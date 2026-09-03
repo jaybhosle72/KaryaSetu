@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Sleek subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Subtle border glow */
+.border-subtle {
+  border-color: rgba(226, 232, 240, 0.8);
+}
+
+/* Sovereign Indian Tricolor Background System */
+.bg-tricolor-gradient {
+  background: 
+    linear-gradient(
+      180deg,
+      rgba(255, 153, 51, 0.08) 0%,
+      rgba(255, 255, 255, 0.98) 16%,
+      rgba(255, 255, 255, 1) 50%,
+      rgba(255, 255, 255, 0.98) 84%,
+      rgba(19, 136, 8, 0.07) 100%
+    );
+  background-attachment: fixed;
+}
+
+/* Atmospheric Saffron & Green ambient lights */
+.ambient-tricolor-glow {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(255, 153, 51, 0.10) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(19, 136, 8, 0.09) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(10, 25, 47, 0.03) 0px, transparent 35%);
+}
+
+/* 3-Stripe National Tricolor Accent Ribbon */
+.tricolor-ribbon {
+  height: 4px;
+  background: linear-gradient(90deg, #FF9933 0%, #FF9933 33.3%, #FFFFFF 33.3%, #FFFFFF 66.6%, #138808 66.6%, #138808 100%);
+}
+
+.saffron-badge {
+  background-color: rgba(255, 153, 51, 0.12);
+  color: #c2410c;
+  border: 1px solid rgba(255, 153, 51, 0.35);
+}
+
+.green-badge {
+  background-color: rgba(19, 136, 8, 0.10);
+  color: #15803d;
+  border: 1px solid rgba(19, 136, 8, 0.28);
+}
