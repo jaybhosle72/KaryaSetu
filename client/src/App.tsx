@@ -65,8 +65,16 @@ export function App() {
   const [openCategoryNavTrigger, setOpenCategoryNavTrigger] = useState<string>('HOMES');
   const [openActiveBookingTrigger, setOpenActiveBookingTrigger] = useState<number>(0);
   const [externalCategorySelect, setExternalCategorySelect] = useState<any>(null);
+  const [preselectedService, setPreselectedService] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'emergency' | 'info' } | null>(null);
+
+  const handleSelectService = (sectorId: string, service: any) => {
+    setPreselectedService(service);
+    setExternalCategorySelect(sectorId);
+    setCurrentRole('customer');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Unified Persistent Cart State across navigation
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -439,12 +447,17 @@ export function App() {
         onOpenActiveBooking={() => setOpenActiveBookingTrigger(prev => prev + 1)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSelectService={handleSelectService}
         selectedLocality={selectedLocality}
         onSelectLocality={(loc) => {
           setSelectedLocality(loc);
           showToast(`Service zone switched to: ${loc}`, 'info');
         }}
-        onQuickCategorySelect={(catId) => setExternalCategorySelect(catId)}
+        onQuickCategorySelect={(catId) => {
+          setExternalCategorySelect(catId);
+          setPreselectedService(null);
+          setCurrentRole('customer');
+        }}
       />
 
       {/* Real-Time Toast Notification Banner */}
@@ -488,6 +501,11 @@ export function App() {
                 openCategoryNavTrigger={openCategoryNavTrigger}
                 openActiveBookingTrigger={openActiveBookingTrigger}
                 externalCategorySelect={externalCategorySelect}
+                preselectedService={preselectedService}
+                onClearPreselectedService={() => setPreselectedService(null)}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSelectService={handleSelectService}
                 cart={cart}
                 onAddToCart={handleAddToCart}
                 onUpdateQuantity={handleUpdateQuantity}

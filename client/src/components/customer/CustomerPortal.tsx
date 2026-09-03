@@ -20,6 +20,7 @@ import { CustomerLocationBar, PUNE_LOCALITIES } from './CustomerLocationBar';
 import { GeoLocationCoords } from '../../types';
 import { MASTER_SECTORS, MasterSector } from '../../data/masterCatalog';
 import { CartItem } from './CartDrawerModal';
+import { searchCatalog } from '../../utils/searchCatalog';
 
 interface CustomerPortalProps {
   cooperatives: Cooperative[];
@@ -45,6 +46,11 @@ interface CustomerPortalProps {
   onClearCart?: () => void;
   onOpenCart?: () => void;
   onApproveProposal?: (bookingId: string) => Promise<any>;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  preselectedService?: any;
+  onClearPreselectedService?: () => void;
+  onSelectService?: (sectorId: string, service: any) => void;
 }
 
 export const CustomerPortal: React.FC<CustomerPortalProps> = ({
@@ -70,7 +76,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   onRemoveFromCart,
   onClearCart,
   onOpenCart,
-  onApproveProposal
+  onApproveProposal,
+  searchQuery = '',
+  onSearchChange,
+  preselectedService: propPreselectedService,
+  onClearPreselectedService,
+  onSelectService
 }) => {
   const t = translations[currentLanguage];
 
@@ -88,7 +99,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showWelfareModal, setShowWelfareModal] = useState(false);
   const [activeViewingBooking, setActiveViewingBooking] = useState<Booking | null>(null);
-  const [preselectedService, setPreselectedService] = useState<any>(null);
+  const [preselectedService, setPreselectedService] = useState<any>(propPreselectedService || null);
+
+  useEffect(() => {
+    if (propPreselectedService) {
+      setPreselectedService(propPreselectedService);
+    }
+  }, [propPreselectedService]);
 
   const activeBookingRef = useRef<HTMLDivElement>(null);
   const activeBooking = bookings[0] || null;
@@ -132,7 +149,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       return (
         <MasterSectorDetailPage
           sectorId={subView}
-          onBack={() => { setSubView('HOME'); setPreselectedService(null); }}
+          onBack={() => { 
+            setSubView('HOME'); 
+            setPreselectedService(null); 
+            onClearPreselectedService?.();
+          }}
           onSubmitBooking={onBookService}
           workers={workers}
           initialService={preselectedService}
@@ -157,8 +178,18 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     );
   }
 
-  // Filter sectors by active domain
-  const visibleSectors = MASTER_SECTORS.filter(s => s.domain === activeDomain);
+  const searchResults = searchCatalog(searchQuery || '', 12);
+
+  // Filter sectors by active domain, and refine when search is active
+  const visibleSectors = MASTER_SECTORS.filter(s => {
+    if (s.domain !== activeDomain) return false;
+    if (!searchQuery || !searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return s.title.toLowerCase().includes(q) || 
+           s.shortTitle.toLowerCase().includes(q) ||
+           s.subTradesList.some(st => st.toLowerCase().includes(q)) ||
+           s.subTrades.some(st => st.services.some(svc => svc.name.toLowerCase().includes(q) || svc.description.toLowerCase().includes(q)));
+  });
 
   // Helper function to render Lucide icon by name
   const renderSectorIcon = (name: string) => {
@@ -244,6 +275,126 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
         </div>
       </section>
+
+      {/* 1.2 SEARCH RESULTS SHELF (When search query is entered from Navbar) */}
+      {searchQuery && searchQuery.trim().length > 0 && (
+        <section className="max-w-[1360px] mx-auto space-y-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-orange-400/40 shadow-xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center font-black flex-shrink-0">
+                  <Search className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                    <span>Search Results for</span>
+                    <span className="text-orange-600">"{searchQuery}"</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Found {searchResults.totalMatches} verified cooperative service{searchResults.totalMatches === 1 ? '' : 's'} & trade{searchResults.totalMatches === 1 ? '' : 's'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onSearchChange?.('')}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Clear Search</span>
+              </button>
+            </div>
+
+            {searchResults.services.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {searchResults.services.map((item) => (
+                  <div
+                    key={item.service.id}
+                    className="p-4 rounded-2xl bg-slate-50/80 hover:bg-white border border-slate-200 hover:border-orange-300 hover:shadow-lg transition-all flex flex-col justify-between group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
+                          {item.subTrade.title}
+                        </span>
+                        <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span>{item.service.rating}</span>
+                        </span>
+                      </div>
+
+                      <h4 className="text-sm font-black text-slate-900 group-hover:text-orange-600 transition leading-snug">
+                        {item.service.name}
+                      </h4>
+                      <p className="text-xs text-slate-500 line-clamp-2">
+                        {item.service.description}
+                      </p>
+                      <div className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{item.service.duration}</span>
+                        <span>•</span>
+                        <span>{item.sector.shortTitle}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 mt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
+                      <div>
+                        <span className="text-sm font-black text-slate-900">
+                          ₹{item.service.price}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block font-semibold">
+                          Gazetted rate
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {onAddToCart && (
+                          <button
+                            type="button"
+                            onClick={() => onAddToCart({
+                              id: item.service.id,
+                              name: item.service.name,
+                              price: item.service.price,
+                              category: item.sector.title,
+                              quantity: 1,
+                              duration: item.service.duration
+                            })}
+                            className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer shadow-2xs"
+                            title="Add to Booking Cart"
+                          >
+                            + Cart
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onSelectService) {
+                              onSelectService(item.sector.id, item.service);
+                            } else {
+                              setPreselectedService(item.service);
+                              setSubView(item.sector.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-orange-600 text-white text-xs font-black transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                        >
+                          <span>Book</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-xs text-slate-500 space-y-2">
+                <p className="font-semibold text-slate-700">No cooperative services found matching "{searchQuery}".</p>
+                <p className="text-[11px] text-slate-400">Try common searches: electrician, plumber, AC, cleaning, painting, carpentry.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* 1.5 CONTRACTOR WORKFORCE PROPOSAL REVIEW CARDS */}
       {bookings.filter(b => b.status === 'PROPOSAL_RECEIVED').map((propBooking) => (
