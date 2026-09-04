@@ -138,6 +138,19 @@ export const api = {
     return data.data;
   },
 
+  async verifyBookingOtp(id: string, otp: string): Promise<Booking> {
+    const res = await fetch(`${API_BASE}/bookings/${id}/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to verify OTP');
+    }
+    return data.data;
+  },
+
   async submitProposal(id: string, proposalData: {
     workforce: any[];
     estimatedDurationDays: number;

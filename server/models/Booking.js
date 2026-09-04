@@ -64,6 +64,7 @@ const BookingSchema = new mongoose.Schema({
     cooperativeEndorsement: { type: Boolean, default: true }
   },
   emergencyTriggerReason: { type: String },
+  otp: { type: String, default: '4821' },
   completedAt: { type: Date }
 }, { timestamps: true, _id: false });
 

@@ -29,7 +29,8 @@ import { Worker } from '../../types';
 interface ServiceCategoryDetailPageProps {
   categoryId: ServiceCategoryId;
   onBack: () => void;
-  onSubmitBooking: (bookingData: any) => Promise<void>;
+  onSubmitBooking: (bookingData: any) => Promise<any>;
+  onPayBooking?: (id: string, paymentMethod?: string) => Promise<void>;
   cart: CartItem[];
   onAddToCart: (item: any) => void;
   onUpdateQuantity: (id: string, delta: number) => void;
@@ -1528,7 +1529,7 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
                 ))}
               </div>
               <p className="text-[10px] text-slate-400 text-center font-medium">
-                80% of booking fee goes directly to the technician
+                Verified cooperative booking with doorstep OTP security
               </p>
             </div>
           )}
@@ -1686,7 +1687,7 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="font-semibold">Transparent 80% Fair Pay to Worker</span>
+                <span className="font-semibold">Direct Verified Cooperative Booking</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -1737,7 +1738,7 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
                   ))}
                 </div>
 
-                {/* Total & 4-Way Split Preview */}
+                {/* Total & Service Assurance Preview */}
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
                   <div className="flex justify-between items-baseline">
                     <span className="font-bold text-slate-700">Total Payable:</span>
@@ -1745,21 +1746,17 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
                   </div>
 
                   <div className="pt-2 border-t border-slate-200 text-[11px] space-y-1 text-slate-600">
-                    <div className="flex justify-between font-semibold text-emerald-800">
-                      <span>✓ Worker Direct Share (80%):</span>
-                      <span className="font-black">₹{workerEarning}</span>
+                    <div className="flex justify-between text-emerald-800 font-semibold">
+                      <span>✓ Doorstep OTP Verification:</span>
+                      <span>Included</span>
                     </div>
-                    <div className="flex justify-between text-blue-700">
-                      <span>✓ Cooperative Tool Depot (10%):</span>
-                      <span>₹{coopShare}</span>
+                    <div className="flex justify-between text-blue-700 font-semibold">
+                      <span>✓ Certified Cooperative Technician:</span>
+                      <span>Assigned</span>
                     </div>
-                    <div className="flex justify-between text-amber-700 font-bold">
-                      <span>✓ Worker Welfare & PM-JAY (6%):</span>
-                      <span>₹{welfareShare}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Platform Infrastructure (4%):</span>
-                      <span>₹{platformFee}</span>
+                    <div className="flex justify-between text-purple-700 font-semibold">
+                      <span>✓ Cooperative Guarantee:</span>
+                      <span>30 Days Free Rework</span>
                     </div>
                   </div>
                 </div>

@@ -23,6 +23,13 @@ interface BookingModalProps {
     projectDurationDays?: number;
     workerType?: string;
     workerTier?: 'STANDARD' | 'MASTER' | 'HELPER';
+    projectScope?: {
+      taskDescription?: string;
+      propertyType?: string;
+      scopeType?: string;
+      approxAreaSqFt?: number;
+      specialRequirements?: string;
+    };
   }) => Promise<void>;
 }
 
@@ -35,8 +42,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onSubmitBooking
 }) => {
   const [bookingMode, setBookingMode] = useState<'SOLO_WORKER' | 'CONTRACTOR_TEAM'>('SOLO_WORKER');
-  const [teamSize, setTeamSize] = useState<number>(4);
-  const [projectDurationDays, setProjectDurationDays] = useState<number>(2);
+  
+  // Customer site scope details (Customer does NOT guess worker count)
+  const [propertyType, setPropertyType] = useState<string>('3 BHK');
+  const [scopeType, setScopeType] = useState<string>('Interior');
+  const [approxArea, setApproxArea] = useState<string>('1,200 sq.ft');
+  const [specialRequirements, setSpecialRequirements] = useState<string>('');
 
   // Worker Type and Skill Tier States
   const [selectedWorkerType, setSelectedWorkerType] = useState<string>(() => {
@@ -77,11 +88,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   if (selectedWorkerTier === 'MASTER') basePrice += 150; // Master Craftsman gazetted rate
   if (selectedWorkerTier === 'HELPER') basePrice = Math.max(250, basePrice - 100);
 
+  const contractorBenchmarkAmount = propertyType === '1 BHK' ? 4500
+    : propertyType === '2 BHK' ? 7500
+    : propertyType === '3 BHK' ? 12000
+    : propertyType === '4+ BHK / Villa' ? 18000
+    : propertyType === 'Office' ? 15000
+    : 35000;
+
   const estimatedAmount = bookingMode === 'SOLO_WORKER'
     ? basePrice
-    : Math.round(basePrice * teamSize * 0.9 * projectDurationDays);
+    : contractorBenchmarkAmount;
 
-  // Real-time 4-way split calculations
+  // Real-time split calculations
   const workerAmount = Math.round(estimatedAmount * 0.80);
   const coopAmount = Math.round(estimatedAmount * 0.10);
   const welfareAmount = Math.round(estimatedAmount * 0.06);
@@ -95,14 +113,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         customerName,
         customerPhone,
         serviceCategory,
-        subTrade,
+        subTrade: bookingMode === 'CONTRACTOR_TEAM' 
+          ? `${selectedWorkerType} Project (${propertyType})`
+          : subTrade,
         address,
         estimatedAmount,
         bookingMode,
-        teamSize: bookingMode === 'CONTRACTOR_TEAM' ? teamSize : 1,
-        projectDurationDays: bookingMode === 'CONTRACTOR_TEAM' ? projectDurationDays : 1,
+        teamSize: 0, // Customer does NOT guess worker count! Contractor plans and sizes the crew.
+        projectDurationDays: 0,
         workerType: selectedWorkerType,
-        workerTier: selectedWorkerTier
+        workerTier: selectedWorkerTier,
+        projectScope: bookingMode === 'CONTRACTOR_TEAM' ? {
+          taskDescription: `${selectedWorkerType} for ${propertyType} (${scopeType})`,
+          propertyType,
+          scopeType,
+          approxAreaSqFt: parseInt(approxArea.replace(/[^0-9]/g, '')) || (propertyType.includes('1') ? 550 : propertyType.includes('2') ? 850 : 1200),
+          specialRequirements
+        } : undefined
       });
       onClose();
     } finally {
@@ -214,58 +241,104 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
-          {/* Contractor Team Specific Config */}
+          {/* Contractor Team Specific Config (Outcome & Property Based - No Worker Guessing) */}
           {bookingMode === 'CONTRACTOR_TEAM' && (
             <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200 space-y-3 animate-fadeIn">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold uppercase text-blue-800">
-                  Worker Community Team Configuration
+                <span className="text-[10px] font-extrabold uppercase text-blue-800 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Site Scope & Property Details</span>
                 </span>
                 <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                  Contractor Allocation Flow
+                  Contractor Workforce Sizing
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Number of Workers Required
-                  </label>
-                  <select
-                    value={teamSize}
-                    onChange={(e) => setTeamSize(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold text-slate-900"
-                  >
-                    <option value={2}>Team of 2 Shramiks</option>
-                    <option value={3}>Team of 3 Shramiks</option>
-                    <option value={4}>Team of 4 Shramiks</option>
-                    <option value={5}>Gang of 5 Shramiks (Recommended)</option>
-                    <option value={8}>Crew of 8 Shramiks</option>
-                    <option value={10}>Full Squad of 10 Shramiks</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Project Duration (Days)
-                  </label>
-                  <select
-                    value={projectDurationDays}
-                    onChange={(e) => setProjectDurationDays(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold text-slate-900"
-                  >
-                    <option value={1}>1 Day (Express Service)</option>
-                    <option value={2}>2 Days</option>
-                    <option value={3}>3 Days (Standard Project)</option>
-                    <option value={5}>5 Days (Multi-Room / Deep)</option>
-                    <option value={7}>1 Week (Full Renovation)</option>
-                  </select>
+              {/* Property / Site Type */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Property / Site Type
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['1 BHK', '2 BHK', '3 BHK', '4+ BHK / Villa', 'Office', 'Housing Society'].map((pt) => (
+                    <button
+                      key={pt}
+                      type="button"
+                      onClick={() => setPropertyType(pt)}
+                      className={`py-1.5 px-2 rounded-xl text-[10px] font-black transition text-center border cursor-pointer ${
+                        propertyType === pt
+                          ? 'bg-slate-950 text-white border-slate-950 shadow-xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {pt}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <p className="text-[11px] text-blue-800">
-                ⚡ Dispatched to <strong>Balasaheb Shinde (Accredited Mukaddam)</strong> to allocate <strong>{teamSize} certified {selectedWorkerType}s</strong> from the cooperative roster.
-              </p>
+              {/* Work Scope & Approx Area */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Work Scope
+                  </label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(['Interior', 'Exterior', 'Both'] as const).map((sc) => (
+                      <button
+                        key={sc}
+                        type="button"
+                        onClick={() => setScopeType(sc)}
+                        className={`py-1.5 rounded-lg text-[10px] font-bold transition text-center border cursor-pointer ${
+                          scopeType === sc
+                            ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {sc}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Approx Area / Rooms
+                  </label>
+                  <input
+                    type="text"
+                    value={approxArea}
+                    onChange={(e) => setApproxArea(e.target.value)}
+                    placeholder="e.g. 1,200 sq.ft or 3 rooms"
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white font-bold text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Special Instructions & Notes */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Specific Work Instructions (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={specialRequirements}
+                  onChange={(e) => setSpecialRequirements(e.target.value)}
+                  placeholder="e.g. Waterproofing on ceiling, pastel colors, scaffolding needed..."
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white font-medium text-xs focus:outline-none"
+                />
+              </div>
+
+              {/* Explanation Banner */}
+              <div className="p-2.5 bg-blue-100/70 rounded-xl border border-blue-200/80 text-[11px] text-blue-950 space-y-1">
+                <div className="flex items-center gap-1.5 font-black text-blue-900">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-700 flex-shrink-0" />
+                  <span>Customer Does Not Need to Estimate Workers</span>
+                </div>
+                <p className="text-[10px] text-blue-800 leading-snug">
+                  You don't need to guess how many painters or labourers are required. Licensed Mukaddam <strong>Balasaheb Shinde</strong> evaluates your site details, determines the exact crew (skilled craftsmen + helpers) and days, and provides an itemized proposal with transparent statutory rates.
+                </p>
+              </div>
             </div>
           )}
 
@@ -308,49 +381,41 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
-          {/* Transparent 4-Way Earnings Breakdown Card */}
+          {/* Customer Service Protection & Pricing Card */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                Transparent Cooperative Split Preview
+                Service Pricing & Inclusions
               </span>
               <span className="text-base font-black text-slate-900">
                 ₹{estimatedAmount.toLocaleString('en-IN')}
               </span>
             </div>
 
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between font-bold text-emerald-800 bg-emerald-50/80 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+            <div className="space-y-1.5 text-xs text-slate-700">
+              <div className="flex items-center justify-between px-1">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                  {bookingMode === 'CONTRACTOR_TEAM' ? `Team Worker Direct Share (80%)` : 'Worker Take-Home Pay (80%)'}
+                  <span>Doorstep OTP Verification</span>
                 </span>
-                <span className="font-black text-sm">₹{workerAmount.toLocaleString('en-IN')}</span>
+                <span className="font-bold text-emerald-700">Included</span>
               </div>
 
-              <div className="flex items-center justify-between text-slate-700 px-2 py-0.5">
+              <div className="flex items-center justify-between px-1">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600" />
-                  {bookingMode === 'CONTRACTOR_TEAM' ? 'Contractor Coordination & Depot (10%)' : 'Cooperative Tool Depot (10%)'}
+                  <span>Government-Accredited Shramik</span>
                 </span>
-                <span className="font-semibold">₹{coopAmount.toLocaleString('en-IN')}</span>
+                <span className="font-bold text-blue-700">Certified</span>
               </div>
 
-              <div className="flex items-center justify-between text-amber-900 bg-amber-50/80 px-2 py-0.5 rounded-lg border border-amber-200">
+              <div className="flex items-center justify-between px-1">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-600" />
-                  Worker Welfare & Healthcare Fund (6%)
+                  <span className="w-2 h-2 rounded-full bg-purple-600" />
+                  <span>Cooperative Service Warranty</span>
                 </span>
-                <span className="font-bold">₹{welfareAmount.toLocaleString('en-IN')}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-slate-500 px-2 py-0.5">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-slate-400" />
-                  Platform Infrastructure (4%)
-                </span>
-                <span>₹{platformAmount.toLocaleString('en-IN')}</span>
+                <span className="font-bold text-purple-700">30 Days</span>
               </div>
             </div>
           </div>
@@ -360,7 +425,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <HeartHandshake className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <span>
               {bookingMode === 'CONTRACTOR_TEAM'
-                ? `Contractor will allocate ${teamSize} verified ${selectedWorkerType}s from community roster.`
+                ? `Dispatched to Mukaddam Balasaheb Shinde to evaluate site scope and calculate optimal workforce.`
                 : `Dispatching accredited ${selectedWorkerType} (${selectedWorkerTier} tier) from nearest cooperative.`
               }
             </span>
@@ -377,7 +442,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             ) : (
               <span>
                 {bookingMode === 'CONTRACTOR_TEAM'
-                  ? `Submit Team Order (${teamSize} ${selectedWorkerType}s) ➔`
+                  ? `Request Contractor Proposal (Mukaddam Sizing) ➔`
                   : `Request ${selectedWorkerType} (${selectedWorkerTier}) ➔`
                 }
               </span>

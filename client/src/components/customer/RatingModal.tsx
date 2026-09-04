@@ -12,7 +12,7 @@ interface RatingModalProps {
     quality: number;
     punctuality: number;
     safety: number;
-    cooperativeEndorsement: boolean;
+    cooperativeEndorsement?: boolean;
   }) => Promise<void>;
 }
 
@@ -26,7 +26,6 @@ export const RatingModal: React.FC<RatingModalProps> = ({
   const [quality, setQuality] = useState(5);
   const [punctuality, setPunctuality] = useState(5);
   const [safety, setSafety] = useState(5);
-  const [cooperativeEndorsement, setCooperativeEndorsement] = useState(true);
   const [comment, setComment] = useState('Excellent work, prompt arrival and very respectful behavior. Proud to support our local worker cooperative!');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,7 +41,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
         quality,
         punctuality,
         safety,
-        cooperativeEndorsement
+        cooperativeEndorsement: true
       });
       onClose();
     } finally {
@@ -56,7 +55,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
         
         <div className="bg-emerald-800 text-white p-5 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold">Rate Worker & Endorse Cooperative</h3>
+            <h3 className="text-base font-bold">Rate Worker & Service</h3>
             <p className="text-xs text-emerald-200">Holistic reputation beyond simple 5-stars</p>
           </div>
           <button onClick={onClose} className="text-white/80 hover:text-white text-xl font-bold">
@@ -126,25 +125,6 @@ export const RatingModal: React.FC<RatingModalProps> = ({
             </div>
           </div>
 
-          {/* Cooperative Endorsement Checkbox */}
-          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-            <label className="flex items-start gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={cooperativeEndorsement}
-                onChange={(e) => setCooperativeEndorsement(e.target.checked)}
-                className="mt-1 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-              />
-              <div className="text-xs">
-                <span className="font-bold text-emerald-900 block">
-                  Endorse {booking.cooperativeName}
-                </span>
-                <span className="text-emerald-700">
-                  Adds to the cooperative's social reliability index and community trust score.
-                </span>
-              </div>
-            </label>
-          </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Feedback & Review</label>
@@ -162,7 +142,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
             disabled={isSubmitting}
             className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow transition"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Cooperative Review'}
+            {isSubmitting ? 'Submitting...' : 'Submit Review'}
           </button>
         </form>
       </div>

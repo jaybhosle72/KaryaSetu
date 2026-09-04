@@ -136,7 +136,8 @@ router.post('/', async (req, res) => {
         paymentMethod: 'UPI',
         invoiceNumber: generateInvoiceNumber(),
         allocationRationale: matchResult.rationale,
-        etaMinutes: matchResult.etaMinutes || 20
+        etaMinutes: matchResult.etaMinutes || 20,
+        otp: req.body.otp || Math.floor(1000 + Math.random() * 9000).toString()
       };
 
       if (assignedWorker) {
@@ -232,7 +233,8 @@ router.post('/emergency', async (req, res) => {
       invoiceNumber: generateInvoiceNumber(),
       allocationRationale: `🚨 EMERGENCY DISPATCH: ${matchResult.rationale}`,
       etaMinutes: Math.min(12, matchResult.etaMinutes || 10),
-      emergencyTriggerReason: notes
+      emergencyTriggerReason: notes,
+      otp: req.body.otp || Math.floor(1000 + Math.random() * 9000).toString()
     });
 
     if (assignedWorker) {
@@ -283,6 +285,37 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
+// POST /api/bookings/:id/verify-otp - Verify Doorstep 4-digit OTP & transition to IN_PROGRESS
+router.post('/:id/verify-otp', async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const booking = await DataStore.getBookingById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, error: 'Booking not found' });
+
+    const expectedOtp = booking.otp || '4821';
+    if (otp && otp.toString().trim() !== expectedOtp.toString().trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Invalid OTP. Please enter the correct 4-digit code (${expectedOtp}) provided to the customer.` 
+      });
+    }
+
+    const updated = await DataStore.updateBooking(req.params.id, {
+      status: 'IN_PROGRESS',
+      workerVerifiedAt: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      message: 'Doorstep OTP verified successfully. Worker is now authorized to start work.',
+      data: updated,
+      booking: updated
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/bookings/:id/pay - Process Digital Payment & Apply 4-Way Transparent Split
 router.post('/:id/pay', async (req, res) => {
   try {
@@ -292,12 +325,13 @@ router.post('/:id/pay', async (req, res) => {
 
     const split = booking.paymentBreakdown;
 
-    // 1. Mark booking as PAID
+    // 1. Mark booking as PAID and EN_ROUTE (worker dispatched to work site)
+    const newStatus = (booking.status === 'IN_PROGRESS') ? 'IN_PROGRESS' : 'EN_ROUTE';
     const updatedBooking = await DataStore.updateBooking(req.params.id, {
       paymentStatus: 'PAID',
       paymentMethod,
-      status: 'COMPLETED',
-      completedAt: new Date().toISOString()
+      status: newStatus,
+      paidAt: new Date().toISOString()
     });
 
     // 2. Credit Worker Earnings & Welfare

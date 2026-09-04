@@ -1,6 +1,6 @@
 import React from 'react';
 import { Booking } from '../../types';
-import { ShieldCheck, Printer, CheckCircle2, QrCode, FileText } from 'lucide-react';
+import { ShieldCheck, Printer, CheckCircle2, FileText } from 'lucide-react';
 
 interface TransparentInvoiceModalProps {
   isOpen: boolean;
@@ -50,23 +50,28 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
           
           {/* Header & Logo */}
           <div className="flex items-start justify-between border-b border-slate-200 pb-4">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Registered Labour Cooperative Society
-              </span>
-              <h2 className="text-base font-black text-slate-900 mt-1">
-                {booking.cooperativeName || 'Pune Electrical & Mechanical Shramik Sahakari Sanstha Ltd.'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Reg No: MAH/PNE/LBR/2018/8842 • District: Pune • Under MSCS Act
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-0.5 shrink-0 shadow-2xs">
+                <img src="/karyasetu-logo.png" alt="KaryaSetu Logo" className="w-full h-full object-contain rounded-lg" />
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  KaryaSetu Accredited Labour Cooperative Society
+                </span>
+                <h2 className="text-base font-black text-slate-900 mt-1">
+                  {booking.cooperativeName || 'Pune Electrical & Mechanical Shramik Sahakari Sanstha Ltd.'}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Reg No: MAH/PNE/LBR/2018/8842 • District: Pune • Under MSCS Act
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <span className="inline-block px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">
                 PAID IN FULL
               </span>
               <p className="text-xs font-mono text-slate-500 mt-1">
-                {booking.invoiceNumber || 'INV-SAHAKAR-2026-9041'}
+                {booking.invoiceNumber || 'INV-KARYA-2026-9041'}
               </p>
               <p className="text-[11px] text-slate-400">
                 Date: {new Date(booking.completedAt || booking.createdAt).toLocaleDateString()}
@@ -90,100 +95,64 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
             </div>
           </div>
 
-          {/* Transparent 4-Way Breakdown Table */}
+          {/* Itemized Service Invoice Table */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                Transparent Social Breakdown of Your ₹{booking.totalAmount}
+                Itemized Service & Billing Summary
               </h4>
               <span className="text-[10px] text-emerald-700 font-semibold">
-                ✓ 100% Audited Financial Ledger
+                ✓ Official Cooperative Tax Invoice
               </span>
             </div>
 
             <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
               <thead className="bg-slate-100 text-slate-700 font-bold">
                 <tr>
-                  <th className="py-2 px-3 text-left">Allocation Beneficiary</th>
-                  <th className="py-2 px-3 text-center">Share %</th>
-                  <th className="py-2 px-3 text-right">Amount (₹)</th>
+                  <th className="py-2.5 px-3 text-left">Service Item & Description</th>
+                  <th className="py-2.5 px-3 text-center">SAC Code</th>
+                  <th className="py-2.5 px-3 text-center">Qty</th>
+                  <th className="py-2.5 px-3 text-right">Amount (₹)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                <tr className="bg-emerald-50/40">
-                  <td className="py-2 px-3">
-                    <p className="font-bold text-emerald-900">Direct Worker Take-Home Pay</p>
-                    <p className="text-[10px] text-slate-500">Instant UPI payout to worker's personal account</p>
+                <tr className="bg-white">
+                  <td className="py-2.5 px-3">
+                    <p className="font-bold text-slate-900">{booking.serviceCategory} — {booking.subTrade}</p>
+                    <p className="text-[10px] text-slate-500">Certified doorstep maintenance with verified materials & tools</p>
                   </td>
-                  <td className="py-2 px-3 text-center font-bold text-emerald-800">80%</td>
-                  <td className="py-2 px-3 text-right font-black text-emerald-900">₹{split.workerAmount}</td>
+                  <td className="py-2.5 px-3 text-center font-mono text-slate-600">998719</td>
+                  <td className="py-2.5 px-3 text-center font-bold text-slate-700">1</td>
+                  <td className="py-2.5 px-3 text-right font-black text-slate-900">₹{booking.totalAmount}</td>
                 </tr>
 
-                <tr>
+                <tr className="bg-slate-50/50">
                   <td className="py-2 px-3">
-                    <p className="font-semibold text-slate-800">Cooperative Society Operations</p>
-                    <p className="text-[10px] text-slate-500">Equipment maintenance, local branch office & dispute mediation</p>
+                    <p className="font-medium text-slate-700">Doorstep OTP Handshake & Safety Protocol</p>
+                    <p className="text-[10px] text-slate-500">Aadhaar verified artisan with safety kit & equipment</p>
                   </td>
-                  <td className="py-2 px-3 text-center font-semibold text-slate-700">10%</td>
-                  <td className="py-2 px-3 text-right font-bold text-slate-800">₹{split.coopAmount}</td>
+                  <td className="py-2 px-3 text-center font-mono text-slate-500">998721</td>
+                  <td className="py-2 px-3 text-center text-slate-500">1</td>
+                  <td className="py-2 px-3 text-right font-semibold text-emerald-700">Included</td>
                 </tr>
 
-                <tr className="bg-amber-50/40">
+                <tr className="bg-slate-50/50">
                   <td className="py-2 px-3">
-                    <p className="font-bold text-amber-950">Worker Welfare & Social Security Fund</p>
-                    <p className="text-[10px] text-slate-500">Ayushman Bharat top-up, accident cover & child scholarships</p>
+                    <p className="font-medium text-slate-700">Cooperative Quality Warranty (30 Days)</p>
+                    <p className="text-[10px] text-slate-500">Free rework protection covered under Society rules</p>
                   </td>
-                  <td className="py-2 px-3 text-center font-bold text-amber-800">6%</td>
-                  <td className="py-2 px-3 text-right font-black text-amber-950">₹{split.welfareAmount}</td>
-                </tr>
-
-                <tr>
-                  <td className="py-2 px-3">
-                    <p className="font-medium text-slate-600">Platform Technology Infrastructure</p>
-                    <p className="text-[10px] text-slate-500">Cloud servers, automated dispatch & payment gateway</p>
-                  </td>
-                  <td className="py-2 px-3 text-center text-slate-500">4%</td>
-                  <td className="py-2 px-3 text-right font-semibold text-slate-700">₹{split.platformAmount}</td>
+                  <td className="py-2 px-3 text-center font-mono text-slate-500">WTY-30</td>
+                  <td className="py-2 px-3 text-center text-slate-500">1</td>
+                  <td className="py-2 px-3 text-right font-semibold text-emerald-700">Covered</td>
                 </tr>
 
                 <tr className="bg-slate-100 font-extrabold text-slate-900">
-                  <td className="py-2.5 px-3">Total Amount Paid</td>
-                  <td className="py-2.5 px-3 text-center">100%</td>
-                  <td className="py-2.5 px-3 text-right text-sm">₹{booking.totalAmount}</td>
+                  <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-slate-700">Total Invoice Value (Paid):</td>
+                  <td className="py-2.5 px-3 text-right text-sm font-black text-emerald-800">₹{booking.totalAmount}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-          {/* Cooperative Stamp & Digital Verification */}
-          <div className="pt-2 flex items-center justify-between border-t border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full border-2 border-emerald-600 border-dashed flex items-center justify-center text-center p-1 rotate-[-12deg]">
-                <span className="text-[8px] font-black uppercase text-emerald-800 leading-tight">
-                  COOP SEAL<br />VERIFIED
-                </span>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-700">
-                  Certified by Maharashtra Labour Cooperative Union
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  GST Exempt under Co-operative Welfare Provision §12(A)
-                </p>
-              </div>
-            </div>
-
-            <div className="text-right flex items-center gap-2">
-              <div className="w-10 h-10 bg-slate-100 border border-slate-300 rounded flex items-center justify-center">
-                <QrCode className="w-8 h-8 text-slate-700" />
-              </div>
-              <div className="text-left text-[10px] text-slate-500">
-                <p className="font-mono font-bold">VERIFIED PAYOUT</p>
-                <p>Scan to verify on blockchain / registry</p>
-              </div>
-            </div>
-          </div>
-
         </div>
 
       </div>

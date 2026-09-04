@@ -537,7 +537,7 @@ export const AcServiceDetailPage: React.FC<AcServiceDetailPageProps> = ({
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="font-semibold">Transparent 80% Fair Pay to Worker</span>
+                <span className="font-semibold">Direct Verified Cooperative Booking</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -596,21 +596,17 @@ export const AcServiceDetailPage: React.FC<AcServiceDetailPageProps> = ({
                   </div>
 
                   <div className="pt-2 border-t border-slate-200 text-[11px] space-y-1 text-slate-600">
-                    <div className="flex justify-between font-semibold text-emerald-800">
-                      <span>✓ Worker Direct Share (80%):</span>
-                      <span className="font-black">₹{workerEarning}</span>
+                    <div className="flex justify-between text-emerald-800 font-semibold">
+                      <span>✓ Doorstep OTP Verification:</span>
+                      <span>Included</span>
                     </div>
-                    <div className="flex justify-between text-blue-700">
-                      <span>✓ Cooperative Tool Depot (10%):</span>
-                      <span>₹{coopShare}</span>
+                    <div className="flex justify-between text-blue-700 font-semibold">
+                      <span>✓ Certified Cooperative Technician:</span>
+                      <span>Assigned</span>
                     </div>
-                    <div className="flex justify-between text-amber-700 font-bold">
-                      <span>✓ Worker Welfare & PM-JAY (6%):</span>
-                      <span>₹{welfareShare}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Platform Infrastructure (4%):</span>
-                      <span>₹{platformFee}</span>
+                    <div className="flex justify-between text-purple-700 font-semibold">
+                      <span>✓ Cooperative Guarantee:</span>
+                      <span>30 Days Free Rework</span>
                     </div>
                   </div>
                 </div>

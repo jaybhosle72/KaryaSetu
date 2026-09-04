@@ -59,7 +59,7 @@ export const MASTER_SECTORS: MasterSector[] = [
     regNo: 'MAH/PNE/LBR/2018/0091',
     shramiksAvailable: 114,
     description: 'Certified electricians, plumbers, carpenters, painters, masons, roofers, and waterproofing artisans for complete residential maintenance.',
-    heroImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1000&q=80',
+    heroImage: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=1000&q=80',
     subTradesList: ['Electrical', 'Plumbing', 'Carpentry', 'Painting', 'Masonry', 'Flooring & Tiling', 'Roofing', 'Waterproofing', 'General Repairs'],
     subTrades: [
       {
@@ -732,7 +732,7 @@ export const MASTER_SECTORS: MasterSector[] = [
     regNo: 'MAH/PNE/LBR/2021/SOS-99',
     shramiksAvailable: 42,
     description: 'Special priority response squads dispatched within 15 minutes for critical residential hazards, power blackouts, pipe bursts, and lockout crises.',
-    heroImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1000&q=80',
+    heroImage: 'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&w=1000&q=80',
     subTradesList: ['Electrical Emergency', 'Plumbing Emergency', 'Home Emergency', 'Appliance Emergency', 'Other Urgent Help'],
     subTrades: [
       {
@@ -814,7 +814,10 @@ export const MASTER_SECTORS: MasterSector[] = [
         services: [
           { id: 'renov-bath', name: 'Bathroom Modernization (Turnkey Civil)', rating: 4.92, price: 28500, duration: '5 Days', description: 'Demolition of old tiles, concealed CPVC plumbing, waterproofing layer, and vitrified tiles.' },
           { id: 'renov-kitchen', name: 'Modular Granite Platform & Dado Renovation', rating: 4.88, price: 22000, duration: '4 Days', description: 'Granite counter cutting, double-edge polishing, and sink manifold plumbing.' },
-          { id: 'renov-full', name: 'Full Apartment Turnkey Renovation (2 BHK)', rating: 4.95, price: 85000, duration: '15 Days', description: 'Complete civil overhaul including plastering, wiring, plumbing, flooring, and paint.' }
+          { id: 'renov-full', name: 'Full Apartment Turnkey Renovation (2 BHK)', rating: 4.95, price: 85000, duration: '15 Days', description: 'Complete civil overhaul including plastering, wiring, plumbing, flooring, and paint.' },
+          { id: 'renov-terrace', name: 'Terrace Waterproofing', rating: 4.94, price: 16500, duration: '3 Days', description: 'Polyurethane chemical coating, fiber mesh reinforcement, and 72-hr ponding test.' },
+          { id: 'renov-tile', name: 'Floor Tile Installation', rating: 4.91, price: 12000, duration: '2-3 Days', description: 'Laser-leveled vitrified tile laying with anti-skid epoxy joint grouting.' },
+          { id: 'renov-plaster', name: 'Plastering', rating: 4.89, price: 8500, duration: '2 Days', description: 'Sand-faced river sand cement mortar plastering for interior and exterior walls.' }
         ]
       }
     ]
@@ -842,56 +845,16 @@ export const MASTER_SECTORS: MasterSector[] = [
         tagline: 'Common area lighting, STP & water pump maintenance, lift power backup, clubhouse',
         services: [
           { id: 'rwa-monthly', name: 'Housing Society Monthly Common Area Maintenance SLA', rating: 4.93, price: 18500, duration: 'Monthly SLA', description: 'Bi-weekly electrical and plumbing audits, overhead tank sanitization, and emergency coverage.' },
-          { id: 'rwa-stp', name: 'Sewage Treatment Plant (STP) Operations SLA', rating: 4.91, price: 14500, duration: 'Monthly SLA', description: 'Blower servicing, dosing pump chemical management, and treated water quality test.' }
+          { id: 'rwa-stp', name: 'Sewage Treatment Plant (STP) Operations SLA', rating: 4.91, price: 14500, duration: 'Monthly SLA', description: 'Blower servicing, dosing pump chemical management, and treated water quality test.' },
+          { id: 'rwa-cctv', name: 'CCTV Installation', rating: 4.90, price: 12500, duration: '1 Day', description: 'Gated society 16-channel IP surveillance cameras, optical fiber cabling, and security cabin monitoring.' },
+          { id: 'rwa-clean', name: 'Building Cleaning', rating: 4.88, price: 9500, duration: '1 Day', description: 'High-pressure mechanized pressure washing of society podiums, driveways, and basements.' },
+          { id: 'rwa-tank', name: 'Water Tank Cleaning', rating: 4.92, price: 4500, duration: '4 hrs', description: '6-stage scientific sanitization with sludge de-watering, high-pressure rotary jet, and UV treatment.' },
+          { id: 'rwa-garden', name: 'Society Garden Maintenance', rating: 4.89, price: 6500, duration: 'Monthly SLA', description: 'Lawn aerating, ornamental plant feeding, pathway cleaning, and tree branch safety trimming.' }
         ]
       }
     ]
   },
 
-  // 11. WORKFORCE & LABOUR SUPPLY (CONTRACTOR FEATURE)
-  {
-    id: 'workforce-labour',
-    title: 'Workforce & Labour Supply (Contractor Gangs)',
-    shortTitle: 'Workforce & Labour',
-    domain: 'PROJECTS_CONTRACTS',
-    iconName: 'Users',
-    rating: 4.92,
-    bookingsCount: '1,200+ contractor allocations',
-    coopName: 'Shramik Kalyan Kamgar Puravatha Sahakari',
-    regNo: 'MAH/PNE/LBR/2016/0008',
-    shramiksAvailable: 210,
-    description: 'Direct cooperative allocation of certified trade gangs for construction sites, residential societies, industrial plants, and events. Fully e-Shram registered with statutory safety and PM-JAY compliance.',
-    heroImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1000&q=80',
-    subTradesList: ['Skilled Workers', 'General Labour', 'Specialized Teams', 'Temporary Workforce', 'Bulk Workforce Requests'],
-    subTrades: [
-      {
-        id: 'skilled-crews',
-        title: 'Skilled Trade Crews',
-        tagline: 'Certified trade gangs with master craftsmen and professional equipment',
-        services: [
-          { id: 'crew-painters', name: 'Crew of Painters', rating: 4.95, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Professional painting gang for interior walls, exterior facades, texture coats, and high-rise scaffolding.', inclusions: ['Surface putty & sanding', 'Two-coat emulsion & weathercoat', 'Scaffolding & spray equipment provided'] },
-          { id: 'crew-electricians', name: 'Crew of Electricians', rating: 4.93, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'ITI certified wiremen gang for concealed cabling, distribution boards, switchgear, and commercial electrification.', inclusions: ['Conduit drawing & cable tray setup', 'Megger insulation testing', 'Earthing pit & load balancing'] },
-          { id: 'crew-plumbers', name: 'Crew of Plumbers', rating: 4.91, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Experienced plumbing squad for high-pressure CPVC/UPVC pipelines, drainage networks, and sanitary fixtures.', inclusions: ['Pipeline pressure leak tests', 'Overhead manifold distribution', 'Core cutting & drain traps'] },
-          { id: 'crew-carpenters', name: 'Crew of Carpenters', rating: 4.89, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Craftsmen gang for modular kitchen assembly, wooden shutter doors, gypsum partitions, and formwork shuttering.', inclusions: ['Precision planer levelling', 'Hydraulic hinge fitting', 'Custom wood joinery'] },
-          { id: 'crew-masons', name: 'Crew of Masons & Civil Craftsmen', rating: 4.92, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Skilled masons for red-brick masonry, sand-faced plastering, lintel casting, and structural repair work.', inclusions: ['Cement mortar ratio checks', 'Water curing oversight', 'Plumb-line precision alignment'] },
-          { id: 'crew-tile-flooring', name: 'Crew of Tile & Flooring Craftsmen', rating: 4.90, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Artisans for large format vitrified tiles, marble laying, granite counter polishing, and epoxy grouting.', inclusions: ['Laser level leveling', 'Epoxy waterproof grouting', 'Diamond edge polishing'] },
-          { id: 'crew-welders', name: 'Crew of Welders & Fabricators', rating: 4.88, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Heavy structural welders for MS safety grills, balcony railings, roof trusses, and industrial gate fabrication.', inclusions: ['Arc & MIG welding machines', 'Pre-painted rust protection coat', 'On-site grinding and fitting'] },
-          { id: 'crew-waterproofing', name: 'Crew of Waterproofing Specialists', rating: 4.94, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Specialist squad for terrace polyurethane coating, basement pressure grouting, and bathroom chemical membranes.', inclusions: ['Crack V-grooving & polymer seal', 'Fiberglass mesh layer', '72-hr ponding test'] }
-        ]
-      },
-      {
-        id: 'support-labour-crews',
-        title: 'General Labour & Support Crews',
-        tagline: 'Trained workforce for site logistics, material movement, event sanitation, and landscaping',
-        services: [
-          { id: 'crew-construction-labour', name: 'Crew of Construction Labourers', rating: 4.92, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Robust site workforce for concrete pouring support, brick/sand movement, trenching, and site debris clearing.', inclusions: ['e-Shram certified labour', 'Helmets & safety boots', 'Managed by senior Mukaddam'] },
-          { id: 'crew-cleaners', name: 'Crew of Cleaners & Housekeeping', rating: 4.91, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Mechanized sanitation crew for high-rise commercial buildings, exhibition grounds, and post-construction dust cleanup.', inclusions: ['Single-disc floor scrubbers', 'Industrial wet/dry vacuums', 'Eco-friendly degreasers'] },
-          { id: 'crew-loading-helpers', name: 'Crew of Loading & Shifting Helpers', rating: 4.87, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Heavy lifting crew for warehouse freight loading, equipment relocation, and bulk material shifting.', inclusions: ['Hand trolleys and lifting straps', 'Fragile item handling', 'Zero damage protocol'] },
-          { id: 'crew-landscaping', name: 'Crew of Landscaping & Gardening Workers', rating: 4.89, price: 0, rateLabel: 'Govt Gazetted Wages', hideCostEstimate: true, duration: 'Select Persons & Days', description: 'Green zone team for society lawn mowing, hedge trimming, tree branch safety pruning, and garden development.', inclusions: ['Petrol lawn-mowers & hedge shears', 'Organic compost distribution', 'Pre-monsoon safety trimming'] }
-        ]
-      }
-    ]
-  },
 
   // 12. CONTRACTS & RECURRING SERVICES (AMC)
   {
@@ -915,7 +878,11 @@ export const MASTER_SECTORS: MasterSector[] = [
         tagline: 'Comprehensive Electrical, Plumbing, AC, and Water Pump AMCs',
         services: [
           { id: 'amc-home', name: 'Complete Home Comprehensive AMC (1 Year)', rating: 4.92, price: 4999, duration: '365 Days', description: '4 scheduled preventive visits + unlimited emergency breakdown visits for electrical and plumbing.' },
-          { id: 'amc-society-pumps', name: 'Housing Society Water Pump & STP Annual AMC', rating: 4.95, price: 24000, duration: '1 Year', description: 'Monthly motor alignment, bearing greasing, capacitor check, and STP aeration blower audit.' }
+          { id: 'amc-society-pumps', name: 'Housing Society Water Pump & STP Annual AMC', rating: 4.95, price: 24000, duration: '1 Year', description: 'Monthly motor alignment, bearing greasing, capacitor check, and STP aeration blower audit.' },
+          { id: 'amc-ac-society', name: 'AC Maintenance', rating: 4.91, price: 7999, duration: '1 Year', description: 'Quarterly indoor coil chemical foam washing, gas pressure verification, and condenser servicing.' },
+          { id: 'amc-solar', name: 'Solar Maintenance', rating: 4.93, price: 8500, duration: '1 Year', description: 'Bi-monthly rooftop solar panel dusting, inverter efficiency checks, and wiring terminal safety tests.' },
+          { id: 'amc-lift-generator', name: 'Inverter/Battery Services', rating: 4.89, price: 5500, duration: '1 Year', description: 'Electrolyte gravity testing, terminal anti-corrosion coating, and full load changeover verification.' },
+          { id: 'amc-fire-safety', name: 'Roof Maintenance', rating: 4.90, price: 6200, duration: '1 Year', description: 'Annual terrace rainwater gutter clearing, down-pipe joint inspection, and pre-monsoon seal checks.' }
         ]
       }
     ]

@@ -299,6 +299,7 @@ const DataStore = {
         { $or: [{ _id: bookingId }, { id: bookingId }] },
         {
           assignedWorkerIds: workerIds,
+          teamSize: workerIds.length,
           status: 'ALLOCATED',
           assignedWorkerId: workerIds[0],
           workerName: workerNames,
@@ -315,6 +316,7 @@ const DataStore = {
     
     const assignedWorkers = (store.workers || []).filter(w => workerIds.includes(w._id));
     store.bookings[bookingIdx].assignedWorkerIds = workerIds;
+    store.bookings[bookingIdx].teamSize = workerIds.length;
     store.bookings[bookingIdx].status = 'ALLOCATED';
     store.bookings[bookingIdx].assignedWorkerId = workerIds[0];
     store.bookings[bookingIdx].workerName = assignedWorkers.map(w => w.name).join(', ');

@@ -11,6 +11,9 @@ import { FederationDashboard } from './components/federation/FederationDashboard
 import { ContractorPortal } from './components/contractor/ContractorPortal';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { CartDrawerModal, CartItem } from './components/customer/CartDrawerModal';
+import { GoogleMapLocationModal } from './components/customer/GoogleMapLocationModal';
+import { PaymentModal } from './components/customer/PaymentModal';
+import { CustomerProfilePage } from './components/customer/CustomerProfilePage';
 import confetti from 'canvas-confetti';
 
 export function App() {
@@ -21,7 +24,7 @@ export function App() {
     roleName: string;
   } | null>(() => {
     try {
-      const saved = localStorage.getItem('sahakar_current_user');
+      const saved = localStorage.getItem('karyasetu_current_user') || localStorage.getItem('sahakar_current_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -29,13 +32,28 @@ export function App() {
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(currentUser?.role || 'customer');
-  const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('karyasetu_language') || localStorage.getItem('sahakar_language');
+      if (saved === 'en' || saved === 'hi' || saved === 'mr') return saved;
+    } catch {}
+    return 'en';
+  });
+
+  const handleLanguageChange = (lang: Language) => {
+    setCurrentLanguage(lang);
+    try {
+      localStorage.setItem('karyasetu_language', lang);
+      localStorage.setItem('sahakar_language', lang);
+    } catch {}
+  };
 
   const handleLogin = (role: UserRole, userDetails: { name: string; phone: string; roleName: string }) => {
     const user = { role, ...userDetails };
     setCurrentUser(user);
     setCurrentRole(role);
     try {
+      localStorage.setItem('karyasetu_current_user', JSON.stringify(user));
       localStorage.setItem('sahakar_current_user', JSON.stringify(user));
     } catch {}
     showToast(`Welcome, ${user.name}! Signed in to ${role.toUpperCase()} portal.`, 'info');
@@ -44,6 +62,7 @@ export function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     try {
+      localStorage.removeItem('karyasetu_current_user');
       localStorage.removeItem('sahakar_current_user');
     } catch {}
     showToast('Signed out. Please select your role to continue.', 'info');
@@ -79,16 +98,20 @@ export function App() {
   // Unified Persistent Cart State across navigation
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const saved = localStorage.getItem('sahakar_cart');
+      const saved = localStorage.getItem('karyasetu_cart') || localStorage.getItem('sahakar_cart');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [isGlobalGoogleMapOpen, setIsGlobalGoogleMapOpen] = useState<boolean>(false);
+  const [cartPaymentBooking, setCartPaymentBooking] = useState<Booking | null>(null);
+  const [isCustomerProfileOpen, setIsCustomerProfileOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
+      localStorage.setItem('karyasetu_cart', JSON.stringify(cart));
       localStorage.setItem('sahakar_cart', JSON.stringify(cart));
     } catch {}
   }, [cart]);
@@ -130,7 +153,7 @@ export function App() {
   const handleCartCheckout = async (items: CartItem[], totalAmount: number) => {
     const primaryCategory = items[0]?.category || 'Cooperative Gig Services';
     const subTradeSummary = items.map(i => `${i.name} (x${i.quantity})`).join(', ');
-    await handleBookService({
+    const newBooking = await handleBookService({
       customerName: currentUser?.name || 'Rahul Sharma',
       customerPhone: currentUser?.phone || '+91 98229 33445',
       serviceCategory: primaryCategory,
@@ -139,10 +162,13 @@ export function App() {
       address: 'Flat 402, Mayur Residency, Kothrud, Pune 411038',
       preferredTime: 'Tomorrow, 10:00 AM',
       estimatedPrice: totalAmount,
-      notes: `Cart checkout for ${items.length} items (${subTradeSummary}). 80% to technician, 6% to PM-JAY.`
+      notes: `Cart checkout for ${items.length} items (${subTradeSummary}). Direct cooperative booking.`
     });
     setCart([]);
     setIsCartOpen(false);
+    if (newBooking) {
+      setCartPaymentBooking(newBooking);
+    }
   };
 
   // Synthesized Web Audio chime (safe, no external files required)
@@ -227,14 +253,16 @@ export function App() {
   }, []);
 
   // Handlers for Customer
-  const handleBookService = async (bookingData: any) => {
+  const handleBookService = async (bookingData: any): Promise<Booking | null> => {
     try {
       const res = await api.createBooking(bookingData);
       setBookings(prev => [res.booking, ...prev]);
       showToast(`Matched via ${res.booking.cooperativeName} • Worker: ${res.booking.workerName}`, 'success');
       playAlertSound('success');
+      return res.booking;
     } catch (e: any) {
       showToast(e.message, 'info');
+      return null;
     }
   };
 
@@ -254,14 +282,32 @@ export function App() {
     try {
       const updated = await api.updateBookingStatus(id, status);
       setBookings(prev => prev.map(b => b._id === id ? updated : b));
-      showToast(`Booking moved to milestone: ${status}`, 'info');
-      
-      if (status === 'COMPLETED') {
+      if (status === 'IN_PROGRESS') {
+        showToast(`✓ Worker Verified & Work In-Progress!`, 'success');
+        playAlertSound('success');
+      } else if (status === 'COMPLETED') {
+        showToast(`Work Complete! Escrow payment released to worker.`, 'success');
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
         playAlertSound('success');
+      } else {
+        showToast(`Booking moved to milestone: ${status}`, 'info');
       }
     } catch (e: any) {
       showToast(e.message, 'info');
+    }
+  };
+
+  const handleVerifyOtp = async (id: string, otp: string) => {
+    try {
+      const updated = await api.verifyBookingOtp(id, otp);
+      setBookings(prev => prev.map(b => b._id === id ? updated : b));
+      showToast(`✓ OTP Verified! Worker ${updated.workerName} has started service.`, 'success');
+      confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
+      playAlertSound('success');
+      return updated;
+    } catch (e: any) {
+      showToast(e.message || 'Invalid OTP', 'info');
+      throw e;
     }
   };
 
@@ -319,11 +365,15 @@ export function App() {
     }
   };
 
-  const handlePayBooking = async (id: string) => {
+  const handlePayBooking = async (id: string, paymentMethod?: string) => {
     try {
-      const res = await api.payBooking(id);
-      setBookings(prev => prev.map(b => b._id === id ? res.booking : b));
-      showToast(`Payment Settled: 80% to Worker, 6% to Social Security Fund`, 'success');
+      const res = await api.payBooking(id, paymentMethod);
+      const paidBooking = res.booking || res;
+      setBookings(prev => prev.map(b => b._id === id ? { ...b, ...paidBooking, paymentStatus: 'PAID', status: paidBooking.status || 'EN_ROUTE' } : b));
+      try {
+        localStorage.setItem('karyasetu_last_paid_booking_id', id);
+      } catch {}
+      showToast(`Payment Settled: Secure Escrow Verified & Released`, 'success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       playAlertSound('success');
       loadData();
@@ -439,24 +489,39 @@ export function App() {
         onLogout={handleLogout}
         welfareCorpusTotal={welfareCorpusTotal}
         currentLanguage={currentLanguage}
-        onLanguageChange={setCurrentLanguage}
+        onLanguageChange={handleLanguageChange}
         activeBookingsCount={bookings.filter(b => b.status !== 'COMPLETED').length}
         cartItemsCount={cart.reduce((sum, i) => sum + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
-        onSelectCategoryNav={(nav) => setOpenCategoryNavTrigger(nav)}
-        onOpenActiveBooking={() => setOpenActiveBookingTrigger(prev => prev + 1)}
+        onSelectCategoryNav={(nav) => {
+          setIsCustomerProfileOpen(false);
+          setOpenCategoryNavTrigger(nav);
+        }}
+        onOpenActiveBooking={() => {
+          setIsCustomerProfileOpen(false);
+          setOpenActiveBookingTrigger(prev => prev + 1);
+        }}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onSelectService={handleSelectService}
+        onSelectService={(sectorId, service) => {
+          setIsCustomerProfileOpen(false);
+          handleSelectService(sectorId, service);
+        }}
         selectedLocality={selectedLocality}
         onSelectLocality={(loc) => {
           setSelectedLocality(loc);
           showToast(`Service zone switched to: ${loc}`, 'info');
         }}
         onQuickCategorySelect={(catId) => {
+          setIsCustomerProfileOpen(false);
           setExternalCategorySelect(catId);
           setPreselectedService(null);
           setCurrentRole('customer');
+        }}
+        onOpenGoogleMap={() => setIsGlobalGoogleMapOpen(true)}
+        onOpenProfile={() => {
+          setIsCustomerProfileOpen(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
 
@@ -478,10 +543,32 @@ export function App() {
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center space-y-3">
-              <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm font-black text-slate-700">Initializing SahakarSetu National Cooperative DPI...</p>
+              <div className="relative w-16 h-16 mx-auto">
+                <img 
+                  src="/karyasetu-logo.png" 
+                  alt="KaryaSetu" 
+                  className="w-16 h-16 rounded-2xl object-contain p-1.5 bg-white border border-slate-200 shadow-sm animate-pulse"
+                />
+                <div className="absolute -inset-1 border-2 border-emerald-500 border-t-transparent rounded-2xl animate-spin" />
+              </div>
+              <p className="text-sm font-black text-slate-700">Initializing KaryaSetu National Cooperative DPI...</p>
             </div>
           </div>
+        ) : isCustomerProfileOpen && currentUser ? (
+          <CustomerProfilePage
+            currentUser={currentUser}
+            bookings={bookings}
+            onBack={() => {
+              setIsCustomerProfileOpen(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onLogout={handleLogout}
+            onUpdateUser={(updated) => {
+              setCurrentUser(updated);
+              showToast('Profile updated successfully!', 'success');
+            }}
+            onPayBooking={handlePayBooking}
+          />
         ) : (
           <>
             {currentRole === 'customer' && (
@@ -494,6 +581,7 @@ export function App() {
                 onBookService={handleBookService}
                 onEmergencyBooking={handleEmergencyBooking}
                 onUpdateBookingStatus={handleUpdateBookingStatus}
+                onVerifyOtp={handleVerifyOtp}
                 onPayBooking={handlePayBooking}
                 onRateBooking={handleRateBooking}
                 onRequestContract={handleRequestContract}
@@ -525,6 +613,7 @@ export function App() {
                 welfareRecords={welfareLedger}
                 onUpdateWorkerStatus={handleUpdateWorkerStatus}
                 onUpdateBookingStatus={handleUpdateBookingStatus}
+                onVerifyOtp={handleVerifyOtp}
                 onAddSkill={(wId, skill) => handleVerifySkill(wId, skill, 'Brihan-Maharashtra Cooperative Board')}
               />
             )}
@@ -571,24 +660,6 @@ export function App() {
         )}
       </main>
 
-      {/* Sovereign DPI Footer */}
-      <footer className="bg-[#0B192C] text-slate-400 text-xs border-t border-slate-800 py-6 mt-12 font-sans">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="font-black text-slate-200">
-              SahakarSetu (सहकार सेतू) — Smart India Hackathon 2024-2026
-            </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              National Digital Public Infrastructure for Labour Cooperatives & Federations
-            </p>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400 text-[11px]">
-            <span>MERN Stack (MongoDB + Express + React + Node.js)</span>
-            <span>•</span>
-            <span className="text-emerald-400 font-bold">80% Statutory Worker Take-Home</span>
-          </div>
-        </div>
-      </footer>
 
       {/* Global Unified Cart Drawer Modal */}
       <CartDrawerModal
@@ -600,6 +671,40 @@ export function App() {
         onClearCart={handleClearCart}
         onCheckout={handleCartCheckout}
       />
+
+      {/* Global Google Map Location Selector Modal */}
+      {isGlobalGoogleMapOpen && (
+        <GoogleMapLocationModal
+          isOpen={isGlobalGoogleMapOpen}
+          onClose={() => setIsGlobalGoogleMapOpen(false)}
+          currentLocation={{
+            lat: 18.5074,
+            lng: 73.8077,
+            area: selectedLocality.split('&')[0].trim() || 'Kothrud',
+            address: selectedLocality
+          }}
+          onConfirmLocation={(newLoc) => {
+            setSelectedLocality(newLoc.area);
+            showToast(`Location set on Google Map: ${newLoc.area} (${newLoc.address || 'Custom Pin'})`, 'success');
+          }}
+        />
+      )}
+
+      {/* Global Cart Razorpay Payment Modal */}
+      {cartPaymentBooking && (
+        <PaymentModal
+          isOpen={!!cartPaymentBooking}
+          booking={cartPaymentBooking}
+          onClose={() => setCartPaymentBooking(null)}
+          onPaymentSuccess={(result) => {
+            try {
+              localStorage.setItem('karyasetu_last_paid_booking_id', cartPaymentBooking._id);
+            } catch {}
+            handlePayBooking(cartPaymentBooking._id, 'UPI_RAZORPAY');
+            setCartPaymentBooking(null);
+          }}
+        />
+      )}
 
     </div>
   );

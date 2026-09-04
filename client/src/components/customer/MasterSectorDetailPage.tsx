@@ -3,19 +3,32 @@ import {
   ArrowLeft, Star, ShieldCheck, Check, Plus, Minus, 
   CreditCard, ChevronRight, Sparkles, Wrench, Zap, Hammer, 
   Home, Tv, Users, Briefcase, Award, Clock, MapPin, AlertTriangle, 
-  HeartHandshake, FileText, CheckCircle2, Calendar
+  HeartHandshake, FileText, CheckCircle2, Calendar, ShoppingBag, Trash2, X
 } from 'lucide-react';
 import { MASTER_SECTORS, MasterSector, MasterSubTrade, MasterServiceItem } from '../../data/masterCatalog';
 import { Worker, GeoLocationCoords, WorkerMatchResult, ContractorMatchResult } from '../../types';
 import { api } from '../../services/api';
+import { Language, translations, getTranslatedSectorTitle, getTranslatedServiceName } from '../../i18n/translations';
+import { GoogleMapLocationModal } from './GoogleMapLocationModal';
+import { PaymentModal } from './PaymentModal';
+import { TransparentInvoiceModal } from './TransparentInvoiceModal';
+import { CartItem } from './CartDrawerModal';
 
 interface MasterSectorDetailPageProps {
   sectorId: string;
   onBack: () => void;
-  onSubmitBooking: (bookingData: any) => Promise<void>;
+  onSubmitBooking: (bookingData: any) => Promise<any>;
+  onPayBooking?: (bookingId: string, paymentMethod?: string) => Promise<void>;
   workers?: Worker[];
   initialService?: any;
   customerLocation?: GeoLocationCoords;
+  currentLanguage?: Language;
+  cart?: CartItem[];
+  onAddToCart?: (item: any) => void;
+  onUpdateQuantity?: (id: string, delta: number) => void;
+  onRemoveItem?: (id: string) => void;
+  onClearCart?: () => void;
+  onOpenCart?: () => void;
 }
 
 const getSubTradeIcon = (id: string): string => {
@@ -57,33 +70,103 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
   sectorId,
   onBack,
   onSubmitBooking,
+  onPayBooking,
   workers = [],
   initialService,
-  customerLocation
+  customerLocation,
+  currentLanguage = 'en',
+  cart = [],
+  onAddToCart,
+  onUpdateQuantity,
+  onRemoveItem,
+  onClearCart,
+  onOpenCart
 }) => {
+  const t = translations[currentLanguage] || translations.en;
   // Find matching sector from master catalog (fallback to sector 0)
   const sector: MasterSector = MASTER_SECTORS.find(s => s.id === sectorId) || MASTER_SECTORS[0];
 
   const [activeSubTradeId, setActiveSubTradeId] = useState<string>(sector.subTrades[0]?.id || '');
   const activeSubTrade = sector.subTrades.find(st => st.id === activeSubTradeId) || sector.subTrades[0];
 
-  const [selectedService, setSelectedService] = useState<MasterServiceItem>(
-    activeSubTrade?.services[0] || {
+  // Multi-service booking selection state
+  const [selectedServices, setSelectedServices] = useState<Array<{ service: MasterServiceItem; quantity: number }>>(() => {
+    const defaultSvc = initialService || activeSubTrade?.services[0] || {
       id: 'default',
       name: sector.title,
       price: 499,
       rating: 4.85,
       duration: '1 hr',
       description: sector.description
-    }
-  );
+    };
+    return [{ service: defaultSvc, quantity: 1 }];
+  });
+
+  const selectedService = selectedServices[0]?.service || activeSubTrade?.services[0] || {
+    id: 'default',
+    name: sector.title,
+    price: 499,
+    rating: 4.85,
+    duration: '1 hr',
+    description: sector.description
+  };
+
+  const isServiceSelected = (serviceId: string) => {
+    return selectedServices.some(item => item.service.id === serviceId);
+  };
+
+  const getServiceQty = (serviceId: string) => {
+    const item = selectedServices.find(item => item.service.id === serviceId);
+    return item ? item.quantity : 0;
+  };
+
+  const toggleSelectService = (svc: MasterServiceItem) => {
+    setSelectedServices(prev => {
+      const exists = prev.find(item => item.service.id === svc.id);
+      if (exists) {
+        if (prev.length <= 1) return prev; // Keep at least one selected
+        return prev.filter(item => item.service.id !== svc.id);
+      } else {
+        return [...prev, { service: svc, quantity: 1 }];
+      }
+    });
+  };
+
+  const addServiceToBooking = (svc: MasterServiceItem) => {
+    setSelectedServices(prev => {
+      const exists = prev.find(item => item.service.id === svc.id);
+      if (exists) {
+        return prev.map(item => item.service.id === svc.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { service: svc, quantity: 1 }];
+    });
+  };
+
+  const updateServiceQty = (serviceId: string, delta: number) => {
+    setSelectedServices(prev => {
+      return prev.map(item => {
+        if (item.service.id === serviceId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      }).filter(Boolean) as Array<{ service: MasterServiceItem; quantity: number }>;
+    });
+  };
+
+  const removeServiceFromBooking = (serviceId: string) => {
+    setSelectedServices(prev => {
+      if (prev.length <= 1) return prev;
+      return prev.filter(item => item.service.id !== serviceId);
+    });
+  };
 
   const [selectedWorkerTier, setSelectedWorkerTier] = useState<'STANDARD' | 'MASTER' | 'HELPER'>('STANDARD');
   const [bookingMode, setBookingMode] = useState<'SOLO_WORKER' | 'CONTRACTOR_TEAM'>(
     sector.domain === 'PROJECTS_CONTRACTS' ? 'CONTRACTOR_TEAM' : 'SOLO_WORKER'
   );
 
-  const isContractorProject = sector.id === 'workforce-labour' || sector.domain === 'PROJECTS_CONTRACTS' || bookingMode === 'CONTRACTOR_TEAM';
+  const isContractorProject = bookingMode === 'CONTRACTOR_TEAM';
 
   // Outcome-Driven Project Scope states (Customer describes WHAT they want; Contractor plans HOW to do it)
   const [taskOutcome, setTaskOutcome] = useState('I want to paint my 3 BHK flat');
@@ -99,6 +182,13 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Payment states
+  const [paymentBooking, setPaymentBooking] = useState<any>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState<boolean>(false);
+  const [isPaid, setIsPaid] = useState<boolean>(false);
+  const [paidResult, setPaidResult] = useState<any>(null);
+
   // Scheduling state for solo services (SIH Requirement: Customer booking and scheduling system)
   const [scheduleMode, setScheduleMode] = useState<'INSTANT' | 'SCHEDULED'>('INSTANT');
   const [scheduledDay, setScheduledDay] = useState<'TODAY' | 'TOMORROW' | 'DAY_AFTER'>('TODAY');
@@ -109,11 +199,16 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
   const [nearbyContractors, setNearbyContractors] = useState<ContractorMatchResult[]>([]);
   const [selectedContractorId, setSelectedContractorId] = useState<string>('cnt_101');
   const [isLoadingMatch, setIsLoadingMatch] = useState(false);
+  const [showGoogleMap, setShowGoogleMap] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState<GeoLocationCoords>(
+    customerLocation || { lat: 18.5074, lng: 73.8077, area: 'Kothrud', address: 'Flat 504, Windsor Park, Kothrud, Pune 411038' }
+  );
 
   // Synchronize address with customerLocation
   useEffect(() => {
     if (customerLocation?.address) {
       setAddress(customerLocation.address);
+      setCurrentCoords(customerLocation);
     }
   }, [customerLocation]);
 
@@ -122,7 +217,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
     let isMounted = true;
     setIsLoadingMatch(true);
 
-    const coords = customerLocation || { lat: 18.5074, lng: 73.8077, area: 'Kothrud' };
+    const coords = currentCoords;
 
     if (!isContractorProject) {
       api.getNearbyWorkers({
@@ -163,11 +258,11 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
     }
 
     return () => { isMounted = false; };
-  }, [selectedService, customerLocation, isContractorProject, sector.title, taskOutcome, propertyType, scopeType, approxArea]);
+  }, [selectedService, currentCoords, isContractorProject, sector.title, taskOutcome, propertyType, scopeType, approxArea]);
 
   useEffect(() => {
     if (initialService) {
-      setSelectedService(initialService);
+      setSelectedServices([{ service: initialService, quantity: 1 }]);
       const parentSub = sector.subTrades.find(st => st.services.some(s => s.id === initialService.id));
       if (parentSub) {
         setActiveSubTradeId(parentSub.id);
@@ -181,7 +276,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
     if (defaultSubTrade) {
       setActiveSubTradeId(defaultSubTrade.id);
       if (defaultSubTrade.services.length > 0) {
-        setSelectedService(defaultSubTrade.services[0]);
+        setSelectedServices([{ service: defaultSubTrade.services[0], quantity: 1 }]);
       }
     }
   }, [sectorId]);
@@ -216,13 +311,17 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
     }
   }, [selectedService]);
 
-  // Dynamic statutory cost estimation
-  const rawUnitPrice = selectedService.price || 499;
+  // Dynamic statutory cost estimation for multi-service booking
+  const totalItemsCount = selectedServices.reduce((sum, item) => sum + item.quantity, 0);
+  const rawTotalPrice = selectedServices.reduce((sum, item) => sum + (item.service.price || 0) * item.quantity, 0);
 
-  let estimatedCost = rawUnitPrice;
+  let estimatedCost = rawTotalPrice;
 
-  if (isContractorProject) {
-    // Dynamic multiplier based on property type and scope
+  if (rawTotalPrice > 0) {
+    // When customer has added specific services to booking, estimated cost strictly EQUALS the exact sum of selected services
+    estimatedCost = rawTotalPrice;
+  } else if (isContractorProject) {
+    // Fallback benchmark calculation ONLY for custom open-scope contractor projects without catalog items
     let propertyMultiplier = 1.0;
     if (propertyType === '1 BHK') propertyMultiplier = 0.85;
     else if (propertyType === '2 BHK') propertyMultiplier = 1.0;
@@ -236,13 +335,11 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
     else if (scopeType === 'Exterior') scopeMultiplier = 1.2;
     else if (scopeType === 'Both') scopeMultiplier = 1.45;
 
-    // Use selectedService.price if meaningful (>= 1500), otherwise scale by benchmark rate
-    const benchmark = rawUnitPrice >= 1500 ? rawUnitPrice : 16500;
-    estimatedCost = Math.round(benchmark * propertyMultiplier * scopeMultiplier);
+    estimatedCost = Math.round(16500 * propertyMultiplier * scopeMultiplier);
   } else {
-    // Solo worker service
+    // Solo worker default rate if no specific service picked
     const tierAdjustment = selectedWorkerTier === 'MASTER' ? 150 : selectedWorkerTier === 'HELPER' ? -50 : 0;
-    estimatedCost = Math.max(99, rawUnitPrice + tierAdjustment);
+    estimatedCost = Math.max(99, 499 + tierAdjustment);
   }
 
   const finalAmount = estimatedCost;
@@ -253,14 +350,20 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedServices.length === 0) {
+      alert('Please select at least one service to proceed with booking.');
+      return;
+    }
     setIsSubmitting(true);
     setSuccessMessage('');
     try {
-      await onSubmitBooking({
+      const servicesSummary = selectedServices.map(i => `${i.service.name}${i.quantity > 1 ? ` (x${i.quantity})` : ''}`).join(', ');
+
+      const created = await onSubmitBooking({
         customerName,
         customerPhone,
         serviceCategory: sector.title,
-        subTrade: isContractorProject ? taskOutcome : `${activeSubTrade?.title}: ${selectedService.name}`,
+        subTrade: isContractorProject ? taskOutcome : `${activeSubTrade?.title || sector.title}: ${servicesSummary}`,
         address,
         estimatedAmount: finalAmount,
         bookingMode: isContractorProject ? 'CONTRACTOR_TEAM' : 'SOLO_WORKER',
@@ -273,6 +376,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         preferredTime: isContractorProject 
           ? preferredDate 
           : (scheduleMode === 'INSTANT' ? 'Immediate Dispatch (< 30 Mins)' : `${scheduledDay === 'TODAY' ? 'Today' : scheduledDay === 'TOMORROW' ? 'Tomorrow' : 'In 2 Days'} (${scheduledSlot})`),
+        notes: `Multi-service booking (${totalItemsCount} items: ${servicesSummary}). Statutory split: ₹${workerAmount} direct to Shramik, ₹${welfareAmount} to PM-JAY.`,
         projectScope: isContractorProject ? {
           taskDescription: taskOutcome,
           propertyType,
@@ -283,12 +387,28 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         } : undefined
       });
 
+      const activeBookingObj = created || {
+        _id: `bk_${Date.now()}`,
+        customerName,
+        customerPhone,
+        serviceCategory: sector.title,
+        subTrade: `${activeSubTrade?.title || sector.title}: ${servicesSummary}`,
+        totalAmount: finalAmount,
+        workerName: 'Pravin Maruti Jadhav',
+        cooperativeName: 'Pune Electrical Workers Cooperative Society',
+        paymentStatus: 'PENDING',
+        status: 'ALLOCATED'
+      };
+
+      setPaymentBooking(activeBookingObj);
+
       if (isContractorProject) {
         setSuccessMessage(`Requirement Registered! Mukaddam Balasaheb Shinde is evaluating your site scope and preparing the workforce proposal.`);
       } else {
-        setSuccessMessage(`Booking successfully dispatched to Cooperative! Certified technician will arrive shortly.`);
+        setSuccessMessage(`Booking for ${totalItemsCount} services successfully dispatched to Cooperative! Certified technician will arrive shortly.`);
+        // Open Razorpay Payment Checkout automatically
+        setShowPaymentModal(true);
       }
-      setTimeout(() => setSuccessMessage(''), 8000);
     } catch (err: any) {
       alert(err.message || 'Booking submission failed');
     } finally {
@@ -306,7 +426,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500" />
-          <span>← Back to All Services</span>
+          <span>← {t.portal.backToSectors}</span>
         </button>
 
         <div className="flex items-center gap-2 text-xs">
@@ -328,7 +448,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              {sector.title}
+              {getTranslatedSectorTitle(sector.id, sector.title, currentLanguage)}
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -361,7 +481,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
             </p>
             <div className="pt-2 border-t border-slate-200 text-[10px] font-bold text-emerald-700 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>80% Take-Home Wage Assured</span>
+              <span>Direct Escrow Protected</span>
             </div>
           </div>
         </div>
@@ -393,7 +513,9 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                     key={st.id}
                     onClick={() => {
                       setActiveSubTradeId(st.id);
-                      if (st.services.length > 0) setSelectedService(st.services[0]);
+                      if (st.services.length > 0 && selectedServices.length === 0) {
+                        setSelectedServices([{ service: st.services[0], quantity: 1 }]);
+                      }
                     }}
                     className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-200 whitespace-nowrap cursor-pointer flex-shrink-0 flex items-center gap-2.5 border ${
                       isActive
@@ -434,16 +556,67 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         )}
       </div>
 
-      {/* Success Notification */}
-      {successMessage && (
+      {/* Live Booking & Payment Action Console */}
+      {paymentBooking ? (
+        <div className={`p-4 sm:p-5 rounded-2xl border shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn ${
+          isPaid ? 'bg-emerald-50 border-emerald-300 text-emerald-950' : 'bg-slate-900 text-white border-slate-800'
+        }`}>
+          <div className="flex items-center gap-3.5">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold shadow-xs flex-shrink-0 ${
+              isPaid ? 'bg-emerald-200 text-emerald-800' : 'bg-emerald-500/20 text-emerald-400'
+            }`}>
+              {isPaid ? <CheckCircle2 className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-extrabold text-sm sm:text-base tracking-tight">
+                  {isPaid ? 'Payment Verified & Statutory Escrow Settled' : `Booking Dispatched • Payment Due (₹${paymentBooking.totalAmount || finalAmount})`}
+                </h4>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  isPaid ? 'bg-emerald-600 text-white' : 'bg-orange-500 text-white animate-pulse'
+                }`}>
+                  {isPaid ? 'PAID via Razorpay' : 'Payment Required'}
+                </span>
+              </div>
+              <p className={`text-xs ${isPaid ? 'text-emerald-700 font-medium' : 'text-slate-300'} mt-0.5`}>
+                {isPaid
+                  ? `Invoice #${paidResult?.invoice?.invoiceNumber || paymentBooking?.invoiceNumber || 'INV-2026'} • Verified Payment to ${paymentBooking.workerName || 'Worker'}`
+                  : `Assigned: ${paymentBooking.workerName || 'Pravin Maruti Jadhav'} • Pay securely via Razorpay Test Mode (UPI, Card, NetBanking).`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {!isPaid ? (
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(true)}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-[0.99] transition cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay ₹{paymentBooking.totalAmount || finalAmount} with Razorpay ➔</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-300 shadow-xs transition cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-emerald-600" />
+                <span>View GST Tax Invoice</span>
+              </button>
+            )}
+          </div>
+        </div>
+      ) : successMessage ? (
         <div className="p-4 rounded-2xl bg-emerald-600 text-white text-xs font-bold shadow-md flex items-center justify-between animate-fadeIn">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-200" />
             <span>{successMessage}</span>
           </div>
-          <button onClick={() => setSuccessMessage('')} className="text-white/80 hover:text-white text-sm">✕</button>
+          <button onClick={() => setSuccessMessage('')} className="text-white/80 hover:text-white text-sm cursor-pointer">✕</button>
         </div>
-      )}
+      ) : null}
 
       {/* 3. Main Workspace: Services on Left (7 cols) | Dispatch Panel on Right (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -464,63 +637,127 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
             </span>
           </div>
 
+          {/* Multi-Service Selection Summary Tray */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                {totalItemsCount}
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <span>{totalItemsCount === 1 ? '1 Service Selected in Order' : `${totalItemsCount} Services in Multi-Booking`}</span>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-100 font-bold px-1.5 py-0.5 rounded-md">
+                    1 Single Payment
+                  </span>
+                </h4>
+                <p className="text-[10px] text-slate-600 font-medium">
+                  Subtotal: <strong className="text-slate-950 font-black">₹{finalAmount.toLocaleString('en-IN')}</strong> • Select multiple services below to pay once
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {selectedServices.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedServices([selectedServices[0]])}
+                  className="px-2.5 py-1 text-[11px] font-bold text-slate-500 hover:text-rose-600 transition cursor-pointer"
+                >
+                  Clear Others
+                </button>
+              )}
+              {onOpenCart && (
+                <button
+                  type="button"
+                  onClick={onOpenCart}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Cart ({cart?.reduce((a, b) => a + b.quantity, 0) || 0})</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-3">
             {activeSubTrade?.services.map((svc) => {
-              const isSelected = selectedService.id === svc.id;
+              const isSelected = isServiceSelected(svc.id);
+              const qty = getServiceQty(svc.id);
               return (
                 <div
                   key={svc.id}
-                  onClick={() => setSelectedService(svc)}
+                  onClick={() => toggleSelectService(svc)}
                   className={`p-4 sm:p-5 rounded-3xl border transition cursor-pointer flex flex-col justify-between gap-3 ${
                     isSelected
-                      ? 'bg-white border-slate-950 shadow-md ring-1 ring-slate-950'
+                      ? 'bg-orange-50/20 border-slate-950 shadow-md ring-2 ring-slate-950/20'
                       : 'bg-white hover:border-slate-300 border-slate-200 shadow-2xs'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                          {svc.name}
-                        </h3>
-                        {svc.instant && (
-                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                            ⚡ Instant
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelectService(svc);
+                        }}
+                        className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center border transition flex-shrink-0 cursor-pointer ${
+                          isSelected ? 'bg-slate-950 border-slate-950 text-white shadow-2xs' : 'border-slate-300 bg-white hover:border-slate-500'
+                        }`}
+                        title={isSelected ? 'Remove from booking' : 'Add to booking'}
+                      >
+                        {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : null}
+                      </button>
+
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                            {svc.name}
+                          </h3>
+                          {svc.instant && (
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              ⚡ Instant
+                            </span>
+                          )}
+                          {isSelected && (
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-900 text-white">
+                              ✓ In Order (x{qty})
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span className="text-amber-600 font-bold flex items-center gap-0.5">
+                            ★ {svc.rating}
                           </span>
+                          <span>•</span>
+                          <span>{svc.duration}</span>
+                        </div>
+
+                        <p className="text-xs text-slate-600 pt-1 leading-relaxed">
+                          {svc.description}
+                        </p>
+
+                        {svc.inclusions && svc.inclusions.length > 0 && (
+                          <div className="pt-2 space-y-1">
+                            <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
+                              Service Includes:
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-slate-600">
+                              {svc.inclusions.map((inc, i) => (
+                                <div key={i} className="flex items-center gap-1.5">
+                                  <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                  <span className="text-[11px]">{inc}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
-
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="text-amber-600 font-bold flex items-center gap-0.5">
-                          ★ {svc.rating}
-                        </span>
-                        <span>•</span>
-                        <span>{svc.duration}</span>
-                      </div>
-
-                      <p className="text-xs text-slate-600 pt-1 leading-relaxed">
-                        {svc.description}
-                      </p>
-
-                      {svc.inclusions && svc.inclusions.length > 0 && (
-                        <div className="pt-2 space-y-1">
-                          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
-                            Service Includes:
-                          </span>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-slate-600">
-                            {svc.inclusions.map((inc, i) => (
-                              <div key={i} className="flex items-center gap-1.5">
-                                <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                                <span className="text-[11px]">{inc}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="text-right flex-shrink-0 sm:pl-4">
-                      {svc.hideCostEstimate || sector.id === 'workforce-labour' ? (
+                    <div className="text-right flex-shrink-0 sm:pl-4 space-y-2">
+                      {svc.hideCostEstimate ? (
                         <div>
                           <span className="text-[10px] text-emerald-800 bg-emerald-100 font-bold px-2 py-0.5 rounded-full inline-block">
                             {svc.rateLabel || 'Govt Gazetted Wages'}
@@ -537,16 +774,67 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                           </strong>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        className={`mt-2 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs ${
-                          isSelected
-                            ? 'bg-slate-950 text-white'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                        }`}
-                      >
-                        {isSelected ? '✓ Selected' : (sector.id === 'workforce-labour' ? 'Select Crew' : 'Select Service')}
-                      </button>
+
+                      <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1">
+                        {/* Multi-service Quantity / Select Controller */}
+                        {isSelected ? (
+                          <div className="flex items-center gap-1 bg-slate-950 text-white rounded-xl p-0.5 shadow-2xs" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => updateServiceQty(svc.id, -1)}
+                              className="w-6 h-6 rounded-lg hover:bg-slate-800 flex items-center justify-center font-black text-xs cursor-pointer"
+                              title="Decrease quantity"
+                            >
+                              -
+                            </button>
+                            <span className="px-1.5 text-xs font-black font-mono">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateServiceQty(svc.id, 1)}
+                              className="w-6 h-6 rounded-lg hover:bg-slate-800 flex items-center justify-center font-black text-xs cursor-pointer"
+                              title="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addServiceToBooking(svc);
+                            }}
+                            className="px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 hover:bg-orange-600 text-white transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3 stroke-[2.5]" />
+                            <span>Add Service</span>
+                          </button>
+                        )}
+
+                        {/* Add to Global Cart Button */}
+                        {onAddToCart && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAddToCart({
+                                id: svc.id,
+                                name: svc.name,
+                                price: svc.price,
+                                category: sector.title,
+                                quantity: 1,
+                                duration: svc.duration,
+                                description: svc.description
+                              });
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                            title="Add to Global Booking Cart"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
+                            <span className="hidden sm:inline">+ Cart</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -589,7 +877,9 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                 Cooperative Dispatch Console
               </span>
               <h3 className="text-base font-black text-slate-900">
-                {selectedService.name}
+                {selectedServices.length > 1
+                  ? `Multi-Service Order (${selectedServices.length} Trades • ${totalItemsCount} Services)`
+                  : (selectedService?.name || 'Select a Service')}
               </h3>
             </div>
             <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -599,51 +889,112 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
 
           <form onSubmit={handleBookingSubmit} className="space-y-4 text-xs">
             
-            {/* 1. Service Delivery Model (For general sectors) */}
-            {sector.id !== 'workforce-labour' && (
-              <div>
-                <label className="block font-bold text-slate-700 mb-1.5">
-                  Service Delivery Model
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setBookingMode('SOLO_WORKER')}
-                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
-                      bookingMode === 'SOLO_WORKER'
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Users className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <div>
-                      <strong className="text-[11px] block">Solo Worker</strong>
-                      <span className={`text-[9px] ${bookingMode === 'SOLO_WORKER' ? 'text-slate-300' : 'text-slate-500'}`}>
-                        1 Technician
-                      </span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setBookingMode('CONTRACTOR_TEAM')}
-                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
-                      bookingMode === 'CONTRACTOR_TEAM'
-                        ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Briefcase className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                    <div>
-                      <strong className="text-[11px] block">Contractor Team</strong>
-                      <span className={`text-[9px] ${bookingMode === 'CONTRACTOR_TEAM' ? 'text-blue-200' : 'text-slate-500'}`}>
-                        Custom Crew
-                      </span>
-                    </div>
-                  </button>
-                </div>
+            {/* Selected Services in this Booking Basket */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 pb-1 border-b border-slate-200">
+                <span className="flex items-center gap-1.5">
+                  <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Services in this Booking ({totalItemsCount})</span>
+                </span>
+                <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md">
+                  Single Combined Payment
+                </span>
               </div>
-            )}
+
+              {selectedServices.length === 0 ? (
+                <div className="py-3 text-center text-xs text-slate-500">
+                  No services selected. Click "+ Add Service" on the left to include services.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {selectedServices.map(item => (
+                    <div key={item.service.id} className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs shadow-2xs">
+                      <div className="min-w-0 pr-2">
+                        <strong className="block text-xs font-black text-slate-900 truncate">{item.service.name}</strong>
+                        <span className="text-[10px] text-slate-500">₹{item.service.price} × {item.quantity}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => updateServiceQty(item.service.id, -1)}
+                            className="px-1.5 py-0.5 text-slate-600 hover:bg-slate-200 font-black cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="px-1.5 text-[11px] font-bold font-mono text-slate-900">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateServiceQty(item.service.id, 1)}
+                            className="px-1.5 py-0.5 text-slate-600 hover:bg-slate-200 font-black cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="text-xs font-black text-slate-900 min-w-[50px] text-right">
+                          ₹{(item.service.price * item.quantity).toLocaleString('en-IN')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeServiceFromBooking(item.service.id)}
+                          className="w-5 h-5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition cursor-pointer"
+                          title="Remove service"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-slate-500 leading-tight">
+                💡 Add multiple services from the left to bundle into this single appointment and single payment.
+              </p>
+            </div>
+            
+            {/* 1. Service Delivery Model (For general sectors) */}
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5">
+                Service Delivery Model
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBookingMode('SOLO_WORKER')}
+                  className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
+                    bookingMode === 'SOLO_WORKER'
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <Users className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <div>
+                    <strong className="text-[11px] block">Solo Worker</strong>
+                    <span className={`text-[9px] ${bookingMode === 'SOLO_WORKER' ? 'text-slate-300' : 'text-slate-500'}`}>
+                      1 Technician
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setBookingMode('CONTRACTOR_TEAM')}
+                  className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
+                    bookingMode === 'CONTRACTOR_TEAM'
+                      ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                  <div>
+                    <strong className="text-[11px] block">Contractor Team</strong>
+                    <span className={`text-[9px] ${bookingMode === 'CONTRACTOR_TEAM' ? 'text-blue-200' : 'text-slate-500'}`}>
+                      Custom Crew
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             {/* 2. Outcome-Driven Project Scope Form (Customer describes WHAT they want) */}
             {isContractorProject ? (
@@ -747,22 +1098,11 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                   />
                 </div>
 
-                {/* Outcome Architecture Assurance Banner */}
-                <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200/80 text-[11px] text-blue-950 space-y-1">
-                  <div className="flex items-center gap-1.5 font-black text-blue-900">
-                    <ShieldCheck className="w-4 h-4 text-blue-700 flex-shrink-0" />
-                    <span>Contractor Planning Guarantee</span>
-                  </div>
-                  <p className="text-[10px] text-blue-800 leading-snug">
-                    You don't need to guess how many workers you need. Licensed Mukaddam <strong>Balasaheb Shinde</strong> calculates the exact team (painters + helpers), duration, and equipment, and provides a transparent proposal within statutory minimum wage guidelines.
-                  </p>
-                </div>
-
               </div>
             ) : null}
 
             {/* 2.5 GEO-LOCATION MATCHING ENGINE WIDGET */}
-            {!isContractorProject ? (
+            {!isContractorProject && (
               <div className="p-3.5 bg-gradient-to-br from-emerald-50/80 to-slate-50 rounded-2xl border border-emerald-200/80 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between pb-1 border-b border-emerald-200/60">
                   <span className="font-black text-emerald-950 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
@@ -821,60 +1161,6 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="p-3.5 bg-gradient-to-br from-blue-50/80 to-slate-50 rounded-2xl border border-blue-200/80 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between pb-1 border-b border-blue-200/60">
-                  <span className="font-black text-blue-950 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Level 1: Nearby Contractor Matching</span>
-                  </span>
-                  <span className="text-[10px] font-extrabold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md">
-                    Proximity & Capability
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">
-                    Select Licensed Nearby Contractor:
-                  </span>
-                  {nearbyContractors.map((cMatch) => {
-                    const isSelected = selectedContractorId === cMatch.contractor._id;
-                    return (
-                      <button
-                        key={cMatch.contractor._id}
-                        type="button"
-                        onClick={() => setSelectedContractorId(cMatch.contractor._id)}
-                        className={`w-full text-left p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
-                            : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        <div>
-                          <strong className="block text-xs font-black">
-                            {cMatch.contractor.name}
-                          </strong>
-                          <span className={`text-[10px] block ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}>
-                            📍 {cMatch.contractor.location?.area || 'Pune'} ({cMatch.distKm} km) • {cMatch.contractor.communitySize || 12} Shramiks Pool
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className={`text-xs font-black block ${isSelected ? 'text-emerald-300' : 'text-emerald-700'}`}>
-                            {cMatch.totalScore}% Match
-                          </span>
-                          <span className={`text-[9px] ${isSelected ? 'text-blue-200' : 'text-slate-400'}`}>
-                            ★ {cMatch.contractor.rating}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="p-2 bg-blue-100/60 rounded-xl text-[10px] text-blue-950 font-semibold leading-tight">
-                  Selected contractor evaluates site scope & formulates the workforce proposal (painters, helpers, duration, tools).
-                </div>
-              </div>
             )}
 
             {/* Customer Details */}
@@ -903,7 +1189,17 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Service Address (Pune)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Service Address (Pune)</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleMap(true)}
+                    className="text-[10px] font-black text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-0.5 rounded-lg border border-red-200 flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                  >
+                    <MapPin className="w-3 h-3 text-red-600 animate-bounce" />
+                    <span>Pick on Google Map</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
                   <input
@@ -1017,96 +1313,59 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
               )}
             </div>
 
-            {/* Cost Split vs Workforce Assurance (No arbitrary cost estimation for crews) */}
-            {sector.id === 'workforce-labour' ? (
-              <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-2">
-                <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                    Statutory Cooperative Crew Dispatch
+            {/* Cost Split */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                    {isContractorProject ? 'Statutory Estimated Budget' : 'Service Price Breakdown'}
                   </span>
-                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                    Govt Gazetted Wages
+                  <span className="text-[9px] text-slate-400 block font-semibold">
+                    {totalItemsCount > 0 
+                      ? `Total for ${totalItemsCount} selected service${totalItemsCount > 1 ? 's' : ''}` 
+                      : (isContractorProject ? `Cooperative benchmark for ${propertyType} (${scopeType})` : 'Standard Cooperative Tariff')}
                   </span>
                 </div>
-
-                <div className="space-y-1 text-[11px] text-emerald-950">
-                  <p className="flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                    <span><strong>100% e-Shram & Aadhaar verified</strong> trade workers</span>
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                    <span><strong>PM-JAY health & accidental cover</strong> included</span>
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                    <span><strong>District tool depot scaffolding & PPE</strong> provided</span>
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                    <span>Mukaddam will coordinate on-site muster roll</span>
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-emerald-600" />
-                      {isContractorProject ? 'Statutory Estimated Budget' : 'Statutory 4-Way Split'}
+                <div className="text-right">
+                  <strong className="text-sm font-black text-slate-900 block">
+                    ₹{finalAmount.toLocaleString('en-IN')}
+                  </strong>
+                  {isContractorProject && (
+                    <span className="text-[9px] text-blue-700 font-extrabold uppercase block">
+                      Estimated
                     </span>
-                    {isContractorProject && (
-                      <span className="text-[9px] text-slate-400 block font-semibold">
-                        Cooperative benchmark for {propertyType} ({scopeType})
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <strong className="text-sm font-black text-slate-900 block">
-                      ₹{finalAmount.toLocaleString('en-IN')}
-                    </strong>
-                    {isContractorProject && (
-                      <span className="text-[9px] text-blue-700 font-extrabold uppercase block">
-                        Estimated
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
-
-                <div className="space-y-1 text-[11px]">
-                  <div className="flex items-center justify-between font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg">
-                    <span>80% Worker Take-Home</span>
-                    <span>₹{workerAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-700 px-2">
-                    <span>10% Tool Depot & Logistics</span>
-                    <span>₹{coopAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-amber-800 bg-amber-50 px-2 py-0.5 rounded">
-                    <span>6% PM-JAY & Accidental Fund</span>
-                    <span>₹{welfareAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-500 px-2">
-                    <span>4% DPI Digital Rail</span>
-                    <span>₹{platformAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-
-                {isContractorProject && (
-                  <p className="text-[10px] text-slate-500 italic pt-1 border-t border-slate-200">
-                    💡 Final cost and crew composition confirmed in Mukaddam's workforce proposal based on site scope.
-                  </p>
-                )}
               </div>
-            )}
+
+              <div className="space-y-1 text-[11px] text-slate-700">
+                <div className="flex items-center justify-between px-1">
+                  <span>Doorstep OTP Verification</span>
+                  <span className="font-bold text-emerald-700">Included</span>
+                </div>
+                <div className="flex items-center justify-between px-1">
+                  <span>Certified Cooperative Shramik</span>
+                  <span className="font-bold text-blue-700">Guaranteed</span>
+                </div>
+                <div className="flex items-center justify-between px-1">
+                  <span>Cooperative Service Warranty</span>
+                  <span className="font-bold text-purple-700">30 Days</span>
+                </div>
+              </div>
+
+              {isContractorProject && (
+                <p className="text-[10px] text-slate-500 italic pt-1 border-t border-slate-200">
+                  💡 Final cost and crew composition confirmed in Mukaddam's workforce proposal based on site scope.
+                </p>
+              )}
+            </div>
 
             {/* Direct Dispatch Button */}
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+              disabled={isSubmitting || selectedServices.length === 0}
+              className="w-full py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 disabled:opacity-50 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <span>Submitting to Cooperative...</span>
@@ -1114,7 +1373,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                 <span>
                   {isContractorProject
                     ? `Request Contractor Proposal (₹${finalAmount.toLocaleString('en-IN')} Est.) ➔`
-                    : `Confirm & Book ${selectedService.name} (₹${finalAmount.toLocaleString('en-IN')}) ➔`}
+                    : `Confirm & Book ${totalItemsCount > 1 ? `${totalItemsCount} Services` : (selectedService?.name || 'Service')} (₹${finalAmount.toLocaleString('en-IN')}) ➔`}
                 </span>
               )}
             </button>
@@ -1124,6 +1383,59 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         </div>
 
       </div>
+
+      {/* Interactive Google Map Modal for Site Pinpoint */}
+      {showGoogleMap && (
+        <GoogleMapLocationModal
+          isOpen={showGoogleMap}
+          onClose={() => setShowGoogleMap(false)}
+          currentLocation={currentCoords}
+          onConfirmLocation={(newLoc) => {
+            setCurrentCoords(newLoc);
+            if (newLoc.address) setAddress(newLoc.address);
+          }}
+        />
+      )}
+
+      {/* Official Razorpay Payment Gateway Modal */}
+      {showPaymentModal && paymentBooking && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          booking={paymentBooking}
+          onClose={() => {
+            setShowPaymentModal(false);
+            onBack();
+          }}
+          onPaymentSuccess={(result) => {
+            setIsPaid(true);
+            setPaidResult(result);
+            if (paymentBooking?._id) {
+              try {
+                localStorage.setItem('karyasetu_last_paid_booking_id', paymentBooking._id);
+              } catch {}
+            }
+            if (onPayBooking && paymentBooking._id) {
+              onPayBooking(paymentBooking._id, 'UPI_RAZORPAY');
+            }
+            setShowPaymentModal(false);
+            onBack();
+          }}
+        />
+      )}
+
+      {/* Official GST Tax Invoice Modal */}
+      {showInvoiceModal && paymentBooking && (
+        <TransparentInvoiceModal
+          isOpen={showInvoiceModal}
+          onClose={() => setShowInvoiceModal(false)}
+          booking={{
+            ...paymentBooking,
+            paymentStatus: 'PAID',
+            status: 'COMPLETED',
+            invoiceNumber: paidResult?.invoice?.invoiceNumber || paymentBooking.invoiceNumber || 'INV-KARYA-2026-001'
+          }}
+        />
+      )}
 
     </div>
   );

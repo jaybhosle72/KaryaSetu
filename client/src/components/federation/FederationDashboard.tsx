@@ -157,7 +157,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
               <span className="text-emerald-700">100% Resolved</span>
             </div>
             <p className="leading-relaxed">
-              Commercial gig platforms ban workers without recourse based on automated algorithms. Under SahakarSeva, grievances are mediated fairly by a committee composed of the customer, cooperative arbitrator, and peer worker.
+              Commercial gig platforms ban workers without recourse based on automated algorithms. Under KaryaSetu, grievances are mediated fairly by a committee composed of the customer, cooperative arbitrator, and peer worker.
             </p>
           </div>
         </div>

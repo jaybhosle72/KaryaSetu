@@ -1,7 +1,7 @@
 {
   "name": "sahakar-seva",
   "version": "1.0.0",
-  "description": "SahakarSeva - Cooperative-Owned Digital Labour & Services Marketplace (SIH Hackathon)",
+  "description": "KaryaSetu - Cooperative-Owned Digital Labour & Services Marketplace (SIH Hackathon)",
   "scripts": {
     "server": "node server/index.js",
     "client": "cd client && npm run dev",

@@ -95,13 +95,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       
       {/* 1. Header with Sovereign Branding */}
       <div className="max-w-5xl mx-auto w-full flex items-center justify-between pb-6 border-b border-slate-200/80">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-slate-950 text-white flex items-center justify-center font-black text-lg shadow-sm">
-            SS
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center p-0.5 overflow-hidden shrink-0">
+            <img 
+              src="/karyasetu-logo.png" 
+              alt="KaryaSetu Logo" 
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
           <div>
             <span className="text-xl font-black text-slate-900 tracking-tight block leading-none">
-              SahakarSetu
+              KaryaSetu
             </span>
             <span className="text-[10px] text-slate-400 font-medium">
               National Cooperative Digital Labour Infrastructure
@@ -265,7 +269,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   </div>
                   <div className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>80% direct to worker statutory guarantee</span>
+                    <span>Direct verified cooperative shramik guarantee</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -743,7 +747,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
       {/* 4. Footer with Prototype Notice */}
       <div className="max-w-5xl mx-auto w-full pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
-        <p>© 2026 SahakarSetu. National Cooperative Digital Labour Infrastructure (NCCT Architecture). Smart India Hackathon Prototype.</p>
+        <p>© 2026 KaryaSetu. National Cooperative Digital Labour Infrastructure. Smart India Hackathon Prototype.</p>
       </div>
 
     </div>

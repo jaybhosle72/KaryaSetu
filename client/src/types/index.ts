@@ -177,6 +177,10 @@ export interface Booking {
     cooperativeEndorsement: boolean;
   };
   emergencyTriggerReason?: string;
+  otp?: string;
+  preferredTime?: string;
+  estimatedAmount?: number;
+  estimatedPrice?: number;
   createdAt: string;
   completedAt?: string;
 }

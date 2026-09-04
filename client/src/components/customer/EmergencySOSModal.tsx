@@ -202,7 +202,7 @@ export const EmergencySOSModal: React.FC<EmergencySOSModalProps> = ({
               <span>Cooperative Guarantee:</span>
             </div>
             <p className="text-[11px]">
-              Allocates verified nearby cooperative shramiks with required safety equipment. Transparent standard rate: 80% directly paid to the responding worker.
+              Allocates verified nearby cooperative shramiks with required safety equipment and transparent standard rates.
             </p>
           </div>
 

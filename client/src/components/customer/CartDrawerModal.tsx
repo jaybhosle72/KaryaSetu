@@ -38,11 +38,6 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const workerEarning = Math.round(totalAmount * 0.80);
-  const coopShare = Math.round(totalAmount * 0.10);
-  const welfareShare = Math.round(totalAmount * 0.06);
-  const platformFee = totalAmount - workerEarning - coopShare - welfareShare;
-
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     setIsSubmitting(true);
@@ -168,46 +163,39 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
                 ))}
               </div>
 
-              {/* Cooperative Transparent 4-Way Split */}
+              {/* Customer Service Protection & Inclusions */}
               <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-2 text-xs">
                 <div className="flex items-center justify-between font-bold text-emerald-950 pb-1 border-b border-emerald-200/60">
                   <span className="flex items-center gap-1.5">
                     <HeartHandshake className="w-4 h-4 text-emerald-600" />
-                    <span>Transparent Cooperative Split</span>
+                    <span>Verified Cooperative Service</span>
                   </span>
                   <span className="text-[10px] text-emerald-700 uppercase tracking-wider font-extrabold">
-                    Zero 30% Aggregator Cut
+                    Govt-Certified Shramiks
                   </span>
                 </div>
 
-                <div className="space-y-1 text-[11px]">
-                  <div className="flex justify-between text-slate-700">
-                    <span className="flex items-center gap-1">
+                <div className="space-y-1.5 text-[11px] text-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>Worker Direct Earning (80%)</span>
+                      <span>Doorstep OTP Verification</span>
                     </span>
-                    <span className="font-extrabold text-slate-900">₹{workerEarning}</span>
+                    <span className="font-semibold text-emerald-800">Included</span>
                   </div>
-                  <div className="flex justify-between text-slate-700">
-                    <span className="flex items-center gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      <span>Cooperative Tool Depot (10%)</span>
+                      <span>Standard Rate Card & Fair Pricing</span>
                     </span>
-                    <span className="font-extrabold text-slate-900">₹{coopShare}</span>
+                    <span className="font-semibold text-blue-800">Guaranteed</span>
                   </div>
-                  <div className="flex justify-between text-slate-700">
-                    <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                      <span>Worker Welfare & PM-JAY Vault (6%)</span>
-                    </span>
-                    <span className="font-extrabold text-slate-900">₹{welfareShare}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-700">
-                    <span className="flex items-center gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                      <span>Platform Infrastructure (4%)</span>
+                      <span>30-Day Cooperative Service Warranty</span>
                     </span>
-                    <span className="font-extrabold text-slate-900">₹{platformFee}</span>
+                    <span className="font-semibold text-purple-800">Protected</span>
                   </div>
                 </div>
               </div>

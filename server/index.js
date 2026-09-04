@@ -14,6 +14,7 @@ const welfareRoutes = require('./routes/welfare');
 const disputeRoutes = require('./routes/disputes');
 const contractorRoutes = require('./routes/contractors');
 const matchingRoutes = require('./routes/matching');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,7 +33,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ONLINE',
-    platform: 'SahakarSetu National Cooperative Digital Labour Infrastructure',
+    platform: 'KaryaSetu National Cooperative Digital Labour Infrastructure',
     edition: 'Smart India Hackathon 2024-2026 DPI Edition',
     databaseMode: getDBMode(),
     timestamp: new Date().toISOString()
@@ -59,6 +60,7 @@ app.use('/api/welfare', welfareRoutes);
 app.use('/api/disputes', disputeRoutes);
 app.use('/api/contractors', contractorRoutes);
 app.use('/api/matching', matchingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -72,7 +74,7 @@ async function startServer() {
   await seedMongoIfEmpty();
 
   app.listen(PORT, () => {
-    console.log(`🚀 SahakarSeva Backend running on http://localhost:${PORT}`);
+    console.log(`🚀 KaryaSetu Backend running on http://localhost:${PORT}`);
     console.log(`📊 Mode: ${getDBMode().toUpperCase()} | SIH 2026 Ready`);
   });
 }

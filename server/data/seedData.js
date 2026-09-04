@@ -476,6 +476,7 @@ const seedBookings = [
     invoiceNumber: "INV-COOP-2026-00413",
     createdAt: "2026-09-01T22:30:00.000Z",
     etaMinutes: 8,
+    otp: "4821",
     emergencyTriggerReason: "Main supply pipeline rupture; water flooding parking and utility area"
   },
   {

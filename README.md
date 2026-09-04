@@ -1,13 +1,13 @@
-# SahakarSeva (सहकार सेवा) 🇮🇳
+# KaryaSetu (कार्य सेतू) 🇮🇳
 ### A Cooperative-Owned Digital Marketplace for Household, Community & Institutional Services
 **Built for the Smart India Hackathon (SIH)**
 **Technology Stack:** MERN (MongoDB, Express.js, React, Node.js) + Tailwind CSS + Recharts
 
 ---
 
-## 🌟 The Core Pitch: Why SahakarSeva is NOT Urban Company
+## 🌟 The Core Pitch: Why KaryaSetu is NOT Urban Company
 
-| Feature / Dimension | Commercial Aggregators (Urban Company) | **SahakarSeva (Cooperative-Owned)** |
+| Feature / Dimension | Commercial Aggregators (Urban Company) | **KaryaSetu (Cooperative-Owned)** |
 | :--- | :--- | :--- |
 | **Model** | Customer ➔ Individual Gig Worker | **Customer ➔ Labour Cooperative ➔ Suitable Worker** |
 | **Governance** | Corporate-owned, profit-maximizing extraction | **Democratic cooperative federation owned by workers** |

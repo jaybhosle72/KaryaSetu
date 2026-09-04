@@ -37,6 +37,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
   // State for worker allocation modal
   const [allocatingBooking, setAllocatingBooking] = useState<Booking | null>(null);
   const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
+  const [customCrewSize, setCustomCrewSize] = useState<number | null>(null);
   const [isSubmittingAllocation, setIsSubmittingAllocation] = useState(false);
 
   // Search & Filter state for Worker Community Roster
@@ -53,26 +54,45 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
     craftsmenCount: number;
     helpersCount: number;
     durationDays: number;
-    scaffolding: boolean;
-    sander: boolean;
-    sprayer: boolean;
-    dropSheets: boolean;
     notes: string;
   }>>({});
   const [submittingProposalId, setSubmittingProposalId] = useState<string | null>(null);
 
-  const getPlan = (bookingId: string, defaultRole: string = 'Painter') => {
+  const getPlan = (bookingId: string, defaultRole: string = 'Painter', projectScope?: any) => {
     if (planningData[bookingId]) return planningData[bookingId];
+
+    // Smart baseline sizing derived from customer's site details
+    const propType = projectScope?.propertyType || '';
+    const area = projectScope?.approxAreaSqFt || 0;
+
+    let craftsmenCount = 2;
+    let helpersCount = 1;
+    let durationDays = 3;
+
+    if (propType.includes('1 BHK') || (area > 0 && area <= 650)) {
+      craftsmenCount = 1;
+      helpersCount = 1;
+      durationDays = 2;
+    } else if (propType.includes('2 BHK') || (area > 650 && area <= 950)) {
+      craftsmenCount = 2;
+      helpersCount = 1;
+      durationDays = 3;
+    } else if (propType.includes('3 BHK') || (area > 950 && area <= 1500)) {
+      craftsmenCount = 2;
+      helpersCount = 2;
+      durationDays = 4;
+    } else if (propType.includes('4+') || propType.includes('Villa') || propType.includes('Society') || area > 1500) {
+      craftsmenCount = 4;
+      helpersCount = 2;
+      durationDays = 5;
+    }
+
     return {
       craftsmenRole: defaultRole,
-      craftsmenCount: 3,
-      helpersCount: 1,
-      durationDays: 4,
-      scaffolding: true,
-      sander: true,
-      sprayer: false,
-      dropSheets: true,
-      notes: 'Cooperative depot scaffolding & sanders included. 80% direct to worker bank accounts.'
+      craftsmenCount,
+      helpersCount,
+      durationDays,
+      notes: `Mukaddam Sizing: Allocated ${craftsmenCount} Master ${defaultRole}s + ${helpersCount} Helpers based on customer's ${propType || 'residential'} scope (${area ? `${area} sq.ft` : 'site specs'}).`
     };
   };
 
@@ -139,7 +159,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
       if (prev.includes(workerId)) {
         return prev.filter(id => id !== workerId);
       } else {
-        const targetSize = allocatingBooking?.teamSize || 4;
+        const targetSize = customCrewSize ?? (allocatingBooking?.teamSize || 4);
         if (prev.length >= targetSize) {
           return prev; // limit to required team size
         }
@@ -362,15 +382,14 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {teamBookings.map((booking) => {
-                  const plan = getPlan(booking._id, booking.subTrade?.includes('Paint') ? 'Painter' : 'Craftsman');
+                  const plan = getPlan(booking._id, booking.subTrade?.includes('Paint') ? 'Painter' : 'Craftsman', booking.projectScope);
                   const assignedCount = booking.assignedWorkerIds ? booking.assignedWorkerIds.length : 0;
                   const isFullyAllocated = assignedCount >= (booking.teamSize || 1) && booking.status !== 'MATCHING' && booking.status !== 'PROPOSAL_PENDING' && booking.status !== 'PROPOSAL_RECEIVED';
 
                   // Calculate statutory cost for current plan
                   const craftsmanCost = plan.craftsmenCount * 1200 * plan.durationDays;
                   const helperCost = plan.helpersCount * 700 * plan.durationDays;
-                  const depotCost = (plan.scaffolding ? 800 : 0) + (plan.sander ? 300 : 0) + (plan.sprayer ? 500 : 0) + 500;
-                  const totalStatutoryCost = craftsmanCost + helperCost + depotCost;
+                  const totalStatutoryCost = craftsmanCost + helperCost;
 
                   // Find full worker objects for assigned workers
                   const assignedShramiks = (booking.assignedWorkerIds || [])
@@ -505,99 +524,6 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                           </div>
                         )}
 
-                        {/* 5. WORKFORCE ARCHITECTURE & SIZING BREAKDOWN */}
-                        <div className="p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 rounded-2xl text-white space-y-2 text-xs">
-                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                              Workforce Architecture & Sizing
-                            </span>
-                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded-md">
-                              {booking.teamSize || 3} Certified Shramiks • {(booking.teamSize || 3) * (booking.projectDurationDays || 2)} Man-Days
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center pt-1">
-                            <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-                              <span className="text-[9px] uppercase font-bold text-slate-400 block">👨‍🎨 Master Craftsmen</span>
-                              <strong className="text-sm font-black text-white">2 Specialists</strong>
-                              <span className="text-[9px] text-slate-400 block font-mono">₹1,200/day</span>
-                            </div>
-                            <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-                              <span className="text-[9px] uppercase font-bold text-slate-400 block">👷 Riggers / Helpers</span>
-                              <strong className="text-sm font-black text-white">1 Assistant</strong>
-                              <span className="text-[9px] text-slate-400 block font-mono">₹700/day</span>
-                            </div>
-                            <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60 col-span-2 sm:col-span-1">
-                              <span className="text-[9px] uppercase font-bold text-slate-400 block">🛡️ Safety Lead</span>
-                              <strong className="text-sm font-black text-amber-400">Mukaddam</strong>
-                              <span className="text-[9px] text-slate-400 block">On-Site Supervision</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 6. DEPOT EQUIPMENT & SAFETY GEAR ALLOCATED */}
-                        {booking.proposal?.materialsAndEquipment && booking.proposal.materialsAndEquipment.length > 0 && (
-                          <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/70 space-y-1.5 text-xs">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
-                              <HardHat className="w-3 h-3 text-amber-600" />
-                              <span>Allocated Cooperative Depot Equipment & Safety Gear</span>
-                            </span>
-                            <div className="flex flex-wrap gap-1.5 pt-0.5">
-                              {booking.proposal.materialsAndEquipment.map((eq: string, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className="text-[10px] font-bold bg-white text-slate-800 px-2.5 py-1 rounded-lg border border-amber-200/80 shadow-2xs flex items-center gap-1"
-                                >
-                                  <Check className="w-2.5 h-2.5 text-emerald-600" />
-                                  <span>{eq}</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 7. TRANSPARENT STATUTORY FINANCIAL SPLIT (80/10/6/4) */}
-                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="font-black text-slate-900 text-[11px] uppercase tracking-wider">
-                              Transparent Statutory Split (80/10/6/4)
-                            </span>
-                            <strong className="font-black text-slate-950 text-sm">
-                              Total Budget: ₹{booking.totalAmount.toLocaleString('en-IN')}
-                            </strong>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[10px]">
-                            <div className="p-2 bg-white rounded-xl border border-slate-200 space-y-0.5">
-                              <span className="text-slate-400 block font-bold">Worker Wages (80%)</span>
-                              <strong className="text-xs font-black text-emerald-700 block">
-                                ₹{(booking.paymentBreakdown?.workerAmount || 14800).toLocaleString('en-IN')}
-                              </strong>
-                              <span className="text-[9px] text-slate-500 block">₹4,933 / Worker</span>
-                            </div>
-                            <div className="p-2 bg-white rounded-xl border border-slate-200 space-y-0.5">
-                              <span className="text-slate-400 block font-bold">Depot / Tools (10%)</span>
-                              <strong className="text-xs font-black text-blue-700 block">
-                                ₹{(booking.paymentBreakdown?.coopAmount || 1850).toLocaleString('en-IN')}
-                              </strong>
-                              <span className="text-[9px] text-slate-500 block">Scaffolding Reserve</span>
-                            </div>
-                            <div className="p-2 bg-white rounded-xl border border-slate-200 space-y-0.5">
-                              <span className="text-slate-400 block font-bold">PM-JAY Welfare (6%)</span>
-                              <strong className="text-xs font-black text-purple-700 block">
-                                ₹{(booking.paymentBreakdown?.welfareAmount || 1110).toLocaleString('en-IN')}
-                              </strong>
-                              <span className="text-[9px] text-slate-500 block">₹5L Health Fund</span>
-                            </div>
-                            <div className="p-2 bg-white rounded-xl border border-slate-200 space-y-0.5">
-                              <span className="text-slate-400 block font-bold">Digital Rail (4%)</span>
-                              <strong className="text-xs font-black text-slate-700 block">
-                                ₹{(booking.paymentBreakdown?.platformAmount || 740).toLocaleString('en-IN')}
-                              </strong>
-                              <span className="text-[9px] text-slate-500 block">Escrow & GPS</span>
-                            </div>
-                          </div>
-                        </div>
 
                         {/* CASE 1: PROPOSAL PENDING -> SHOW WORKFORCE PLANNING MATRIX */}
                         {(booking.status === 'PROPOSAL_PENDING' || (!booking.proposal && booking.status !== 'MATCHING' && !isFullyAllocated)) && (
@@ -608,130 +534,133 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                                 <span>Contractor Workforce Planning Console</span>
                               </span>
                               <span className="text-[10px] font-extrabold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">
-                                Mukaddam Sizing
+                                Mukaddam Sizing Active
                               </span>
                             </div>
 
-                            {/* Sizing Controls Grid */}
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                              {/* 1. Craftsmen */}
-                              <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1">
-                                <span className="text-[9px] uppercase font-bold text-slate-400 block truncate">
-                                  👨‍🎨 Skilled {plan.craftsmenRole}s
+                            {/* Customer Site Technical Specifications Card */}
+                            <div className="p-3 bg-white rounded-xl border border-blue-200/90 shadow-2xs space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
+                                  <FileText className="w-3 h-3 text-blue-600" />
+                                  <span>Customer Technical Site Brief</span>
                                 </span>
-                                <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
+                                  Customer provides site specs • Mukaddam sizes crew
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                  <span className="text-[9px] text-slate-400 block font-bold">PROPERTY TYPE</span>
+                                  <strong className="text-slate-800 truncate block">{booking.projectScope?.propertyType || '3 BHK Flat'}</strong>
+                                </div>
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                  <span className="text-[9px] text-slate-400 block font-bold">WORK SCOPE</span>
+                                  <strong className="text-slate-800 truncate block">{booking.projectScope?.scopeType || 'Interior Painting'}</strong>
+                                </div>
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                  <span className="text-[9px] text-slate-400 block font-bold">APPROX AREA</span>
+                                  <strong className="text-blue-700 truncate block">{booking.projectScope?.approxAreaSqFt ? `${booking.projectScope.approxAreaSqFt.toLocaleString('en-IN')} sq.ft` : '1,200 sq.ft'}</strong>
+                                </div>
+                              </div>
+                              {booking.projectScope?.specialRequirements && (
+                                <div className="text-[11px] text-slate-600 bg-amber-50/60 p-2 rounded-lg border border-amber-200/60 italic">
+                                  "{booking.projectScope.specialRequirements}"
+                                </div>
+                              )}
+                            </div>
+
+
+                            {/* Sizing Controls Grid with Clear Increase/Decrease Buttons */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
+                              {/* 1. Craftsmen */}
+                              <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+                                <span className="text-[10px] uppercase font-black text-slate-500 block truncate">
+                                  👨‍🎨 Master {plan.craftsmenRole}s
+                                </span>
+                                <div className="flex items-center justify-between gap-1 px-1">
                                   <button
                                     type="button"
                                     onClick={() => updatePlan(booking._id, { craftsmenCount: Math.max(1, plan.craftsmenCount - 1) })}
-                                    className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold flex items-center justify-center text-xs cursor-pointer"
+                                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 font-black text-sm flex items-center justify-center cursor-pointer transition border border-slate-200"
+                                    title="Decrease craftsmen"
                                   >
                                     −
                                   </button>
-                                  <span className="font-black text-sm text-slate-900">{plan.craftsmenCount}</span>
+                                  <div className="text-center">
+                                    <span className="font-black text-lg text-slate-900 block leading-tight">{plan.craftsmenCount}</span>
+                                    <span className="text-[9px] text-slate-400 font-bold uppercase block">{plan.craftsmenCount > 1 ? 'Specialists' : 'Specialist'}</span>
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => updatePlan(booking._id, { craftsmenCount: plan.craftsmenCount + 1 })}
-                                    className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold flex items-center justify-center text-xs cursor-pointer"
+                                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 font-black text-sm flex items-center justify-center cursor-pointer transition border border-slate-200"
+                                    title="Increase craftsmen"
                                   >
                                     +
                                   </button>
                                 </div>
-                                <span className="text-[9px] text-slate-400 block font-mono">₹1,200/day</span>
+                                <span className="text-[9px] text-slate-400 block font-mono">₹1,200/day statutory</span>
                               </div>
 
                               {/* 2. Helpers */}
-                              <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1">
-                                <span className="text-[9px] uppercase font-bold text-slate-400 block truncate">
-                                  👷 Assistants
+                              <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+                                <span className="text-[10px] uppercase font-black text-slate-500 block truncate">
+                                  👷 Assistant Helpers
                                 </span>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-1 px-1">
                                   <button
                                     type="button"
                                     onClick={() => updatePlan(booking._id, { helpersCount: Math.max(0, plan.helpersCount - 1) })}
-                                    className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold flex items-center justify-center text-xs cursor-pointer"
+                                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 font-black text-sm flex items-center justify-center cursor-pointer transition border border-slate-200"
+                                    title="Decrease helpers"
                                   >
                                     −
                                   </button>
-                                  <span className="font-black text-sm text-slate-900">{plan.helpersCount}</span>
+                                  <div className="text-center">
+                                    <span className="font-black text-lg text-slate-900 block leading-tight">{plan.helpersCount}</span>
+                                    <span className="text-[9px] text-slate-400 font-bold uppercase block">{plan.helpersCount > 1 ? 'Assistants' : 'Assistant'}</span>
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => updatePlan(booking._id, { helpersCount: plan.helpersCount + 1 })}
-                                    className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold flex items-center justify-center text-xs cursor-pointer"
+                                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 font-black text-sm flex items-center justify-center cursor-pointer transition border border-slate-200"
+                                    title="Increase helpers"
                                   >
                                     +
                                   </button>
                                 </div>
-                                <span className="text-[9px] text-slate-400 block font-mono">₹700/day</span>
+                                <span className="text-[9px] text-slate-400 block font-mono">₹700/day statutory</span>
                               </div>
 
                               {/* 3. Duration Days */}
-                              <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1">
-                                <span className="text-[9px] uppercase font-bold text-slate-400 block truncate">
-                                  📅 Duration
+                              <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+                                <span className="text-[10px] uppercase font-black text-slate-500 block truncate">
+                                  📅 Project Duration
                                 </span>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-1 px-1">
                                   <button
                                     type="button"
                                     onClick={() => updatePlan(booking._id, { durationDays: Math.max(1, plan.durationDays - 1) })}
-                                    className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold flex items-center justify-center text-xs cursor-pointer"
+                                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 font-black text-sm flex items-center justify-center cursor-pointer transition border border-slate-200"
+                                    title="Decrease duration"
                                   >
                                     −
                                   </button>
-                                  <span className="font-black text-sm text-slate-900">{plan.durationDays}d</span>
+                                  <div className="text-center">
+                                    <span className="font-black text-lg text-slate-900 block leading-tight">{plan.durationDays}d</span>
+                                    <span className="text-[9px] text-slate-400 font-bold uppercase block">Site Days</span>
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => updatePlan(booking._id, { durationDays: plan.durationDays + 1 })}
-                                    className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold flex items-center justify-center text-xs cursor-pointer"
+                                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 font-black text-sm flex items-center justify-center cursor-pointer transition border border-slate-200"
+                                    title="Increase duration"
                                   >
                                     +
                                   </button>
                                 </div>
-                                <span className="text-[9px] text-slate-400 block font-mono">Site Days</span>
-                              </div>
-                            </div>
-
-                            {/* Equipment Selection */}
-                            <div className="space-y-1.5">
-                              <span className="text-[10px] font-bold uppercase text-slate-500 block">
-                                Depot Equipment Checklist:
-                              </span>
-                              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                                <label className="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={plan.scaffolding}
-                                    onChange={(e) => updatePlan(booking._id, { scaffolding: e.target.checked })}
-                                    className="rounded text-blue-600"
-                                  />
-                                  <span className="font-medium text-slate-700">Aluminium Scaffolding</span>
-                                </label>
-                                <label className="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={plan.sander}
-                                    onChange={(e) => updatePlan(booking._id, { sander: e.target.checked })}
-                                    className="rounded text-blue-600"
-                                  />
-                                  <span className="font-medium text-slate-700">Surface Sander</span>
-                                </label>
-                                <label className="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={plan.sprayer}
-                                    onChange={(e) => updatePlan(booking._id, { sprayer: e.target.checked })}
-                                    className="rounded text-blue-600"
-                                  />
-                                  <span className="font-medium text-slate-700">Paint Sprayer</span>
-                                </label>
-                                <label className="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={plan.dropSheets}
-                                    onChange={(e) => updatePlan(booking._id, { dropSheets: e.target.checked })}
-                                    className="rounded text-blue-600"
-                                  />
-                                  <span className="font-medium text-slate-700">Floor Drop Sheets</span>
-                                </label>
+                                <span className="text-[9px] text-slate-400 block font-mono">{plan.durationDays * 8} Working Hours</span>
                               </div>
                             </div>
 
@@ -754,13 +683,6 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                                       return;
                                     }
 
-                                    const equipmentList = [
-                                      plan.scaffolding && 'Aluminium Scaffolding (2 Units)',
-                                      plan.sander && 'Surface Putty Sander',
-                                      plan.sprayer && 'Airless Paint Sprayer',
-                                      plan.dropSheets && 'Floor Protection Sheets'
-                                    ].filter(Boolean);
-
                                     await onSubmitProposal(booking._id, {
                                       workforce: [
                                         { role: `Master ${plan.craftsmenRole}`, count: plan.craftsmenCount, skills: 'Trade certified' },
@@ -768,7 +690,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                                       ],
                                       estimatedDurationDays: plan.durationDays,
                                       estimatedCost: totalStatutoryCost,
-                                      materialsAndEquipment: equipmentList,
+                                      materialsAndEquipment: [],
                                       notes: plan.notes
                                     });
                                   } catch (err: any) {
@@ -822,6 +744,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                                 onClick={() => {
                                   setAllocatingBooking(booking);
                                   setSelectedWorkerIds(booking.assignedWorkerIds || []);
+                                  setCustomCrewSize(booking.teamSize || 3);
                                 }}
                                 className="w-full py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                               >
@@ -839,6 +762,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                                     onClick={() => {
                                       setAllocatingBooking(booking);
                                       setSelectedWorkerIds(booking.assignedWorkerIds || []);
+                                      setCustomCrewSize(booking.teamSize || 3);
                                     }}
                                     className="text-[11px] font-bold text-blue-700 hover:text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
                                   >
@@ -1354,7 +1278,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
 
                 <div className="p-4 bg-slate-100 rounded-2xl border border-slate-200">
                   <span className="text-[10px] font-black uppercase text-slate-700">4% Digital DPI</span>
-                  <div className="text-xl font-black text-slate-900 mt-1">SahakarSetu Rail</div>
+                  <div className="text-xl font-black text-slate-900 mt-1">KaryaSetu Rail</div>
                   <p className="text-[11px] text-slate-500 mt-0.5">Digital public infrastructure maintenance</p>
                 </div>
               </div>
@@ -1471,14 +1395,48 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-blue-200/60 flex items-center justify-between font-black text-blue-900">
-                  <span>Workforce Requirement: {allocatingBooking.teamSize || 3} Shramiks</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    selectedWorkerIds.length === (allocatingBooking.teamSize || 3)
-                      ? 'bg-emerald-100 text-emerald-900'
-                      : 'bg-amber-100 text-amber-900'
+                <div className="pt-2 border-t border-blue-200/60 flex flex-wrap items-center justify-between gap-2 font-black text-blue-900">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">Contractor Crew Requirement:</span>
+                    <div className="flex items-center gap-1 bg-white border border-blue-300 rounded-xl px-2 py-0.5 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const curr = customCrewSize ?? (allocatingBooking.teamSize || 3);
+                          const next = Math.max(1, curr - 1);
+                          setCustomCrewSize(next);
+                          if (selectedWorkerIds.length > next) {
+                            setSelectedWorkerIds(prev => prev.slice(0, next));
+                          }
+                        }}
+                        className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 font-bold flex items-center justify-center text-xs text-slate-700 cursor-pointer transition"
+                        title="Decrease required crew size"
+                      >
+                        −
+                      </button>
+                      <span className="font-black text-sm px-2 text-blue-950">
+                        {customCrewSize ?? (allocatingBooking.teamSize || 3)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const curr = customCrewSize ?? (allocatingBooking.teamSize || 3);
+                          setCustomCrewSize(curr + 1);
+                        }}
+                        className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 font-bold flex items-center justify-center text-xs text-slate-700 cursor-pointer transition"
+                        title="Increase required crew size"
+                      >
+                        +
+                      </button>
+                      <span className="text-[10px] text-slate-500 font-semibold ml-0.5">Shramiks</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                    selectedWorkerIds.length === (customCrewSize ?? (allocatingBooking.teamSize || 3))
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
                   }`}>
-                    Selected: {selectedWorkerIds.length} of {allocatingBooking.teamSize || 3} Shramiks
+                    Selected: {selectedWorkerIds.length} of {customCrewSize ?? (allocatingBooking.teamSize || 3)} Shramiks
                   </span>
                 </div>
               </div>

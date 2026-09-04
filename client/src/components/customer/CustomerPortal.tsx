@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { EmergencySOSModal } from './EmergencySOSModal';
 import { TransparentInvoiceModal } from './TransparentInvoiceModal';
+import { PaymentModal } from './PaymentModal';
 import { InstitutionalRequestModal } from './InstitutionalRequestModal';
 import { RatingModal } from './RatingModal';
 import { DisputeModal } from './DisputeModal';
@@ -17,10 +18,12 @@ import { ServiceCategoryDetailPage, ServiceCategoryId } from './ServiceCategoryD
 import { MasterSectorDetailPage } from './MasterSectorDetailPage';
 import { SectorShelfRow } from './SectorShelfRow';
 import { CustomerLocationBar, PUNE_LOCALITIES } from './CustomerLocationBar';
+import { GoogleMapLocationModal } from './GoogleMapLocationModal';
 import { GeoLocationCoords } from '../../types';
 import { MASTER_SECTORS, MasterSector } from '../../data/masterCatalog';
 import { CartItem } from './CartDrawerModal';
 import { searchCatalog } from '../../utils/searchCatalog';
+import { ActiveBookingTrackerCard } from './ActiveBookingTrackerCard';
 
 interface CustomerPortalProps {
   cooperatives: Cooperative[];
@@ -28,10 +31,11 @@ interface CustomerPortalProps {
   bookings: Booking[];
   forecasts: DemandForecast[];
   currentLanguage: Language;
-  onBookService: (data: any) => Promise<void>;
+  onBookService: (data: any) => Promise<any>;
   onEmergencyBooking: (data: any) => Promise<void>;
   onUpdateBookingStatus: (id: string, status: string) => Promise<void>;
-  onPayBooking: (id: string) => Promise<void>;
+  onVerifyOtp?: (id: string, otp: string) => Promise<any>;
+  onPayBooking: (id: string, paymentMethod?: string) => Promise<void>;
   onRateBooking: (id: string, ratings: any) => Promise<void>;
   onRequestContract: (contractData: any) => Promise<void>;
   onSubmitDispute: (disputeData: any) => Promise<void>;
@@ -62,6 +66,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   onBookService,
   onEmergencyBooking,
   onUpdateBookingStatus,
+  onVerifyOtp,
   onPayBooking,
   onRateBooking,
   onRequestContract,
@@ -91,15 +96,37 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   // Domain Switcher: Home Services vs Projects & Contracts
   const [activeDomain, setActiveDomain] = useState<'HOME_SERVICES' | 'PROJECTS_CONTRACTS'>('HOME_SERVICES');
   const [customerLocation, setCustomerLocation] = useState<GeoLocationCoords>(PUNE_LOCALITIES[0]);
+  const [showGoogleMapModal, setShowGoogleMapModal] = useState(false);
 
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentBooking, setPaymentBooking] = useState<Booking | null>(null);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showWelfareModal, setShowWelfareModal] = useState(false);
   const [activeViewingBooking, setActiveViewingBooking] = useState<Booking | null>(null);
   const [preselectedService, setPreselectedService] = useState<any>(propPreselectedService || null);
+  const [selectedActiveBookingId, setSelectedActiveBookingId] = useState<string | null>(null);
+  const [dismissedBookingIds, setDismissedBookingIds] = useState<string[]>([]);
+  const [recentlyPaidBookingId, setRecentlyPaidBookingId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('karyasetu_last_paid_booking_id') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Sync recently paid booking ID whenever subView or bookings change
+  useEffect(() => {
+    try {
+      const storedId = localStorage.getItem('karyasetu_last_paid_booking_id');
+      if (storedId && storedId !== recentlyPaidBookingId) {
+        setRecentlyPaidBookingId(storedId);
+      }
+    } catch {}
+  }, [subView, bookings]);
 
   useEffect(() => {
     if (propPreselectedService) {
@@ -108,7 +135,37 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   }, [propPreselectedService]);
 
   const activeBookingRef = useRef<HTMLDivElement>(null);
-  const activeBooking = bookings[0] || null;
+  
+  // STRICT RULE: Only show services that the customer has RECENTLY or CURRENTLY PAID FOR (paymentStatus === 'PAID')
+  // Never show unpaid/pending services in the active arrival tracker!
+  const paidOngoingBookings = bookings.filter(b => 
+    b.paymentStatus === 'PAID' && 
+    b.status !== 'CANCELLED' && 
+    b.status !== 'COMPLETED' && 
+    !dismissedBookingIds.includes(b._id)
+  );
+
+  // If a paid booking was recently paid for (via state or localStorage), strictly prioritize it!
+  const recentlyPaidBooking = recentlyPaidBookingId 
+    ? bookings.find(b => b._id === recentlyPaidBookingId && b.paymentStatus === 'PAID' && !dismissedBookingIds.includes(b._id))
+    : null;
+
+  // If user explicitly selected another active paid booking
+  const selectedBooking = selectedActiveBookingId 
+    ? bookings.find(b => b._id === selectedActiveBookingId && b.paymentStatus === 'PAID' && !dismissedBookingIds.includes(b._id)) 
+    : null;
+
+  // Active booking strictly requires paymentStatus === 'PAID'
+  const activeBooking = (recentlyPaidBooking && recentlyPaidBooking.status !== 'CANCELLED')
+    ? recentlyPaidBooking
+    : (selectedBooking || paidOngoingBookings[0] || null);
+
+  // Active bookings list to pass to tracker: ONLY paid ongoing bookings + recently paid completed booking (if completed during session)
+  const activeBookings = (
+    activeBooking && activeBooking.status === 'COMPLETED' && !paidOngoingBookings.some(b => b._id === activeBooking._id)
+      ? [activeBooking, ...paidOngoingBookings]
+      : paidOngoingBookings
+  );
 
   // React to navbar triggers
   useEffect(() => {
@@ -155,9 +212,17 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             onClearPreselectedService?.();
           }}
           onSubmitBooking={onBookService}
+          onPayBooking={onPayBooking}
           workers={workers}
           initialService={preselectedService}
           customerLocation={customerLocation}
+          currentLanguage={currentLanguage}
+          cart={cart}
+          onAddToCart={onAddToCart}
+          onUpdateQuantity={onUpdateQuantity}
+          onRemoveItem={onRemoveItem || onRemoveFromCart}
+          onClearCart={onClearCart}
+          onOpenCart={onOpenCart}
         />
       );
     }
@@ -168,6 +233,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         categoryId={subView as ServiceCategoryId}
         onBack={() => setSubView('HOME')}
         onSubmitBooking={onBookService}
+        onPayBooking={onPayBooking}
         workers={workers}
         cart={cart}
         onAddToCart={onAddToCart || (() => {})}
@@ -214,31 +280,22 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       {/* 1. TOP SOVEREIGN HEADER & DOMAIN SELECTOR */}
       <section className="pt-2 sm:pt-4 space-y-5">
         <div className="max-w-[1360px] mx-auto text-center space-y-3">
-          
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-2xs text-[11px] font-bold text-slate-800">
-            <span className="w-2 h-2 rounded-full bg-[#FF9933]" />
-            <span className="uppercase tracking-wider">National Cooperative Digital Public Infrastructure • NCCT</span>
-            <span className="w-2 h-2 rounded-full bg-[#138808]" />
-          </div>
-
           <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
-            {activeDomain === 'HOME_SERVICES' ? 'Home services at your doorstep' : 'Contractor & Institutional Projects'}
+            {activeDomain === 'HOME_SERVICES' ? t.portal.homeServicesHeadline : t.portal.contractorHeadline}
           </h1>
 
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-            Choose a main service sector to view verified trade shramiks, transparent gazetted rates, and direct cooperative booking.
+            {activeDomain === 'HOME_SERVICES' ? t.portal.homeServicesSubtitle : t.portal.contractorSubtitle}
           </p>
 
-          {/* Customer Geo-Location Hub Selector */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <span>📍 Service Location:</span>
-            </span>
+          {/* Unified Single Location Bar */}
+          <div className="w-full max-w-xl mx-auto pt-1">
             <CustomerLocationBar
               currentLocation={customerLocation}
               onLocationChange={(newLoc) => {
                 setCustomerLocation(newLoc);
               }}
+              onOpenMap={() => setShowGoogleMapModal(true)}
             />
           </div>
 
@@ -255,7 +312,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 }`}
               >
                 <Home className="w-4 h-4 text-orange-400" />
-                <span>🏠 Home Services (8 Main Sectors)</span>
+                <span>{t.portal.homeServicesTab}</span>
               </button>
 
               <button
@@ -268,13 +325,60 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 }`}
               >
                 <Building2 className="w-4 h-4 text-blue-300" />
-                <span>🏗️ Projects & Contracts (4 Contractor Sectors)</span>
+                <span>{t.portal.projectsTab}</span>
               </button>
             </div>
           </div>
 
         </div>
       </section>
+
+      {/* 1.1 LIVE ACTIVE SERVICE & DOORSTEP OTP TRACKER CARD */}
+      {activeBooking && (
+        <section ref={activeBookingRef} className="max-w-[1360px] mx-auto animate-fadeIn px-4 sm:px-6 my-4">
+          <ActiveBookingTrackerCard
+            booking={activeBooking}
+            allActiveBookings={activeBookings}
+            onSelectBooking={(b) => setSelectedActiveBookingId(b._id)}
+            onDismiss={() => {
+              if (activeBooking) {
+                setDismissedBookingIds(prev => [...prev, activeBooking._id]);
+                setSelectedActiveBookingId(null);
+                if (recentlyPaidBookingId === activeBooking._id) {
+                  setRecentlyPaidBookingId(null);
+                  try {
+                    localStorage.removeItem('karyasetu_last_paid_booking_id');
+                  } catch {}
+                }
+              }
+            }}
+            workers={workers}
+            onUpdateBookingStatus={async (id, status) => {
+              setSelectedActiveBookingId(id);
+              await onUpdateBookingStatus(id, status);
+            }}
+            onVerifyOtp={async (id, otp) => {
+              setSelectedActiveBookingId(id);
+              if (onVerifyOtp) {
+                return await onVerifyOtp(id, otp);
+              }
+            }}
+            onOpenPayment={(b) => {
+              setPaymentBooking(b);
+              setShowPaymentModal(true);
+            }}
+            onOpenInvoice={(b) => {
+              setActiveViewingBooking(b);
+              setShowInvoiceModal(true);
+            }}
+            onOpenRating={(b) => {
+              setActiveViewingBooking(b);
+              setShowRatingModal(true);
+            }}
+            currentLanguage={currentLanguage}
+          />
+        </section>
+      )}
 
       {/* 1.2 SEARCH RESULTS SHELF (When search query is entered from Navbar) */}
       {searchQuery && searchQuery.trim().length > 0 && (
@@ -287,11 +391,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                    <span>Search Results for</span>
+                    <span>{t.portal.searchResultsFor}</span>
                     <span className="text-orange-600">"{searchQuery}"</span>
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Found {searchResults.totalMatches} verified cooperative service{searchResults.totalMatches === 1 ? '' : 's'} & trade{searchResults.totalMatches === 1 ? '' : 's'}
+                    {t.portal.foundServices} {searchResults.totalMatches} {t.portal.verifiedServices}
                   </p>
                 </div>
               </div>
@@ -302,7 +406,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Clear Search</span>
+                <span>{t.portal.clearSearch}</span>
               </button>
             </div>
 
@@ -344,7 +448,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                           ₹{item.service.price}
                         </span>
                         <span className="text-[10px] text-slate-400 block font-semibold">
-                          Gazetted rate
+                          {t.portal.gazettedRate}
                         </span>
                       </div>
 
@@ -470,7 +574,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <div className="text-[11px] text-slate-300 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Statutory 80/10/6/4 Fair Wage Split. 80% direct to workers, 6% to PM-JAY medical coverage.</span>
+                <span>Government-Certified Cooperative Service. Escrow payment released upon OTP verification.</span>
               </div>
 
               <button
@@ -491,48 +595,6 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         </div>
       ))}
 
-      {/* 2. ACTIVE SERVICE PROGRESS BANNER (If a booking exists) */}
-      {activeBooking && (
-        <div ref={activeBookingRef} className="max-w-[1360px] mx-auto">
-          <div className="bg-white rounded-2xl p-4 border border-emerald-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping flex-shrink-0" />
-              <div>
-                <strong className="text-xs font-black text-slate-900 uppercase">
-                  Active On-Site Job: {activeBooking.serviceCategory} ({activeBooking.subTrade})
-                </strong>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Worker: <strong>{activeBooking.workerName}</strong> • Status: <span className="font-bold text-emerald-800">{activeBooking.status}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-slate-900 mr-2">
-                ₹{activeBooking.totalAmount.toLocaleString('en-IN')}
-              </span>
-              {activeBooking.status !== 'COMPLETED' && (
-                <button
-                  onClick={() => onUpdateBookingStatus(activeBooking._id, 'IN_PROGRESS')}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs cursor-pointer"
-                >
-                  Worker On-Site
-                </button>
-              )}
-              {activeBooking.paymentStatus === 'PENDING' && (
-                <button
-                  onClick={() => onPayBooking(activeBooking._id)}
-                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>Pay & Settle Split</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 3. MAIN GROUP SERVICES DISPLAY (All Sectors Listed - Click redirects to second page) */}
       <section className="max-w-[1360px] mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -544,90 +606,32 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Click on any main sector below to view all services and certified shramiks under that sector.
+              {t.portal.allSectorsSubtitle}
             </p>
           </div>
           <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Govt Gazetted Minimum Wages</span>
+            <span>{t.portal.gazettedWagesBadge}</span>
           </span>
         </div>
 
-        {/* 8 Main Groups Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {visibleSectors.map((sector, index) => (
-            <div
+        {/* Services Listed One Below One (Each Sector as a Full-Width Section with Sub-Services and See All) */}
+        <div className="space-y-6">
+          {visibleSectors.map((sector) => (
+            <div 
               key={sector.id}
-              onClick={() => setSubView(sector.id)}
-              className="group bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between transform hover:-translate-y-1"
+              className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition"
             >
-              {/* Sector Header Image Banner */}
-              <div className="h-44 w-full overflow-hidden bg-slate-100 relative">
-                <img
-                  src={sector.heroImage}
-                  alt={sector.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent" />
-                
-                {/* Sector Index & Badge */}
-                <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                  <span className="bg-slate-950/90 backdrop-blur-md text-white text-[11px] font-black px-2.5 py-1 rounded-xl shadow-xs border border-white/20 flex items-center gap-1.5">
-                    <span>{sector.id === 'emergency-services' ? '🚨' : `#${index + 1}`}</span>
-                    <span>{sector.shortTitle}</span>
-                  </span>
-                </div>
-
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs font-bold">
-                  <span className="flex items-center gap-1">
-                    <span className="text-amber-400 font-extrabold">★ {sector.rating}</span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-slate-200 text-[11px]">{sector.bookingsCount}</span>
-                  </span>
-                  <span className="text-[10px] font-black bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-md text-white">
-                    {sector.subTrades.length} Sub-Trades
-                  </span>
-                </div>
-              </div>
-
-              {/* Sector Body */}
-              <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 group-hover:text-blue-900 transition leading-snug">
-                    {sector.title}
-                  </h3>
-
-                  {/* Sub-Trade Tags Preview */}
-                  <div className="mt-2.5 flex flex-wrap gap-1">
-                    {sector.subTrades.slice(0, 5).map((st) => (
-                      <span
-                        key={st.id}
-                        className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/70"
-                      >
-                        {st.title}
-                      </span>
-                    ))}
-                    {sector.subTrades.length > 5 && (
-                      <span className="text-[10px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200/60">
-                        +{sector.subTrades.length - 5} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Cooperative Assurance & Action */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{sector.shramiksAvailable} Ready</span>
-                  </span>
-
-                  <span className="font-black text-slate-900 group-hover:text-orange-600 flex items-center gap-1 transition">
-                    <span>View Services</span>
-                    <span>➔</span>
-                  </span>
-                </div>
-              </div>
+              <SectorShelfRow
+                sector={sector}
+                currentLanguage={currentLanguage}
+                onSeeAll={(secId) => setSubView(secId)}
+                onSelectService={(secId, service) => {
+                  setPreselectedService(service);
+                  setSubView(secId);
+                  onSelectService?.(secId, service);
+                }}
+              />
             </div>
           ))}
         </div>
@@ -642,7 +646,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
             <div>
               <strong className="text-sm font-black text-slate-900 block">
-                Sahakar SOS Priority Emergency Dispatch (&lt;15 Mins)
+                Karya SOS Priority Emergency Dispatch (&lt;15 Mins)
               </strong>
               <p className="text-xs text-slate-600">
                 Critical water pipeline burst, power failure, short circuit, structural minor hazard, or lockout crisis.
@@ -654,56 +658,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             onClick={() => setSubView('emergency-services')}
             className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-sm transition whitespace-nowrap cursor-pointer flex items-center gap-1.5"
           >
-            <span>Trigger Emergency Dispatch ➔</span>
+            <span>{t.portal.sosBtn}</span>
           </button>
         </div>
       </section>
 
-      {/* 5. COOPERATIVE TRANSPARENCY & STATUTORY WAGES */}
-      <section className="max-w-[1360px] mx-auto">
-        <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-orange-400 block mb-1">
-                Sovereign Public Infrastructure • NCCT
-              </span>
-              <h2 className="text-xl sm:text-2xl font-black">
-                The 80 / 10 / 6 / 4 Fair Labour Protocol
-              </h2>
-            </div>
-            <button
-              onClick={() => setShowWelfareModal(true)}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition cursor-pointer self-start sm:self-auto flex items-center gap-1.5"
-            >
-              <Shield className="w-4 h-4 text-emerald-400" />
-              <span>Verify Sovereign Charter</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-2xl sm:text-3xl font-black text-emerald-400">80%</span>
-              <strong className="text-xs font-bold block text-white">Worker Take-Home</strong>
-              <p className="text-[11px] text-slate-400">Directly transferred to worker bank account without platform cuts.</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-2xl sm:text-3xl font-black text-blue-400">10%</span>
-              <strong className="text-xs font-bold block text-white">Tool Depot & Equipment</strong>
-              <p className="text-[11px] text-slate-400">Cooperative depot tools, high-pressure machines, and safety kits.</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-2xl sm:text-3xl font-black text-amber-400">6%</span>
-              <strong className="text-xs font-bold block text-white">PM-JAY Health & Safety</strong>
-              <p className="text-[11px] text-slate-400">Government insurance, accidental coverage, and pensions.</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-2xl sm:text-3xl font-black text-purple-400">4%</span>
-              <strong className="text-xs font-bold block text-white">DPI Digital Rail</strong>
-              <p className="text-[11px] text-slate-400">Open-source digital public rail server & infrastructure operations.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* MODALS */}
       {showEmergencyModal && (
@@ -719,6 +678,24 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           isOpen={showInvoiceModal}
           booking={activeViewingBooking}
           onClose={() => setShowInvoiceModal(false)}
+        />
+      )}
+
+      {showPaymentModal && paymentBooking && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          booking={paymentBooking}
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentSuccess={() => {
+            if (paymentBooking) {
+              try {
+                localStorage.setItem('karyasetu_last_paid_booking_id', paymentBooking._id);
+              } catch {}
+              setRecentlyPaidBookingId(paymentBooking._id);
+              setSelectedActiveBookingId(paymentBooking._id);
+            }
+            onPayBooking(paymentBooking._id);
+          }}
         />
       )}
 
@@ -752,14 +729,19 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-black text-slate-900 text-base">National Cooperative Charter</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 p-0.5 shrink-0 shadow-2xs">
+                  <img src="/karyasetu-logo.png" alt="KaryaSetu Logo" className="w-full h-full object-contain rounded-md" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base leading-none">National Cooperative Charter</h3>
+                  <span className="text-[10px] text-emerald-700 font-bold">KaryaSetu Verified</span>
+                </div>
               </div>
               <button onClick={() => setShowWelfareModal(false)} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              SahakarSetu is built in compliance with the National Council for Cooperative Training (NCCT) and the Ministry of Cooperation, Government of India. Every registered worker receives gazetted minimum wages, PM-JAY medical benefits, and verified digital identity through e-Shram.
+              KaryaSetu is built in compliance with the Ministry of Cooperation, Government of India. Every registered worker receives gazetted minimum wages, PM-JAY medical benefits, and verified digital identity through e-Shram.
             </p>
             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-bold">
               ✓ 100% Cooperative • Zero Private Intermediary Extraction
@@ -772,6 +754,18 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Google Map Interactive Location Selector Modal */}
+      {showGoogleMapModal && (
+        <GoogleMapLocationModal
+          isOpen={showGoogleMapModal}
+          onClose={() => setShowGoogleMapModal(false)}
+          currentLocation={customerLocation}
+          onConfirmLocation={(newLoc) => {
+            setCustomerLocation(newLoc);
+          }}
+        />
       )}
 
     </div>
