@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserRole } from '../../types';
 import { 
-  Users, HardHat, Briefcase, Building, ArrowRight, ShieldCheck, 
+  Users, HardHat, Briefcase, Building, ArrowRight, 
   CheckCircle2, FileCheck, Check, Award, Lock, Phone, Mail, Sparkles 
 } from 'lucide-react';
 
@@ -111,11 +111,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               National Cooperative Digital Labour Infrastructure
             </span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Smart India Hackathon DPI Model</span>
         </div>
       </div>
 
@@ -745,9 +740,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
       </div>
 
-      {/* 4. Footer with Prototype Notice */}
+      {/* 4. Footer */}
       <div className="max-w-5xl mx-auto w-full pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
-        <p>© 2026 KaryaSetu. National Cooperative Digital Labour Infrastructure. Smart India Hackathon Prototype.</p>
+        <p>© 2026 KaryaSetu. National Cooperative Digital Labour Infrastructure.</p>
       </div>
 
     </div>

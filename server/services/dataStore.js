@@ -16,41 +16,7 @@ const {
   seedContractors
 } = require('../data/seedData');
 
-const seedDisputes = [
-  {
-    _id: "dsp_001",
-    bookingId: "bk_1001",
-    customerName: "Aditya Deshpande",
-    customerPhone: "+91 98900 11223",
-    workerId: "wrk_101",
-    workerName: "Santosh Baburao Kadam",
-    cooperativeId: "coop_pune_elec",
-    cooperativeName: "Pune Electrical Sahakari",
-    serviceCategory: "Electrical",
-    issueType: "QUALITY_OF_WORK",
-    description: "Switchgear MCB replacement was prompt, but customer requested additional clarification on the surge warranty certificate.",
-    status: "RESOLVED",
-    resolution: "Cooperative Technical Inspector verified the IS-732 certificate and provided formal 1-year cooperative warranty letter.",
-    resolvedAt: "2026-08-31T14:00:00.000Z",
-    date: "2026-08-30"
-  },
-  {
-    _id: "dsp_002",
-    bookingId: "bk_1002",
-    customerName: "Rohit Sharma",
-    customerPhone: "+91 97654 32109",
-    workerId: "wrk_102",
-    workerName: "Pravin Maruti Jadhav",
-    cooperativeId: "coop_pune_plumb",
-    cooperativeName: "Maha Jal Sahakari",
-    serviceCategory: "Plumbing",
-    issueType: "TIMELINESS_DELAY",
-    description: "Heavy rain caused 5-minute traffic delay during emergency pipeline transit.",
-    status: "UNDER_MEDIATION",
-    resolution: "Cooperative coordinator contacted customer in real-time and waived emergency transit surcharge.",
-    date: "2026-09-01"
-  }
-];
+const seedDisputes = [];
 
 // Initialize in-memory store with deep copy of seed data
 const store = getInMemoryStore();

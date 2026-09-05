@@ -403,6 +403,28 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                     >
                       <div className="space-y-4">
                         
+                        {/* 0. INCOMING CUSTOMER REQUEST BANNER */}
+                        <div className="bg-gradient-to-r from-blue-700 via-indigo-800 to-slate-900 text-white p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-xl">📩</span>
+                            <div>
+                              <span className="text-[10px] uppercase font-black tracking-wider text-blue-200 block">
+                                Direct Customer Service Request
+                              </span>
+                              <p className="text-xs font-bold text-white">
+                                Customer <strong>{booking.customerName}</strong> sent request for <strong>{booking.serviceCategory}</strong>
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={`tel:${booking.customerPhone}`}
+                            className="px-3 py-1.5 rounded-xl bg-white text-blue-950 hover:bg-blue-50 text-xs font-black transition flex items-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
+                          >
+                            <Phone className="w-3.5 h-3.5 text-blue-700" />
+                            <span>Call Customer</span>
+                          </a>
+                        </div>
+
                         {/* 1. TOP HEADER: Reference, Category & Prominent Status */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-100">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -512,14 +534,14 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                         </div>
 
                         {/* 4. CLIENT TECHNICAL BRIEF & SPECIAL REQUIREMENTS CALLOUT */}
-                        {booking.projectScope?.specialRequirements && (
+                        {(booking.projectScope?.specialRequirements || booking.notes) && (
                           <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-200/60 space-y-1 text-xs">
                             <span className="text-[10px] font-black uppercase tracking-wider text-blue-900 flex items-center gap-1">
                               <FileText className="w-3 h-3 text-blue-600" />
                               <span>Client Technical Scope & Special Instructions</span>
                             </span>
                             <p className="text-[11px] text-slate-700 leading-relaxed italic">
-                              "{booking.projectScope.specialRequirements}"
+                              "{booking.projectScope?.specialRequirements || booking.notes}"
                             </p>
                           </div>
                         )}

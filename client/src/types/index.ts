@@ -181,6 +181,7 @@ export interface Booking {
   preferredTime?: string;
   estimatedAmount?: number;
   estimatedPrice?: number;
+  notes?: string;
   createdAt: string;
   completedAt?: string;
 }

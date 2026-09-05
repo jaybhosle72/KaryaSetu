@@ -257,7 +257,14 @@ export function App() {
     try {
       const res = await api.createBooking(bookingData);
       setBookings(prev => [res.booking, ...prev]);
-      showToast(`Matched via ${res.booking.cooperativeName} • Worker: ${res.booking.workerName}`, 'success');
+      if (res.booking.assignedWorkerId) {
+        setSelectedWorkerId(res.booking.assignedWorkerId);
+      }
+      if (res.booking.bookingMode === 'CONTRACTOR_TEAM') {
+        showToast(`Request sent to Contractor ${res.booking.contractorName || 'Balasaheb Shinde'} for workforce planning!`, 'success');
+      } else {
+        showToast(`Matched via ${res.booking.cooperativeName} • Worker: ${res.booking.workerName}`, 'success');
+      }
       playAlertSound('success');
       return res.booking;
     } catch (e: any) {
@@ -640,6 +647,7 @@ export function App() {
                 forecasts={forecasts}
                 welfareLedger={welfareLedger}
                 disputes={disputes}
+                bookings={bookings}
                 onVerifySkill={handleVerifySkill}
                 onUpdateSplit={handleUpdateSplit}
                 onDisburseWelfare={handleDisburseWelfare}
@@ -654,6 +662,10 @@ export function App() {
                 bookings={bookings}
                 contracts={contracts}
                 welfareRecords={welfareLedger}
+                forecasts={forecasts}
+                disputes={disputes}
+                onResolveDispute={handleResolveDispute}
+                onDisburseWelfare={handleDisburseWelfare}
               />
             )}
           </>

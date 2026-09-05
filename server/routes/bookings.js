@@ -51,7 +51,8 @@ router.post('/', async (req, res) => {
 
     if (bookingMode === 'CONTRACTOR_TEAM') {
       // Contractor Team Request: Customer describes the outcome; contractor plans workforce & sends proposal
-      const contractor = (await DataStore.getContractors())[0];
+      const allContractors = await DataStore.getContractors();
+      const contractor = (req.body.contractorId ? allContractors.find(c => c._id === req.body.contractorId) : null) || allContractors[0];
       const coop = allCoops.find(c => c._id === contractor?.cooperativeId) || allCoops[0];
       const initialAmount = Number(estimatedAmount) || 0;
       const split = calculatePaymentSplit(initialAmount, coop?.splitConfig);
@@ -82,6 +83,7 @@ router.post('/', async (req, res) => {
         workerName: 'Awaiting Contractor Evaluation & Planning',
         status: 'PROPOSAL_PENDING',
         totalAmount: initialAmount,
+        notes: req.body.notes || '',
         paymentBreakdown: {
           workerAmount: split.workerAmount,
           coopAmount: split.coopAmount,
@@ -126,6 +128,7 @@ router.post('/', async (req, res) => {
         workerPhone: assignedWorker?.phone,
         status: 'ALLOCATED',
         totalAmount: estimatedAmount,
+        notes: req.body.notes || '',
         paymentBreakdown: {
           workerAmount: split.workerAmount,
           coopAmount: split.coopAmount,

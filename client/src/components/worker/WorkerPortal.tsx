@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Worker, Booking, WelfareClaim } from '../../types';
 import { WorkerNavigationModal } from './WorkerNavigationModal';
 import { 
@@ -41,11 +41,24 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isArrivedAtDoorstep, setIsArrivedAtDoorstep] = useState(false);
 
-  if (!currentWorker) return null;
-
-  const myBookings = bookings.filter(b => b.assignedWorkerId === currentWorker._id);
+  // Check all bookings assigned to this worker
+  const myBookings = bookings.filter(b => b.assignedWorkerId === currentWorker?._id);
   const activeJob = myBookings.find(b => b.status !== 'COMPLETED') || null;
   const completedJobs = myBookings.filter(b => b.status === 'COMPLETED');
+
+  // Check if ANY worker has an active solo booking in progress
+  const anyActiveSoloBooking = bookings.find(b => 
+    b.bookingMode !== 'CONTRACTOR_TEAM' && 
+    b.status !== 'COMPLETED' && 
+    b.assignedWorkerId
+  );
+
+  // Auto-switch to assigned worker so the exact booked service appears immediately
+  useEffect(() => {
+    if (!activeJob && anyActiveSoloBooking && anyActiveSoloBooking.assignedWorkerId && anyActiveSoloBooking.assignedWorkerId !== currentWorker?._id) {
+      onSelectWorker(anyActiveSoloBooking.assignedWorkerId);
+    }
+  }, [activeJob, anyActiveSoloBooking, currentWorker?._id, onSelectWorker]);
 
   const isAvailable = currentWorker.status !== 'OFF_DUTY';
 
@@ -104,13 +117,16 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
             <select
               value={currentWorker._id}
               onChange={(e) => onSelectWorker(e.target.value)}
-              className="text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-400"
+              className="text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              {workers.map(w => (
-                <option key={w._id} value={w._id}>
-                  {w.name} ({w.trade})
-                </option>
-              ))}
+              {workers.map(w => {
+                const hasJob = bookings.some(b => b.assignedWorkerId === w._id && b.status !== 'COMPLETED');
+                return (
+                  <option key={w._id} value={w._id}>
+                    {hasJob ? '🟢 ' : ''}{w.name} ({w.trade}){hasJob ? ' • [ACTIVE JOB]' : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -128,6 +144,31 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Active Job Alert Banner if another worker has the active job */}
+      {anyActiveSoloBooking && anyActiveSoloBooking.assignedWorkerId !== currentWorker._id && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shrink-0">
+              ⚡
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
+                Active Customer Dispatch In Progress
+              </span>
+              <p className="text-xs font-bold text-slate-900">
+                Customer <strong>{anyActiveSoloBooking.customerName}</strong> booked <strong>{anyActiveSoloBooking.serviceCategory}</strong> ({anyActiveSoloBooking.subTrade}), assigned to <strong>{anyActiveSoloBooking.workerName}</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onSelectWorker(anyActiveSoloBooking.assignedWorkerId!)}
+            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black transition self-start sm:self-auto cursor-pointer"
+          >
+            Switch to {anyActiveSoloBooking.workerName?.split(' ')[0] || 'Worker'} ➔
+          </button>
+        </div>
+      )}
 
       {/* 2. Grid Layout: Left Column (Profile & Welfare) | Right Column (Jobs & Earnings) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -329,9 +370,31 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
 
             {activeJob ? (
               <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                {/* 1. High-Visibility Dispatch Header */}
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">⚡</span>
+                    <div>
+                      <span className="text-[10px] uppercase font-black tracking-wider text-emerald-200 block">
+                        Incoming Customer Job Dispatched to You
+                      </span>
+                      <p className="text-xs font-bold text-white">
+                        Customer <strong>{activeJob.customerName}</strong> booked <strong>{activeJob.serviceCategory}</strong>
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={`tel:${activeJob.customerPhone}`}
+                    className="px-3 py-1.5 rounded-xl bg-white text-emerald-950 hover:bg-emerald-50 text-xs font-black transition flex items-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Call Customer</span>
+                  </a>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-4 rounded-2xl border border-slate-200">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Customer Request</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Exact Service Booked</span>
                     <h4 className="text-base font-black text-slate-900 mt-0.5">
                       {activeJob.serviceCategory} • {activeJob.subTrade}
                     </h4>
@@ -342,9 +405,14 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                     <p className="text-xs text-slate-500 mt-0.5">
                       Customer: <strong>{activeJob.customerName}</strong> ({activeJob.customerPhone})
                     </p>
+                    {activeJob.notes && (
+                      <div className="mt-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <strong className="text-slate-900">Job Scope / Instructions:</strong> {activeJob.notes}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="text-left sm:text-right">
+                  <div className="text-left sm:text-right shrink-0">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Your Earning</span>
                     <span className="text-2xl font-black text-emerald-700">
                       ₹{Math.round(activeJob.totalAmount * 0.8)}

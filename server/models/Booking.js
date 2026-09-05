@@ -65,6 +65,7 @@ const BookingSchema = new mongoose.Schema({
   },
   emergencyTriggerReason: { type: String },
   otp: { type: String, default: '4821' },
+  notes: { type: String, default: '' },
   completedAt: { type: Date }
 }, { timestamps: true, _id: false });
 
