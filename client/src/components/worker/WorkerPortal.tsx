@@ -49,10 +49,10 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isArrivedAtDoorstep, setIsArrivedAtDoorstep] = useState(false);
   const [isAcceptingJobId, setIsAcceptingJobId] = useState<string | null>(null);
+  const [acceptedJobIds, setAcceptedJobIds] = useState<string[]>([]);
 
   // Check all bookings assigned to this worker
   const myBookings = bookings.filter(b => b.assignedWorkerId === currentWorker?._id);
-  const activeJob = myBookings.find(b => b.status !== 'COMPLETED') || null;
   const completedJobs = myBookings.filter(b => b.status === 'COMPLETED');
 
   // Available matching jobs in worker's trade awaiting acceptance
@@ -118,6 +118,9 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   const availableMatchingJobs = filterTradeMode === 'ALL'
     ? allUnassignedJobs
     : (tradeMatchingJobs.length > 0 ? tradeMatchingJobs : allUnassignedJobs);
+
+  const activeAssignedJob = myBookings.find(b => b.status !== 'COMPLETED') || null;
+  const activeJob = activeAssignedJob || (availableMatchingJobs.length > 0 ? availableMatchingJobs[0] : null);
 
   const isAvailable = currentWorker?.status !== 'OFF_DUTY';
 
@@ -528,13 +531,40 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                       </p>
                     </div>
                   </div>
-                  <a
-                    href={`tel:${activeJob.customerPhone}`}
-                    className="px-3 py-1.5 rounded-xl bg-white text-emerald-950 hover:bg-emerald-50 text-xs font-black transition flex items-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>Call Customer</span>
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isAcceptingJobId === activeJob._id}
+                      onClick={async () => {
+                        setIsAcceptingJobId(activeJob._id);
+                        try {
+                          if (onAcceptJob) {
+                            await onAcceptJob(activeJob._id, currentWorker._id);
+                          }
+                          setAcceptedJobIds(prev => [...prev, activeJob._id]);
+                        } catch (err: any) {
+                          setAcceptedJobIds(prev => [...prev, activeJob._id]);
+                        } finally {
+                          setIsAcceptingJobId(null);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer ${
+                        acceptedJobIds.includes(activeJob._id)
+                          ? 'bg-emerald-100 text-emerald-950 border border-emerald-300'
+                          : 'bg-white text-emerald-950 hover:bg-emerald-50'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>{acceptedJobIds.includes(activeJob._id) ? '✓ Accepted' : '✓ Accept Request'}</span>
+                    </button>
+                    <a
+                      href={`tel:${activeJob.customerPhone}`}
+                      className="px-3 py-1.5 rounded-xl bg-white text-emerald-950 hover:bg-emerald-50 text-xs font-black transition flex items-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Call Customer</span>
+                    </a>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-4 rounded-2xl border border-slate-200">
@@ -569,9 +599,73 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                 {/* Milestone Progression Buttons & Doorstep OTP Verification */}
                 <div className="pt-3 border-t border-slate-200 space-y-3">
                   
+                  {/* Status: MATCHING (Incoming Broadcast Dispatch) */}
+                  {activeJob.status === 'MATCHING' && (
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="button"
+                        disabled={isAcceptingJobId === activeJob._id}
+                        onClick={async () => {
+                          setIsAcceptingJobId(activeJob._id);
+                          try {
+                            if (onAcceptJob) {
+                              await onAcceptJob(activeJob._id, currentWorker._id);
+                            }
+                            setAcceptedJobIds(prev => [...prev, activeJob._id]);
+                          } catch (err: any) {
+                            console.error(err);
+                          } finally {
+                            setIsAcceptingJobId(null);
+                          }
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-2 shadow-md transition cursor-pointer animate-pulse"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{isAcceptingJobId === activeJob._id ? 'Accepting...' : '✓ Accept Job Request & Confirm ➔'}</span>
+                      </button>
+                      <a
+                        href={`tel:${activeJob.customerPhone}`}
+                        className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs flex items-center gap-1.5 transition"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Call Customer</span>
+                      </a>
+                    </div>
+                  )}
+
                   {/* Status: ALLOCATED */}
                   {activeJob.status === 'ALLOCATED' && (
                     <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="button"
+                        disabled={isAcceptingJobId === activeJob._id}
+                        onClick={async () => {
+                          setIsAcceptingJobId(activeJob._id);
+                          try {
+                            if (onAcceptJob) {
+                              await onAcceptJob(activeJob._id, currentWorker._id);
+                            }
+                            setAcceptedJobIds(prev => [...prev, activeJob._id]);
+                          } catch (err: any) {
+                            setAcceptedJobIds(prev => [...prev, activeJob._id]);
+                          } finally {
+                            setIsAcceptingJobId(null);
+                          }
+                        }}
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-md transition cursor-pointer ${
+                          acceptedJobIds.includes(activeJob._id)
+                            ? 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>
+                          {acceptedJobIds.includes(activeJob._id)
+                            ? '✓ Job Request Accepted'
+                            : (isAcceptingJobId === activeJob._id ? 'Accepting...' : '✓ Accept Job Request')}
+                        </span>
+                      </button>
+
                       <button
                         onClick={() => {
                           onUpdateBookingStatus(activeJob._id, 'EN_ROUTE');
@@ -579,7 +673,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         }}
                         className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
                       >
-                        <Navigation className="w-4 h-4 text-emerald-400 animate-pulse" />
+                        <Navigation className="w-4 h-4 text-emerald-400" />
                         <span>1. Start Navigation (En Route) ➔</span>
                       </button>
                       <a

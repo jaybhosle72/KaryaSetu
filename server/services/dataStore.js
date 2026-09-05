@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { getDBMode, getInMemoryStore } = require('../config/db');
 const Cooperative = require('../models/Cooperative');
 const Worker = require('../models/Worker');
@@ -344,12 +345,32 @@ const DataStore = {
     if (!worker) throw new Error(`Worker with ID ${workerId} not found`);
 
     if (getDBMode() === 'mongodb') {
-      // Atomic find & update: only accept if status is MATCHING and assignedWorkerId is null or empty
+      const idMatch = { $or: [{ _id: String(bookingId) }, { id: String(bookingId) }] };
+
+      // Check if already allocated to this worker
+      const existing = await Booking.findOne(idMatch);
+      if (existing && existing.assignedWorkerId && String(existing.assignedWorkerId) === String(worker._id)) {
+        if (existing.status === 'MATCHING') {
+          existing.status = 'ALLOCATED';
+          await existing.save();
+        }
+        return existing;
+      }
+
+      // Atomic find & update: accept if status is MATCHING (unassigned) or already allocated to worker
       const updatedBooking = await Booking.findOneAndUpdate(
         {
-          $or: [{ _id: bookingId }, { id: bookingId }],
-          status: 'MATCHING',
-          $or: [{ assignedWorkerId: null }, { assignedWorkerId: { $exists: false } }, { assignedWorkerId: '' }]
+          $and: [
+            idMatch,
+            {
+              $or: [
+                { status: 'MATCHING', assignedWorkerId: null },
+                { status: 'MATCHING', assignedWorkerId: { $exists: false } },
+                { status: 'MATCHING', assignedWorkerId: '' },
+                { assignedWorkerId: worker._id }
+              ]
+            }
+          ]
         },
         {
           assignedWorkerId: worker._id,
@@ -377,7 +398,13 @@ const DataStore = {
     }
 
     // In-memory atomic check
-    const bookingIdx = store.bookings.findIndex(b => (b._id === bookingId || b.id === bookingId) && b.status === 'MATCHING' && !b.assignedWorkerId);
+    const existingMem = store.bookings.find(b => (b._id === bookingId || b.id === bookingId));
+    if (existingMem && existingMem.assignedWorkerId === worker._id) {
+      existingMem.status = 'ALLOCATED';
+      return existingMem;
+    }
+
+    const bookingIdx = store.bookings.findIndex(b => (b._id === bookingId || b.id === bookingId) && (b.status === 'MATCHING' && (!b.assignedWorkerId || b.assignedWorkerId === worker._id)));
     if (bookingIdx === -1) {
       throw new Error('Job is no longer available or has already been accepted by another worker.');
     }
