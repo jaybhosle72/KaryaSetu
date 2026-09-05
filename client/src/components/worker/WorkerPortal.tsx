@@ -4,7 +4,7 @@ import { WorkerNavigationModal } from './WorkerNavigationModal';
 import { 
   ShieldCheck, Award, HeartHandshake, Phone, MapPin, 
   CheckCircle2, AlertTriangle, Wallet, Check, Star, 
-  Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight
+  Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight, HardHat
 } from 'lucide-react';
 
 interface WorkerPortalProps {
@@ -152,6 +152,22 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
     }
   };
 
+  if (!currentWorker) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center">
+        <div className="p-8 sm:p-12 bg-white rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200">
+            <HardHat className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-black text-slate-900">No Registered Shramik Profile Found</h2>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+            There are currently no active worker profiles registered in the cooperative database. Please sign out and register a new worker account or sign in with your registered worker mobile number.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-20 font-sans max-w-[1280px] mx-auto">
       
@@ -173,24 +189,26 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Worker Switcher for demo */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-bold uppercase hidden sm:inline">Switch Worker:</span>
-            <select
-              value={currentWorker._id}
-              onChange={(e) => onSelectWorker(e.target.value)}
-              className="text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              {workers.map(w => {
-                const hasJob = bookings.some(b => b.assignedWorkerId === w._id && b.status !== 'COMPLETED');
-                return (
-                  <option key={w._id} value={w._id}>
-                    {hasJob ? '🟢 ' : ''}{w.name} ({w.trade}){hasJob ? ' • [ACTIVE JOB]' : ''}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          {/* Worker Switcher if multiple workers */}
+          {workers.length > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-bold uppercase hidden sm:inline">Switch Worker:</span>
+              <select
+                value={currentWorker._id}
+                onChange={(e) => onSelectWorker(e.target.value)}
+                className="text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {workers.map(w => {
+                  const hasJob = bookings.some(b => b.assignedWorkerId === w._id && b.status !== 'COMPLETED');
+                  return (
+                    <option key={w._id} value={w._id}>
+                      {hasJob ? '🟢 ' : ''}{w.name} ({w.trade}){hasJob ? ' • [ACTIVE JOB]' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
 
           {/* Minimal Availability Toggle */}
           <button
@@ -341,7 +359,9 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               {/* Rating */}
               <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-xl">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="text-xs font-black text-amber-950">{currentWorker.customerRating || 4.8} ⭐</span>
+                <span className="text-xs font-black text-amber-950">
+                  {currentWorker.customerRating ? `${currentWorker.customerRating} ⭐` : 'New ⭐'}
+                </span>
               </div>
             </div>
 
@@ -349,11 +369,11 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
             <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 text-center">
               <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Experience</span>
-                <span className="text-sm font-black text-slate-900">{currentWorker.experienceYears} Years</span>
+                <span className="text-sm font-black text-slate-900">{currentWorker.experienceYears || 0} Years</span>
               </div>
               <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Jobs Done</span>
-                <span className="text-sm font-black text-slate-900">{currentWorker.completedJobs || 62}</span>
+                <span className="text-sm font-black text-slate-900">{currentWorker.completedJobs || completedJobs.length || 0}</span>
               </div>
               <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Certification</span>
@@ -388,20 +408,9 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                     </span>
                   ))
                 ) : (
-                  <>
-                    <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" /> Wiring
-                    </span>
-                    <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" /> Fan installation
-                    </span>
-                    <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" /> Switch repair
-                    </span>
-                    <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" /> AC connection
-                    </span>
-                  </>
+                  <span className="text-[11px] text-slate-400 italic py-1">
+                    No extra skill badges added yet. Click "+ Add Skill" to record verified skills.
+                  </span>
                 )}
               </div>
             </div>
@@ -479,7 +488,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                   <span className="text-[10px] text-amber-800">Auto-funded by 6% client split</span>
                 </div>
                 <span className="text-sm font-black text-amber-900">
-                  ₹{currentWorker.welfareDetails?.welfareContributionBalance?.toLocaleString('en-IN') || '24,650'}
+                  ₹{(currentWorker.welfareDetails?.welfareContributionBalance || 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -487,12 +496,16 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
             {/* Monthly Earnings & Jobs completed summary */}
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="p-3 bg-slate-900 text-white rounded-2xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Monthly Earnings</span>
-                <span className="text-lg font-black text-emerald-400">₹24,500</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Earnings</span>
+                <span className="text-lg font-black text-emerald-400">
+                  ₹{(currentWorker.totalEarnings || 0).toLocaleString('en-IN')}
+                </span>
               </div>
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Jobs Completed</span>
-                <span className="text-lg font-black text-slate-900">{currentWorker.completedJobs || 62}</span>
+                <span className="text-lg font-black text-slate-900">
+                  {currentWorker.completedJobs || completedJobs.length || 0}
+                </span>
               </div>
             </div>
           </div>
@@ -727,16 +740,18 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                               Ask customer <strong>{activeJob.customerName}</strong> for the 4-digit code displayed on their screen.
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setWorkerOtpInput(activeJob.otp || '4821');
-                              setWorkerOtpError('');
-                            }}
-                            className="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-2.5 py-1 rounded-lg transition self-start sm:self-auto cursor-pointer"
-                          >
-                            Autofill OTP ({activeJob.otp || '4821'})
-                          </button>
+                          {activeJob.otp && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWorkerOtpInput(activeJob.otp || '');
+                                setWorkerOtpError('');
+                              }}
+                              className="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-2.5 py-1 rounded-lg transition self-start sm:self-auto cursor-pointer"
+                            >
+                              Autofill OTP ({activeJob.otp})
+                            </button>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
@@ -766,8 +781,8 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                                 if (onVerifyOtp) {
                                   await onVerifyOtp(activeJob._id, code);
                                 } else {
-                                  const expected = activeJob.otp || '4821';
-                                  if (code !== expected) {
+                                  const expected = activeJob.otp;
+                                  if (expected && code !== expected) {
                                     throw new Error(`Invalid OTP. Customer's code is ${expected}`);
                                   }
                                   await onUpdateBookingStatus(activeJob._id, 'IN_PROGRESS');
@@ -838,7 +853,9 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               </div>
               <div className="text-right">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Balance</span>
-                <span className="text-xl font-black text-emerald-700">₹{currentWorker.totalEarnings || 24500}</span>
+                <span className="text-xl font-black text-emerald-700">
+                  ₹{(currentWorker.totalEarnings || 0).toLocaleString('en-IN')}
+                </span>
               </div>
             </div>
 
@@ -855,13 +872,13 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                 </div>
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
                   <span className="text-[10px] text-blue-800 font-bold uppercase block">Completed Bookings</span>
-                  <span className="text-sm font-black text-blue-950">{completedJobs.length || 38} Jobs</span>
+                  <span className="text-sm font-black text-blue-950">{completedJobs.length} Jobs</span>
                   <span className="text-[10px] text-blue-700 block mt-0.5">100% verified payout</span>
                 </div>
                 <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl col-span-2 sm:col-span-1">
                   <span className="text-[10px] text-purple-800 font-bold uppercase block">Cooperative Standing</span>
                   <span className="text-sm font-black text-purple-950">A-Grade Verified</span>
-                  <span className="text-[10px] text-purple-700 block mt-0.5">Primary Pune Ward</span>
+                  <span className="text-[10px] text-purple-700 block mt-0.5">Active Pune Ward</span>
                 </div>
               </div>
             </div>
@@ -871,20 +888,26 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Recent Completed Jobs & Settlements:
               </h4>
-              <div className="divide-y divide-slate-100 text-xs">
-                {completedJobs.slice(0, 3).map((job) => (
-                  <div key={job._id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-slate-900">{job.serviceCategory} - {job.subTrade}</p>
-                      <p className="text-slate-400 text-[11px]">{job.address} • Customer: {job.customerName}</p>
+              {completedJobs.length > 0 ? (
+                <div className="divide-y divide-slate-100 text-xs">
+                  {completedJobs.slice(0, 5).map((job) => (
+                    <div key={job._id} className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900">{job.serviceCategory} - {job.subTrade}</p>
+                        <p className="text-slate-400 text-[11px]">{job.address} • Customer: {job.customerName}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-black text-emerald-700">+₹{Math.round(job.totalAmount * 0.8)}</span>
+                        <span className="text-[10px] text-emerald-600 font-bold block">PAID VIA UPI ✓</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-black text-emerald-700">+₹{Math.round(job.totalAmount * 0.8)}</span>
-                      <span className="text-[10px] text-emerald-600 font-bold block">PAID VIA UPI ✓</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 py-3 italic bg-slate-50/50 rounded-xl p-3 border border-dashed border-slate-200 text-center">
+                  No completed jobs recorded yet. Accept incoming job requests above to build your ledger.
+                </p>
+              )}
             </div>
 
           </div>

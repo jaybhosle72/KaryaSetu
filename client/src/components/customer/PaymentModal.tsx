@@ -895,33 +895,35 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-slate-200">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black text-base flex items-center justify-center shrink-0 shadow-sm">
-                          {(booking.workerName || 'Santosh Kadam').split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          {(booking.workerName || 'Shramik').split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
                         <div>
                           <strong className="text-sm font-black text-slate-900 block">
-                            {booking.workerName || 'Santosh Baburao Kadam'}
+                            {booking.workerName || 'Certified Shramik'}
                           </strong>
                           <span className="text-xs font-medium text-slate-600 block">
                             {booking.subTrade || booking.serviceCategory || 'Master Technician'}
                           </span>
                           <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500 font-medium">
-                            <span className="flex items-center gap-0.5 text-amber-600 font-bold">
-                              <Star className="w-3 h-3 fill-amber-500" />
-                              4.9 (140+ jobs)
+                            <span className="flex items-center gap-0.5 text-emerald-700 font-bold">
+                              <Star className="w-3 h-3 fill-emerald-500" />
+                              Verified Cooperative Member
                             </span>
                             <span>•</span>
-                            <span>{booking.cooperativeName || 'Pune Labour Cooperative'}</span>
+                            <span>{booking.cooperativeName || 'District Labour Cooperative'}</span>
                           </div>
                         </div>
                       </div>
 
-                      <a
-                        href={`tel:${booking.workerPhone || '+919822455667'}`}
-                        className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm shrink-0 cursor-pointer"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
+                      {booking.workerPhone && (
+                        <a
+                          href={`tel:${booking.workerPhone}`}
+                          className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm shrink-0 cursor-pointer"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>Call</span>
+                        </a>
+                      )}
                     </div>
                   </div>
 
@@ -1084,13 +1086,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="grid grid-cols-2 gap-3 py-1 text-[11px]">
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px]">BILLED TO:</span>
-                        <strong className="text-slate-900">{booking.customerName || 'Rahul Deshmukh'}</strong>
-                        <p className="text-slate-500 text-[10px] leading-tight">{booking.address || 'Pune, Maharashtra'}</p>
+                        <strong className="text-slate-900">{booking.customerName || 'Citizen Customer'}</strong>
+                        <p className="text-slate-500 text-[10px] leading-tight">{booking.address || 'Maharashtra'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px]">SERVICE PROVIDER:</span>
-                        <strong className="text-slate-900">{booking.workerName || 'Santosh Baburao Kadam'}</strong>
-                        <p className="text-slate-500 text-[10px]">{booking.cooperativeName || 'Pune Labour Cooperative'}</p>
+                        <strong className="text-slate-900">{booking.workerName || 'Certified Technician'}</strong>
+                        <p className="text-slate-500 text-[10px]">{booking.cooperativeName || 'District Labour Cooperative'}</p>
                       </div>
                     </div>
 

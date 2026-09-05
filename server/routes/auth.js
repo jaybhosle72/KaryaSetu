@@ -69,6 +69,21 @@ router.post('/register', async (req, res) => {
         cooperativeName: cooperativeName || defaultCoop.name,
         aadhaarNumber: aadhaar || `XXXX-XXXX-${cleanPhone.slice(-4)}`
       });
+    } else if (role === 'admin') {
+      const coopName = cooperativeName || `${name}'s District Labour Cooperative Federation`;
+      const createdCoop = await DataStore.createCooperative({
+        name: coopName,
+        shortName: coopName,
+        district: 'Pune',
+        state: 'Maharashtra',
+        serviceCategories: ['Electrical', 'Plumbing', 'Carpentry', 'Painting', 'Deep Cleaning', 'Civil & Masonry'],
+        totalWorkers: 0,
+        activeWorkers: 0,
+        welfareFundBalance: 0,
+        totalJobsCompleted: 0
+      });
+      cooperativeId = createdCoop._id;
+      cooperativeName = createdCoop.name;
     }
 
     const newUser = await DataStore.createUser({

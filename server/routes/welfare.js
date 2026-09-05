@@ -27,12 +27,12 @@ router.post('/claim', async (req, res) => {
   try {
     const { workerId, workerName, cooperativeName, type, title, amount, description } = req.body;
     const newClaim = await DataStore.createWelfareClaim({
-      workerId: workerId || 'wrk_101',
-      workerName: workerName || 'Santosh Baburao Kadam',
-      cooperativeName: cooperativeName || 'Pune Electrical Sahakari',
+      workerId: workerId || 'UNASSIGNED',
+      workerName: workerName || 'Registered Worker',
+      cooperativeName: cooperativeName || 'District Labour Cooperative',
       type: type || 'ACCIDENT_INSURANCE_PREMIUM',
       title: title || 'Worker Welfare Direct Grant',
-      amount: Number(amount) || 1200,
+      amount: Number(amount) || 0,
       description: description || 'Approved by Cooperative Welfare Committee.'
     });
 

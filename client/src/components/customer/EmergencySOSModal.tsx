@@ -20,10 +20,10 @@ export const EmergencySOSModal: React.FC<EmergencySOSModalProps> = ({
   onSubmitEmergency,
   currentUser
 }) => {
-  const [customerName, setCustomerName] = useState(currentUser?.name || 'Registered Customer');
-  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '+91 98229 00000');
+  const [customerName, setCustomerName] = useState(currentUser?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '');
   const [emergencyType, setEmergencyType] = useState('Water Leakage');
-  const [address, setAddress] = useState(currentUser?.address || 'Baner-Pashan Link Road, Pune 411045');
+  const [address, setAddress] = useState(currentUser?.address || '');
   const [notes, setNotes] = useState('Urgent assistance required; pipeline or electrical fault');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

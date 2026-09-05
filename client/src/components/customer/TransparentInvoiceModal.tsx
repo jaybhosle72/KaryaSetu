@@ -89,7 +89,7 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
             </div>
             <div>
               <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Allocated Cooperative Worker</p>
-              <p className="font-bold text-emerald-800 mt-0.5">{booking.workerName || 'Santosh Baburao Kadam'}</p>
+              <p className="font-bold text-emerald-800 mt-0.5">{booking.workerName || 'Certified Technician'}</p>
               <p className="text-slate-600">Trade: {booking.serviceCategory} ({booking.subTrade})</p>
               <p className="text-slate-500 mt-1">Coop Badge: Level-4 Verified</p>
             </div>

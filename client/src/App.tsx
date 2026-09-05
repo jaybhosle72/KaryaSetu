@@ -22,6 +22,8 @@ export function App() {
     name: string;
     phone: string;
     roleName: string;
+    address?: string;
+    extraMeta?: any;
   } | null>(() => {
     try {
       const saved = localStorage.getItem('karyasetu_current_user') || localStorage.getItem('sahakar_current_user');
@@ -157,12 +159,12 @@ export function App() {
     const primaryCategory = items[0]?.category || 'Cooperative Gig Services';
     const subTradeSummary = items.map(i => `${i.name} (x${i.quantity})`).join(', ');
     const newBooking = await handleBookService({
-      customerName: currentUser?.name || 'Rahul Sharma',
-      customerPhone: currentUser?.phone || '+91 98229 33445',
+      customerName: currentUser?.name || 'Citizen Customer',
+      customerPhone: currentUser?.phone || '',
       serviceCategory: primaryCategory,
       subTrade: subTradeSummary,
       urgency: 'STANDARD',
-      address: 'Flat 402, Mayur Residency, Kothrud, Pune 411038',
+      address: currentUser?.address || 'Pune, Maharashtra',
       preferredTime: 'Tomorrow, 10:00 AM',
       estimatedPrice: totalAmount,
       notes: `Cart checkout for ${items.length} items (${subTradeSummary}). Direct cooperative booking.`

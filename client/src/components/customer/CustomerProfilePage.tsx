@@ -26,52 +26,41 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'BOOKINGS' | 'ADDRESSES' | 'SETTINGS'>('OVERVIEW');
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(currentUser?.name || 'Rahul Sharma');
-  const [phone, setPhone] = useState(currentUser?.phone || '+91 98229 33445');
-  const [email, setEmail] = useState(currentUser?.email || 'rahul.sharma@pune.gov.in');
+  const [name, setName] = useState(currentUser?.name || 'Citizen Customer');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
   const [primaryAddress, setPrimaryAddress] = useState(
-    currentUser?.address || 'Flat 504, Windsor Park, Kothrud, Pune 411038'
+    currentUser?.address || ''
   );
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState<Booking | null>(null);
 
   // Saved addresses state
-  const [savedAddresses, setSavedAddresses] = useState([
-    {
-      id: 'addr_1',
-      label: 'Home (Primary)',
-      address: 'Flat 504, Windsor Park, Kothrud, Pune 411038',
-      locality: 'Kothrud',
-      isDefault: true
-    },
-    {
-      id: 'addr_2',
-      label: 'Office / Work',
-      address: 'ICC Tech Park, 4th Floor, Senapati Bapat Road, Pune 411016',
-      locality: 'SB Road',
-      isDefault: false
-    },
-    {
-      id: 'addr_3',
-      label: 'Parents Residence',
-      address: 'Bunglow 12, Prabhat Road, Lane 4, Deccan, Pune 411004',
-      locality: 'Deccan',
-      isDefault: false
+  const [savedAddresses, setSavedAddresses] = useState<any[]>(() => {
+    if (currentUser?.address) {
+      return [{
+        id: 'addr_1',
+        label: 'Home (Primary)',
+        address: currentUser.address,
+        locality: 'Primary Residence',
+        isDefault: true
+      }];
     }
-  ]);
+    return [];
+  });
 
   const [newAddressLabel, setNewAddressLabel] = useState('');
   const [newAddressText, setNewAddressText] = useState('');
   const [showAddAddress, setShowAddAddress] = useState(false);
 
-  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'RS';
+  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC';
 
   // Customer bookings calculation
   const customerBookings = bookings.filter(b => 
-    !b.customerName || b.customerName.toLowerCase().includes('rahul') || b.customerPhone === phone
+    (!phone || b.customerPhone === phone || b.customerName === name)
   );
 
-  const completedJobsCount = customerBookings.filter(b => b.status === 'COMPLETED').length || 4;
+  const completedJobsCount = customerBookings.filter(b => b.status === 'COMPLETED').length;
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,18 +144,18 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
               </div>
 
               <p className="text-xs sm:text-sm text-slate-400">
-                Citizen Consumer ID: <span className="font-mono text-emerald-400 font-bold">COOP-CITIZEN-PUN-4892</span>
+                Citizen Consumer ID: <span className="font-mono text-emerald-400 font-bold">COOP-CITIZEN-{phone.slice(-4) || 'PUN'}</span>
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-300">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Kothrud, Pune (Ward 32)</span>
+                  <span>{primaryAddress ? primaryAddress.split(',')[0] : 'Maharashtra'}</span>
                 </span>
                 <span className="text-slate-500">•</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Member since August 2024</span>
+                  <span>Active Member</span>
                 </span>
               </div>
             </div>
@@ -550,7 +539,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                         <div className="flex flex-wrap items-center gap-3 text-slate-600">
                           <span className="flex items-center gap-1.5 font-medium">
                             <User className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Technician: <strong>{b.workerName || 'Pravin Maruti Jadhav'}</strong></span>
+                            <span>Technician: <strong>{b.workerName || (b.status === 'MATCHING' ? 'Awaiting Worker Dispatch' : 'Assigned Technician')}</strong></span>
                           </span>
 
                           {/* 4-Digit OTP Badge */}
@@ -559,7 +548,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                               <KeyRound className="w-3.5 h-3.5 text-amber-600" />
                               <span className="text-[11px] font-bold">Doorstep OTP:</span>
                               <strong className="text-xs font-black tracking-widest bg-white px-1.5 py-0.5 rounded border border-amber-300">
-                                {b.otp || '4821'}
+                                {b.otp || '----'}
                               </strong>
                             </div>
                           )}
@@ -568,7 +557,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                           {!isCompleted && !isInProgress && (
                             <span className="flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-200 font-bold">
                               <Clock className="w-3 h-3" />
-                              <span>Arriving in ~{b.etaMinutes || 14}m</span>
+                              <span>{b.etaMinutes ? `Arriving in ~${b.etaMinutes}m` : 'Immediate Dispatch'}</span>
                             </span>
                           )}
 
@@ -687,8 +676,13 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             )}
 
             {/* Address List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {savedAddresses.map((addr) => (
+            {savedAddresses.length === 0 ? (
+              <div className="p-10 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                No addresses saved yet. Click 'Add New Address' above to save your service location.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {savedAddresses.map((addr) => (
                 <div
                   key={addr.id}
                   className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs space-y-3 flex flex-col justify-between"
@@ -724,6 +718,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 </div>
               ))}
             </div>
+            )}
 
           </div>
         )}
@@ -847,7 +842,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             ...selectedInvoiceBooking,
             paymentStatus: 'PAID',
             status: 'COMPLETED',
-            invoiceNumber: selectedInvoiceBooking.invoiceNumber || 'INV-KARYA-2026-00412'
+            invoiceNumber: selectedInvoiceBooking.invoiceNumber || `INV-KARYA-${selectedInvoiceBooking._id.slice(-6).toUpperCase()}`
           }}
         />
       )}

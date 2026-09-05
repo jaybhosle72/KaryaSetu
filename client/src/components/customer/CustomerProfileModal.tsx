@@ -28,25 +28,25 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'BOOKINGS' | 'ADDRESSES' | 'SETTINGS'>('OVERVIEW');
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(currentUser?.name || 'Rahul Sharma');
-  const [phone, setPhone] = useState(currentUser?.phone || '+91 98229 33445');
-  const [email, setEmail] = useState(currentUser?.email || 'rahul.sharma@pune.gov.in');
+  const [name, setName] = useState(currentUser?.name || 'Citizen Customer');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
   const [primaryAddress, setPrimaryAddress] = useState(
-    currentUser?.address || 'Flat 504, Windsor Park, Kothrud, Pune 411038'
+    currentUser?.address || ''
   );
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState<Booking | null>(null);
 
   if (!isOpen) return null;
 
-  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'RS';
+  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC';
 
   // Customer bookings calculation
   const customerBookings = bookings.filter(b => 
-    !b.customerName || b.customerName.toLowerCase().includes('rahul') || b.customerPhone === phone
+    (!phone || b.customerPhone === phone || b.customerName === name)
   );
 
-  const completedJobsCount = customerBookings.filter(b => b.status === 'COMPLETED').length || 4;
+  const completedJobsCount = customerBookings.filter(b => b.status === 'COMPLETED').length;
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +87,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Cooperative Consumer ID: <span className="font-mono text-slate-200 font-bold">COOP-CITIZEN-PUN-4892</span>
+                  Cooperative Consumer ID: <span className="font-mono text-slate-200 font-bold">COOP-CITIZEN-{phone.slice(-4) || 'PUN'}</span>
                 </p>
               </div>
             </div>
@@ -415,17 +415,17 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                             <div className="flex items-center gap-3 text-slate-500">
                               <span className="flex items-center gap-1 text-[11px]">
                                 <User className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{b.workerName || 'Pravin Maruti Jadhav'}</span>
+                                <span>{b.workerName || (b.status === 'MATCHING' ? 'Awaiting Worker Dispatch' : 'Assigned Technician')}</span>
                               </span>
                               {b.status !== 'COMPLETED' && (
                                 <span className="flex items-center gap-1 text-[11px] font-mono font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
                                   <span>OTP:</span>
-                                  <strong className="text-xs">{b.otp || '4821'}</strong>
+                                  <strong className="text-xs">{b.otp || '----'}</strong>
                                 </span>
                               )}
                               {b.status !== 'COMPLETED' && (
                                 <span className="flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 font-semibold">
-                                  <span>ETA: ~{b.etaMinutes || 14}m</span>
+                                  <span>{b.etaMinutes ? `ETA: ~${b.etaMinutes}m` : 'Immediate Dispatch'}</span>
                                 </span>
                               )}
                             </div>
@@ -475,53 +475,28 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  {/* Address 1: Primary Home */}
-                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-900 shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs">🏠</span>
-                        <h4 className="text-xs font-black text-slate-900">Residence / Home</h4>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[9px] uppercase">
-                          Default Primary
-                        </span>
+                  {primaryAddress ? (
+                    <div className="p-4 rounded-2xl bg-white border-2 border-slate-900 shadow-2xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs">🏠</span>
+                          <h4 className="text-xs font-black text-slate-900">Residence / Home</h4>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[9px] uppercase">
+                            Default Primary
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400">Maharashtra</span>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400">18.5074° N, 73.8077° E</span>
+                      <p className="text-xs text-slate-700 font-medium">
+                        {primaryAddress}
+                      </p>
+                      <p className="text-[10px] text-slate-400">Contact: {name} • {phone}</p>
                     </div>
-                    <p className="text-xs text-slate-700 font-medium">
-                      {primaryAddress}
-                    </p>
-                    <p className="text-[10px] text-slate-400">Contact: Rahul Sharma • +91 98229 33445</p>
-                  </div>
-
-                  {/* Address 2: Work / Office */}
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs">🏢</span>
-                        <h4 className="text-xs font-black text-slate-900">Office / Workplace</h4>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-400">18.5314° N, 73.8290° E</span>
+                  ) : (
+                    <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                      No service address saved yet. Update your address in the profile tab above.
                     </div>
-                    <p className="text-xs text-slate-700 font-medium">
-                      Office 302, ICC Trade Tower, Senapati Bapat Road, Shivajinagar, Pune 411016
-                    </p>
-                    <p className="text-[10px] text-slate-400">Available: Mon-Sat (9:00 AM - 6:00 PM)</p>
-                  </div>
-
-                  {/* Address 3: Parents Residence */}
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs">🏡</span>
-                        <h4 className="text-xs font-black text-slate-900">Family Residence</h4>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-400">18.5142° N, 73.8341° E</span>
-                    </div>
-                    <p className="text-xs text-slate-700 font-medium">
-                      Bungalow 4, Shanti Kunj, Prabhat Road Lane 5, Erandwane, Pune 411004
-                    </p>
-                    <p className="text-[10px] text-slate-400">Elderly care &amp; home repairs dispatch address</p>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -554,7 +529,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Role &amp; Session Management</h4>
                   <p className="text-xs text-slate-500">
-                    Signed in as <strong className="text-slate-900">Rahul Sharma</strong> ({currentUser?.roleName || 'Citizen Customer'}). You can switch perspectives or sign out below.
+                    Signed in as <strong className="text-slate-900">{name}</strong> ({currentUser?.roleName || 'Citizen Customer'}). You can switch perspectives or sign out below.
                   </p>
 
                   <div className="pt-2 flex flex-wrap items-center gap-2">

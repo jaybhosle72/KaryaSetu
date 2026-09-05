@@ -111,10 +111,10 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
   const [newWorkerAadhaar, setNewWorkerAadhaar] = useState('');
 
   // Contractor profile info
-  const contractorName = contractorUser?.name || 'Balasaheb Ramchandra Shinde';
-  const contractorPhone = contractorUser?.phone || '+91 98224 88120';
-  const licenseNumber = contractorUser?.extraMeta?.license || 'LIC/CLRA/PNE/2022/8812';
-  const cooperativeName = contractorUser?.extraMeta?.cooperative || 'Brihan-Maharashtra Multi-Trade Labour Cooperative';
+  const contractorName = contractorUser?.name || 'Licensed Contractor';
+  const contractorPhone = contractorUser?.phone || '';
+  const licenseNumber = contractorUser?.extraMeta?.license || '';
+  const cooperativeName = contractorUser?.extraMeta?.cooperative || 'District Labour Cooperative Federation';
 
   // Workers in the contractor's community roster
   const communityWorkers = workers;
@@ -140,7 +140,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
 
     return matchesSearch && matchesTrade && matchesStatus;
   }).sort((a, b) => {
-    if (sortBy === 'RATING') return (b.customerRating || 4.8) - (a.customerRating || 4.8);
+    if (sortBy === 'RATING') return (b.customerRating || 0) - (a.customerRating || 0);
     if (sortBy === 'EXPERIENCE') return (b.experienceYears || 0) - (a.experienceYears || 0);
     if (sortBy === 'JOBS') return (b.completedJobs || 0) - (a.completedJobs || 0);
     return a.name.localeCompare(b.name);
@@ -815,7 +815,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                                       </div>
 
                                       <div className="text-[10px] text-slate-600 flex items-center justify-between pt-1 border-t border-slate-100">
-                                        <span>★ {worker.customerRating || 4.9} ({worker.completedJobs || 380} jobs)</span>
+                                        <span>★ {worker.customerRating || 'New'} ({worker.completedJobs || 0} jobs)</span>
                                         <span className="text-emerald-700 font-bold">✓ PM-JAY ₹5L</span>
                                       </div>
 
@@ -1205,19 +1205,20 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                         Allocated Community Shramiks:
                       </span>
                       <div className="flex flex-wrap gap-2">
-                        {(proj.assignedWorkerIds && proj.assignedWorkerIds.length > 0
-                          ? workers.filter(w => proj.assignedWorkerIds?.includes(w._id))
-                          : communityWorkers.slice(0, proj.teamSize || 4)
-                        ).map((shramik, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800"
-                          >
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span>{shramik.name}</span>
-                            <span className="text-[10px] text-slate-400">({shramik.trade})</span>
-                          </div>
-                        ))}
+                        {proj.assignedWorkerIds && proj.assignedWorkerIds.length > 0 ? (
+                          workers.filter(w => proj.assignedWorkerIds?.includes(w._id)).map((shramik, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span>{shramik.name}</span>
+                              <span className="text-[10px] text-slate-400">({shramik.trade})</span>
+                            </div>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">No workers allocated yet</span>
+                        )}
                       </div>
                     </div>
 
@@ -1321,36 +1322,33 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      <tr>
-                        <td className="py-3 px-3 font-bold text-slate-900">
-                          Amanora Towers RWA - Exterior Dampness
-                        </td>
-                        <td className="py-3 px-3">5 Painters</td>
-                        <td className="py-3 px-3 font-bold">₹18,500</td>
-                        <td className="py-3 px-3 font-bold text-emerald-700">₹14,800</td>
-                        <td className="py-3 px-3 font-semibold text-blue-700">₹1,850</td>
-                        <td className="py-3 px-3 font-semibold text-amber-700">₹1,110</td>
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                            SETTLED
-                          </span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-3 px-3 font-bold text-slate-900">
-                          Baner Tech Residency - Post Construction Buffing
-                        </td>
-                        <td className="py-3 px-3">4 Cleaners</td>
-                        <td className="py-3 px-3 font-bold">₹9,600</td>
-                        <td className="py-3 px-3 font-bold text-emerald-700">₹7,680</td>
-                        <td className="py-3 px-3 font-semibold text-blue-700">₹960</td>
-                        <td className="py-3 px-3 font-semibold text-amber-700">₹576</td>
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                            PENDING PAYOUT
-                          </span>
-                        </td>
-                      </tr>
+                      {[...completedProjects, ...ongoingProjects].length > 0 ? (
+                        [...completedProjects, ...ongoingProjects].map(b => (
+                          <tr key={b._id}>
+                            <td className="py-3 px-3 font-bold text-slate-900">
+                              {b.customerName} - {b.subTrade || b.serviceCategory}
+                            </td>
+                            <td className="py-3 px-3">{b.assignedWorkerIds?.length || b.teamSize || 1} Shramiks</td>
+                            <td className="py-3 px-3 font-bold">₹{b.totalAmount.toLocaleString('en-IN')}</td>
+                            <td className="py-3 px-3 font-bold text-emerald-700">₹{Math.round(b.totalAmount * 0.8).toLocaleString('en-IN')}</td>
+                            <td className="py-3 px-3 font-semibold text-blue-700">₹{Math.round(b.totalAmount * 0.1).toLocaleString('en-IN')}</td>
+                            <td className="py-3 px-3 font-semibold text-amber-700">₹{Math.round(b.totalAmount * 0.06).toLocaleString('en-IN')}</td>
+                            <td className="py-3 px-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                b.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {b.status === 'COMPLETED' ? 'SETTLED' : b.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-slate-400 italic">
+                            No team contracts recorded yet. When team projects are dispatched and completed, payouts will reflect here.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1724,7 +1722,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                     <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200">
                       <span className="text-[10px] uppercase font-bold text-amber-800 block">Accumulated Welfare Fund</span>
                       <strong className="text-base font-black text-amber-950 mt-1 block">
-                        ₹{(viewingWorkerDossier.welfareDetails?.welfareContributionBalance || 24650).toLocaleString('en-IN')}
+                        ₹{(viewingWorkerDossier.welfareDetails?.welfareContributionBalance || 0).toLocaleString('en-IN')}
                       </strong>
                       <p className="text-[10px] text-amber-700 mt-0.5">6% statutory contribution credited</p>
                     </div>
@@ -1732,15 +1730,15 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                     <div className="p-3.5 bg-purple-50 rounded-2xl border border-purple-200">
                       <span className="text-[10px] uppercase font-bold text-purple-800 block">Pension Credit Tier</span>
                       <strong className="text-base font-black text-purple-950 mt-1 block">
-                        {viewingWorkerDossier.welfareDetails?.pensionCreditTier || 'Gold Tier'}
+                        {viewingWorkerDossier.welfareDetails?.pensionCreditTier || 'Standard Tier'}
                       </strong>
                       <p className="text-[10px] text-purple-700 mt-0.5">Pradhan Mantri Shram Yogi Maandhan</p>
                     </div>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-700 space-y-1">
-                    <p>• Last Preventive Health Checkup: <strong>{viewingWorkerDossier.welfareDetails?.lastHealthCheckup || 'May 2026'}</strong></p>
-                    <p>• Children Education Scholarships: <strong>{viewingWorkerDossier.welfareDetails?.scholarshipAvailedForDependents || 1} Dependent Enrolled</strong></p>
+                    <p>• Last Preventive Health Checkup: <strong>{viewingWorkerDossier.welfareDetails?.lastHealthCheckup || 'Annual Camp Scheduled'}</strong></p>
+                    <p>• Children Education Scholarships: <strong>{viewingWorkerDossier.welfareDetails?.scholarshipAvailedForDependents || 0} Dependent Enrolled</strong></p>
                   </div>
                 </div>
               )}
@@ -1793,19 +1791,23 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Customer Rating</span>
-                      <strong className="text-base font-black text-amber-600 block mt-0.5">★ {viewingWorkerDossier.customerRating || 4.9}</strong>
+                      <strong className="text-base font-black text-amber-600 block mt-0.5">
+                        {viewingWorkerDossier.customerRating ? `★ ${viewingWorkerDossier.customerRating}` : 'New'}
+                      </strong>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Jobs Completed</span>
-                      <strong className="text-base font-black text-slate-900 block mt-0.5">{viewingWorkerDossier.completedJobs || 412}</strong>
+                      <strong className="text-base font-black text-slate-900 block mt-0.5">{viewingWorkerDossier.completedJobs || 0}</strong>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Experience</span>
-                      <strong className="text-base font-black text-slate-900 block mt-0.5">{viewingWorkerDossier.experienceYears || 9} Years</strong>
+                      <strong className="text-base font-black text-slate-900 block mt-0.5">{viewingWorkerDossier.experienceYears || 0} Years</strong>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Reliability</span>
-                      <strong className="text-base font-black text-emerald-700 block mt-0.5">{viewingWorkerDossier.reliabilityScore || 98.4}%</strong>
+                      <strong className="text-base font-black text-emerald-700 block mt-0.5">
+                        {viewingWorkerDossier.reliabilityScore ? `${viewingWorkerDossier.reliabilityScore}%` : '100%'}
+                      </strong>
                     </div>
                   </div>
 
@@ -1813,7 +1815,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                     <div>
                       <span className="text-[10px] font-bold uppercase text-slate-400 block">Total Career Wages Distributed</span>
                       <strong className="text-lg font-black text-emerald-400">
-                        ₹{(viewingWorkerDossier.totalEarnings || 184500).toLocaleString('en-IN')}
+                        ₹{(viewingWorkerDossier.totalEarnings || 0).toLocaleString('en-IN')}
                       </strong>
                     </div>
                     <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg">

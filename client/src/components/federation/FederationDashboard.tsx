@@ -159,7 +159,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
           <p className="text-2xl font-black text-emerald-700">
-            ₹{(totalWagesDistributed || 248000).toLocaleString('en-IN')}
+            ₹{totalWagesDistributed.toLocaleString('en-IN')}
           </p>
           <p className="text-[11px] text-emerald-800 font-semibold">80% Statutory Floor Enforced</p>
         </div>
@@ -544,7 +544,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
               <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-center shrink-0">
                 <span className="text-[10px] uppercase font-bold text-emerald-300 block">Total Disbursed directly to Shramiks</span>
                 <span className="text-2xl font-black text-emerald-400">
-                  ₹{(totalWagesDistributed || 248000).toLocaleString('en-IN')}
+                  ₹{totalWagesDistributed.toLocaleString('en-IN')}
                 </span>
                 <span className="text-[10px] text-slate-300 block">100% Escrow Settled</span>
               </div>
@@ -614,44 +614,52 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {workers.map((w) => (
-                    <tr key={w._id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-4 px-4">
-                        <p className="font-bold text-slate-900">{w.name}</p>
-                        <p className="text-[11px] font-mono text-slate-400">{w.phone}</p>
-                      </td>
-                      <td className="py-4 px-3">
-                        <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 border border-blue-200 font-bold inline-block mb-1">
-                          {w.trade}
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                          {w.verifiedSkills?.slice(0, 2).map((s, sIdx) => (
-                            <span key={sIdx} className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
-                              ✓ {s.name}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-4 px-3 text-slate-700">
-                        {w.cooperativeName}
-                      </td>
-                      <td className="py-4 px-3 font-bold text-slate-900">
-                        {w.completedJobs} Jobs
-                      </td>
-                      <td className="py-4 px-3 font-black text-emerald-700 text-sm">
-                        ₹{(w.totalEarnings || 24500).toLocaleString('en-IN')}
-                      </td>
-                      <td className="py-4 px-3 text-right">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                          w.status === 'AVAILABLE'
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}>
-                          {w.status}
-                        </span>
+                  {workers.length > 0 ? (
+                    workers.map((w) => (
+                      <tr key={w._id} className="hover:bg-slate-50/80 transition">
+                        <td className="py-4 px-4">
+                          <p className="font-bold text-slate-900">{w.name}</p>
+                          <p className="text-[11px] font-mono text-slate-400">{w.phone}</p>
+                        </td>
+                        <td className="py-4 px-3">
+                          <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 border border-blue-200 font-bold inline-block mb-1">
+                            {w.trade}
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {w.verifiedSkills?.slice(0, 2).map((s, sIdx) => (
+                              <span key={sIdx} className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
+                                ✓ {s.name}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-4 px-3 text-slate-700">
+                          {w.cooperativeName}
+                        </td>
+                        <td className="py-4 px-3 font-bold text-slate-900">
+                          {w.completedJobs || 0} Jobs
+                        </td>
+                        <td className="py-4 px-3 font-black text-emerald-700 text-sm">
+                          ₹{(w.totalEarnings || 0).toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-4 px-3 text-right">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                            w.status === 'AVAILABLE'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {w.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-400 italic">
+                        No shramiks registered in federation roster yet. Newly inducted cooperative workers will appear here.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

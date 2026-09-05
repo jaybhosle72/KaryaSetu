@@ -651,7 +651,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         required
                         value={contractorName}
                         onChange={(e) => setContractorName(e.target.value)}
-                        placeholder="e.g. Balasaheb Ramchandra Shinde"
+                        placeholder="e.g. Ramesh Patil"
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
                       />
                     </div>

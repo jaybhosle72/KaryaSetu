@@ -511,7 +511,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       Contractor Proposal Received
                     </span>
                     <span className="text-xs text-slate-300">
-                      from Mukaddam <strong>{propBooking.contractorName || 'Balasaheb Shinde'}</strong>
+                      from Mukaddam <strong>{propBooking.contractorName || 'Assigned Contractor'}</strong>
                     </span>
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-white mt-1">

@@ -376,7 +376,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         estimatedAmount: finalAmount,
         bookingMode: isContractorProject ? 'CONTRACTOR_TEAM' : 'SOLO_WORKER',
         contractorId: isContractorProject ? selectedContractorId : undefined,
-        contractorName: isContractorProject ? (nearbyContractors.find(c => c.contractor._id === selectedContractorId)?.contractor.name || 'Balasaheb Ramchandra Shinde') : undefined,
+        contractorName: isContractorProject ? (nearbyContractors.find(c => c.contractor._id === selectedContractorId)?.contractor.name || 'Licensed Contractor') : undefined,
         teamSize: 0,
         projectDurationDays: 0,
         workerType: `${sector.shortTitle} Specialist`,
@@ -402,16 +402,16 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         serviceCategory: sector.title,
         subTrade: `${activeSubTrade?.title || sector.title}: ${servicesSummary}`,
         totalAmount: finalAmount,
-        workerName: 'Pravin Maruti Jadhav',
-        cooperativeName: 'Pune Electrical Workers Cooperative Society',
+        workerName: undefined,
+        cooperativeName: `${sector.title} Cooperative`,
         paymentStatus: 'PENDING',
-        status: 'ALLOCATED'
+        status: 'MATCHING'
       };
 
       setPaymentBooking(activeBookingObj);
 
       if (isContractorProject) {
-        setSuccessMessage(`Requirement Registered! Mukaddam Balasaheb Shinde is evaluating your site scope and preparing the workforce proposal.`);
+        setSuccessMessage(`Requirement Registered! Licensed contractor is evaluating your site scope and preparing the workforce proposal.`);
       } else {
         setSuccessMessage(`Booking for ${totalItemsCount} services dispatched! Certified technician is en route. Pay ₹${finalAmount.toLocaleString('en-IN')} securely after service completion.`);
       }
@@ -592,7 +592,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
               <p className={`text-xs ${isPaid ? 'text-emerald-700 font-medium' : 'text-slate-300'} mt-0.5`}>
                 {isPaid
                   ? `Invoice #${paidResult?.invoice?.invoiceNumber || paymentBooking?.invoiceNumber || 'INV-2026'} • Verified Payment to ${paymentBooking.workerName || 'Worker'}`
-                  : `Assigned: ${paymentBooking.workerName || 'Pravin Maruti Jadhav'} • ₹${(paymentBooking.totalAmount || finalAmount).toLocaleString('en-IN')} payment due after service completion.`}
+                  : `Assigned: ${paymentBooking.workerName || 'Assigned Technician'} • ₹${(paymentBooking.totalAmount || finalAmount).toLocaleString('en-IN')} payment due after service completion.`}
               </p>
             </div>
           </div>

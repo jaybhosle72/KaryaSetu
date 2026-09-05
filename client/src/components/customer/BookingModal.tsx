@@ -346,7 +346,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <span>Customer Does Not Need to Estimate Workers</span>
                 </div>
                 <p className="text-[10px] text-blue-800 leading-snug">
-                  You don't need to guess how many painters or labourers are required. Licensed Mukaddam <strong>Balasaheb Shinde</strong> evaluates your site details, determines the exact crew (skilled craftsmen + helpers) and days, and provides an itemized proposal with transparent statutory rates.
+                  You don't need to guess how many painters or labourers are required. A licensed Mukaddam evaluates your site details, determines the exact crew (skilled craftsmen + helpers) and days, and provides an itemized proposal with transparent statutory rates.
                 </p>
               </div>
             </div>
@@ -435,7 +435,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <HeartHandshake className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <span>
               {bookingMode === 'CONTRACTOR_TEAM'
-                ? `Dispatched to Mukaddam Balasaheb Shinde to evaluate site scope and calculate optimal workforce.`
+                ? `Dispatched to licensed Mukaddam to evaluate site scope and calculate optimal workforce.`
                 : `Dispatching accredited ${selectedWorkerType} (${selectedWorkerTier} tier) from nearest cooperative.`
               }
             </span>

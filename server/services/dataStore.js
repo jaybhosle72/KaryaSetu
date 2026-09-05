@@ -19,127 +19,38 @@ const {
   seedContractors
 } = require('../data/seedData');
 
-const seedDisputes = [
-  {
-    _id: "dsp_001",
-    bookingId: "bk_1001",
-    customerName: "Aditya Deshpande",
-    customerPhone: "+91 98900 11223",
-    workerId: "wrk_101",
-    workerName: "Santosh Baburao Kadam",
-    cooperativeId: "coop_pune_elec",
-    cooperativeName: "Pune Electrical Sahakari",
-    serviceCategory: "Electrical",
-    issueType: "QUALITY_OF_WORK",
-    description: "Switchgear MCB replacement was prompt, but customer requested additional clarification on the surge warranty certificate.",
-    status: "RESOLVED",
-    resolution: "Cooperative Technical Inspector verified the IS-732 certificate and provided formal 1-year cooperative warranty letter.",
-    resolvedAt: "2026-08-31T14:00:00.000Z",
-    date: "2026-08-30"
-  },
-  {
-    _id: "dsp_002",
-    bookingId: "bk_1002",
-    customerName: "Rohit Sharma",
-    customerPhone: "+91 97654 32109",
-    workerId: "wrk_102",
-    workerName: "Pravin Maruti Jadhav",
-    cooperativeId: "coop_pune_plumb",
-    cooperativeName: "Maha Jal Sahakari",
-    serviceCategory: "Plumbing",
-    issueType: "TIMELINESS_DELAY",
-    description: "Heavy rain caused 5-minute traffic delay during emergency pipeline transit.",
-    status: "UNDER_MEDIATION",
-    resolution: "Cooperative coordinator contacted customer in real-time and waived emergency transit surcharge.",
-    date: "2026-09-01"
-  }
-];
+const seedDisputes = [];
 
-// Initialize in-memory store with deep copy of seed data
+// Initialize in-memory store with clean empty arrays (no demo/mock records)
 const store = getInMemoryStore();
-store.cooperatives = JSON.parse(JSON.stringify(seedCooperatives));
-store.workers = JSON.parse(JSON.stringify(seedWorkers));
-store.contracts = JSON.parse(JSON.stringify(seedContracts));
-store.forecasts = JSON.parse(JSON.stringify(seedForecasts));
-store.bookings = JSON.parse(JSON.stringify(seedBookings));
-store.welfareLedger = JSON.parse(JSON.stringify(seedWelfareLedger));
-store.disputes = JSON.parse(JSON.stringify(seedDisputes));
-store.contractors = JSON.parse(JSON.stringify(seedContractors));
+store.cooperatives = [];
+store.workers = [];
+store.contracts = [];
+store.forecasts = [];
+store.bookings = [];
+store.welfareLedger = [];
+store.disputes = [];
+store.contractors = [];
 store.users = [];
 
-// Seed initial system users mapped to workers, contractors, and cooperatives
-const initialSeedUsers = [
-  {
-    _id: 'usr_cust_01',
-    name: 'Aakash Deshmukh',
-    phone: '+91 98220 11223',
-    role: 'customer',
-    address: 'Flat 402, Mayur Residency, Kothrud, Pune 411038'
-  },
-  ...seedWorkers.map(w => ({
-    _id: `usr_${w._id}`,
-    name: w.name,
-    phone: w.phone,
-    role: 'worker',
-    workerId: w._id,
-    cooperativeId: w.cooperativeId,
-    cooperativeName: w.cooperativeName,
-    metadata: { trade: w.trade, skills: w.verifiedSkills }
-  })),
-  ...seedContractors.map(c => ({
-    _id: `usr_${c._id}`,
-    name: c.name,
-    phone: c.phone,
-    role: 'contractor',
-    contractorId: c._id,
-    cooperativeId: c.cooperativeId,
-    cooperativeName: c.cooperativeName,
-    metadata: { license: c.licenseNumber, trades: c.tradesManaged }
-  })),
-  {
-    _id: 'usr_admin_01',
-    name: 'Suresh Patil',
-    phone: '+91 98220 99887',
-    role: 'admin',
-    cooperativeId: 'coop_pune_multi',
-    cooperativeName: 'Brihan-Maharashtra Multi-Trade Labour Cooperative'
-  }
-];
-store.users = JSON.parse(JSON.stringify(initialSeedUsers));
+const initialSeedUsers = [];
 
 async function seedMongoIfEmpty() {
   if (getDBMode() === 'mongodb') {
     try {
-      const coopCount = await Cooperative.countDocuments();
-      if (coopCount === 0) {
-        console.log('🌱 Seeding initial records into MongoDB...');
-        await Cooperative.insertMany(seedCooperatives);
-        await Worker.insertMany(seedWorkers);
-        await InstitutionalContract.insertMany(seedContracts);
-        await DemandForecast.insertMany(seedForecasts);
-        await Booking.insertMany(seedBookings);
-        await WelfareClaim.insertMany(seedWelfareLedger);
-      }
-
-      const contractorCount = await Contractor.countDocuments();
-      if (contractorCount === 0) {
-        await Contractor.insertMany(seedContractors);
-        console.log('🌱 Seeded contractors into MongoDB.');
-      }
-
-      const userCount = await User.countDocuments();
-      if (userCount === 0) {
-        await User.insertMany(initialSeedUsers);
-        console.log('🌱 Seeded initial users into MongoDB.');
-      }
-
-      const disputeCount = await Dispute.countDocuments();
-      if (disputeCount === 0) {
-        await Dispute.insertMany(seedDisputes);
-        console.log('🌱 Seeded initial disputes into MongoDB.');
-      }
+      // Purge any legacy mock/demo records so database starts 100% clean and empty
+      await Booking.deleteMany({});
+      await Worker.deleteMany({});
+      await Contractor.deleteMany({});
+      await User.deleteMany({});
+      await InstitutionalContract.deleteMany({});
+      await WelfareClaim.deleteMany({});
+      await Dispute.deleteMany({});
+      await DemandForecast.deleteMany({});
+      await Cooperative.deleteMany({});
+      console.log('🧹 Database initialized to 100% empty state. Ready for real user-entered data.');
     } catch (e) {
-      console.warn('Seed error on MongoDB:', e.message);
+      console.warn('Cleanup error on MongoDB:', e.message);
     }
   }
 }
@@ -223,6 +134,34 @@ const DataStore = {
       return store.cooperatives[idx];
     }
     return null;
+  },
+  async createCooperative(coopData) {
+    const doc = {
+      _id: coopData._id || `coop_${Date.now()}`,
+      name: coopData.name || 'Labour Cooperative Society',
+      shortName: coopData.shortName || coopData.name || 'Coop Society',
+      district: coopData.district || 'Pune',
+      state: coopData.state || 'Maharashtra',
+      serviceCategories: coopData.serviceCategories || ['Electrical', 'Plumbing', 'Carpentry', 'Painting', 'Deep Cleaning'],
+      totalWorkers: 0,
+      activeWorkers: 0,
+      rating: 5.0,
+      welfareFundBalance: 0,
+      totalJobsCompleted: 0,
+      splitConfig: {
+        workerShare: 80,
+        coopShare: 10,
+        welfareShare: 6,
+        platformShare: 4
+      },
+      ...coopData
+    };
+    if (getDBMode() === 'mongodb') {
+      const created = new Cooperative(doc);
+      return await created.save();
+    }
+    store.cooperatives.unshift(doc);
+    return doc;
   },
 
   // Workers
