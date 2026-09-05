@@ -14,8 +14,10 @@ router.get('/', async (req, res) => {
     if (role === 'worker' && workerId) {
       filtered = allBookings.filter(b => {
         const isAssignedToMe = b.assignedWorkerId === workerId;
+        const combined = `${b.serviceCategory || ''} ${b.subTrade || ''} ${b.notes || ''}`.toLowerCase();
+        const cleanTrade = (trade || '').toLowerCase();
         const isAvailableInMyTrade = b.status === 'MATCHING' && !b.assignedWorkerId && 
-          (!trade || b.serviceCategory?.toLowerCase().includes(trade.toLowerCase()) || trade.toLowerCase().includes(b.serviceCategory?.toLowerCase()));
+          (!trade || combined.includes(cleanTrade) || cleanTrade.includes((b.serviceCategory || '').toLowerCase()) || combined.includes('home maintenance') || combined.includes('household'));
         return isAssignedToMe || isAvailableInMyTrade;
       });
     } else {

@@ -56,13 +56,68 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   const completedJobs = myBookings.filter(b => b.status === 'COMPLETED');
 
   // Available matching jobs in worker's trade awaiting acceptance
-  const currentWorkerTrade = currentWorker?.trade?.toLowerCase() || '';
-  const availableMatchingJobs = bookings.filter(b => 
+  const [filterTradeMode, setFilterTradeMode] = useState<'MATCHING' | 'ALL'>('MATCHING');
+
+  const isJobMatchingWorkerTrade = (b: Booking, worker: Worker | undefined): boolean => {
+    if (!worker) return true;
+    const wTrade = (worker.trade || '').toLowerCase();
+    const cat = (b.serviceCategory || '').toLowerCase();
+    const sub = (b.subTrade || '').toLowerCase();
+    const notes = (b.notes || '').toLowerCase();
+    const combined = `${cat} ${sub} ${notes}`;
+
+    // Direct substring matches
+    if (combined.includes(wTrade) || wTrade.includes(cat) || wTrade.includes(sub)) {
+      return true;
+    }
+
+    // Worker subtrades match
+    if (worker.subTrades && Array.isArray(worker.subTrades)) {
+      if (worker.subTrades.some(st => combined.includes(st.toLowerCase()) || st.toLowerCase().includes(sub))) {
+        return true;
+      }
+    }
+
+    // Trade Synonyms / Keywords dictionary
+    const tradeSynonyms: Record<string, string[]> = {
+      'electrical': ['elec', 'wire', 'wiring', 'switch', 'socket', 'mcb', 'light', 'fan', 'ac', 'appliance', 'circuit', 'inverter', 'motor', 'installation', 'geyser', 'repair'],
+      'plumbing': ['plumb', 'pipe', 'leak', 'drain', 'tap', 'faucet', 'sanitary', 'water', 'sewage', 'tank', 'flush', 'basin', 'motor', 'pump'],
+      'carpentry': ['carp', 'wood', 'furniture', 'door', 'lock', 'latch', 'hinge', 'cabinet', 'cupboard', 'table', 'chair', 'drill', 'shelf'],
+      'deep cleaning': ['clean', 'sanitiz', 'sweep', 'mop', 'wash', 'pest', 'disinfect', 'housekeeping', 'dust', 'maid'],
+      'appliance repair': ['appliance', 'ac', 'refrigerat', 'fridge', 'washing', 'microwave', 'oven', 'geyser', 'chimney', 'heater', 'cooler', 'electrical', 'repair'],
+      'painting': ['paint', 'color', 'whitewash', 'distemper', 'waterproof', 'wall', 'primer', 'polish'],
+      'maid': ['maid', 'cook', 'clean', 'domestic', 'household', 'shramik', 'helper'],
+      'driver': ['driver', 'driving', 'car', 'vehicle', 'chauffeur'],
+      'gardening': ['garden', 'lawn', 'plant', 'grass', 'tree', 'landscape'],
+      'caregiver': ['care', 'nurse', 'elderly', 'patient', 'baby', 'attendant']
+    };
+
+    for (const [key, keywords] of Object.entries(tradeSynonyms)) {
+      if (wTrade.includes(key) || key.includes(wTrade)) {
+        if (keywords.some(kw => combined.includes(kw))) {
+          return true;
+        }
+      }
+    }
+
+    // Broad household sector match
+    if (cat.includes('home maintenance') || cat.includes('household') || cat.includes('general')) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const allUnassignedJobs = bookings.filter(b => 
     b.bookingMode !== 'CONTRACTOR_TEAM' && 
     b.status === 'MATCHING' && 
-    !b.assignedWorkerId &&
-    (currentWorkerTrade === '' || b.serviceCategory?.toLowerCase().includes(currentWorkerTrade) || currentWorkerTrade.includes(b.serviceCategory?.toLowerCase()))
+    !b.assignedWorkerId
   );
+
+  const tradeMatchingJobs = allUnassignedJobs.filter(b => isJobMatchingWorkerTrade(b, currentWorker));
+  const availableMatchingJobs = filterTradeMode === 'ALL'
+    ? allUnassignedJobs
+    : (tradeMatchingJobs.length > 0 ? tradeMatchingJobs : allUnassignedJobs);
 
   const isAvailable = currentWorker?.status !== 'OFF_DUTY';
 
@@ -149,17 +204,44 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
         </div>
       </div>
 
-      {/* Real Available Job Requests in Worker's Trade */}
-      {availableMatchingJobs.length > 0 && (
+      {/* Real Available Job Requests in Worker's Trade / Cooperative Pool */}
+      {availableMatchingJobs.length > 0 ? (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <span>Incoming Real Job Dispatches In Your Trade ({availableMatchingJobs.length})</span>
-            </span>
-            <span className="text-[11px] text-slate-500 font-bold">
-              Trade: {currentWorker.trade} • Live Cooperative Matching
-            </span>
+              <h2 className="text-sm font-black uppercase tracking-wider text-emerald-900">
+                {tradeMatchingJobs.length > 0 && filterTradeMode !== 'ALL'
+                  ? `Incoming Real Job Dispatches In Your Trade (${tradeMatchingJobs.length})`
+                  : `Incoming Real Job Dispatches Across Pune (${availableMatchingJobs.length})`}
+              </h2>
+            </div>
+
+            {/* Filter Toggle Pills */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setFilterTradeMode('MATCHING')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  filterTradeMode === 'MATCHING'
+                    ? 'bg-white text-emerald-800 shadow-2xs font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                In Your Trade ({tradeMatchingJobs.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTradeMode('ALL')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  filterTradeMode === 'ALL'
+                    ? 'bg-white text-emerald-800 shadow-2xs font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All Open ({allUnassignedJobs.length})
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -187,7 +269,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                       <span>{job.address}</span>
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Customer: <strong>{job.customerName}</strong>
+                      Customer: <strong>{job.customerName}</strong> ({job.customerPhone})
                     </p>
                     {job.notes && (
                       <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded-xl mt-1.5 border border-slate-100 italic">
@@ -220,6 +302,16 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 text-center space-y-1 shadow-2xs">
+          <div className="flex items-center justify-center gap-2 text-xs font-black text-slate-700">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Cooperative Dispatch Radar Active</span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Listening for live customer bookings in Pune. When a customer books, the job dispatch will appear here immediately.
+          </p>
         </div>
       )}
 
