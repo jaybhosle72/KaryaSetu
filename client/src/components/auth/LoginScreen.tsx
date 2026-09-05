@@ -1,15 +1,44 @@
 import React, { useState } from 'react';
 import { UserRole } from '../../types';
+import { Language } from '../../i18n/translations';
 import { 
   Users, HardHat, Briefcase, Building, ArrowRight, 
-  CheckCircle2, FileCheck, Check, Award, Lock, Phone, Mail, Sparkles 
+  CheckCircle2, FileCheck, Check, Award, Lock, Phone, Mail, Sparkles, Globe 
 } from 'lucide-react';
 
 interface LoginScreenProps {
   onLogin: (role: UserRole, userDetails: { name: string; phone: string; roleName: string; extraMeta?: any }) => void;
+  currentLanguage?: Language;
+  onLanguageChange?: (lang: Language) => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ 
+  onLogin,
+  currentLanguage: propLanguage,
+  onLanguageChange
+}) => {
+  const [internalLanguage, setInternalLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('karyasetu_language') || localStorage.getItem('sahakar_language');
+      if (saved === 'en' || saved === 'hi' || saved === 'mr') return saved;
+    } catch {}
+    return 'en';
+  });
+
+  const currentLanguage = propLanguage || internalLanguage;
+
+  const handleLangSelect = (lang: Language) => {
+    setInternalLanguage(lang);
+    if (onLanguageChange) {
+      onLanguageChange(lang);
+    } else {
+      try {
+        localStorage.setItem('karyasetu_language', lang);
+        localStorage.setItem('sahakar_language', lang);
+      } catch {}
+    }
+  };
+
   const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
 
   // Customer Form State
@@ -93,8 +122,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8 font-sans">
       
-      {/* 1. Header with Sovereign Branding */}
-      <div className="max-w-5xl mx-auto w-full flex items-center justify-between pb-6 border-b border-slate-200/80">
+      {/* 1. Header with Sovereign Branding & Multilingual Selector */}
+      <div className="max-w-5xl mx-auto w-full flex items-center justify-between pb-6 border-b border-slate-200/80 gap-3">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center p-0.5 overflow-hidden shrink-0">
             <img 
@@ -111,6 +140,43 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               National Cooperative Digital Labour Infrastructure
             </span>
           </div>
+        </div>
+
+        {/* Multilingual Selector (SIH Requirement: Multilingual Mobile Application) */}
+        <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200 shadow-2xs">
+          <span className="pl-1.5 pr-0.5 text-slate-400">
+            <Globe className="w-3 h-3" />
+          </span>
+          <button
+            type="button"
+            onClick={() => handleLangSelect('en')}
+            className={`px-2 py-1 rounded-lg text-[10px] font-black transition cursor-pointer ${
+              currentLanguage === 'en' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+            title="English"
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLangSelect('hi')}
+            className={`px-2 py-1 rounded-lg text-[10px] font-black transition cursor-pointer ${
+              currentLanguage === 'hi' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+            title="हिंदी (Hindi)"
+          >
+            हिं
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLangSelect('mr')}
+            className={`px-2 py-1 rounded-lg text-[10px] font-black transition cursor-pointer ${
+              currentLanguage === 'mr' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+            title="मराठी (Marathi)"
+          >
+            मरा
+          </button>
         </div>
       </div>
 

@@ -405,10 +405,13 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
       if (isContractorProject) {
         setSuccessMessage(`Requirement Registered! Mukaddam Balasaheb Shinde is evaluating your site scope and preparing the workforce proposal.`);
       } else {
-        setSuccessMessage(`Booking for ${totalItemsCount} services successfully dispatched to Cooperative! Certified technician will arrive shortly.`);
-        // Open Razorpay Payment Checkout automatically
-        setShowPaymentModal(true);
+        setSuccessMessage(`Booking for ${totalItemsCount} services dispatched! Certified technician is en route. Pay ₹${finalAmount.toLocaleString('en-IN')} securely after service completion.`);
       }
+
+      // Smoothly navigate back to customer portal tracker
+      setTimeout(() => {
+        onBack();
+      }, 1200);
     } catch (err: any) {
       alert(err.message || 'Booking submission failed');
     } finally {
@@ -565,23 +568,23 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold shadow-xs flex-shrink-0 ${
               isPaid ? 'bg-emerald-200 text-emerald-800' : 'bg-emerald-500/20 text-emerald-400'
             }`}>
-              {isPaid ? <CheckCircle2 className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
+              <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-extrabold text-sm sm:text-base tracking-tight">
-                  {isPaid ? 'Payment Verified & Statutory Escrow Settled' : `Booking Dispatched • Payment Due (₹${paymentBooking.totalAmount || finalAmount})`}
+                  {isPaid ? 'Payment Verified & Statutory Escrow Settled' : `Booking Dispatched • Certified Technician Assigned`}
                 </h4>
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                  isPaid ? 'bg-emerald-600 text-white' : 'bg-orange-500 text-white animate-pulse'
+                  isPaid ? 'bg-emerald-600 text-white' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                 }`}>
-                  {isPaid ? 'PAID via Razorpay' : 'Payment Required'}
+                  {isPaid ? 'PAID via Razorpay' : 'Pay Post-Service'}
                 </span>
               </div>
               <p className={`text-xs ${isPaid ? 'text-emerald-700 font-medium' : 'text-slate-300'} mt-0.5`}>
                 {isPaid
                   ? `Invoice #${paidResult?.invoice?.invoiceNumber || paymentBooking?.invoiceNumber || 'INV-2026'} • Verified Payment to ${paymentBooking.workerName || 'Worker'}`
-                  : `Assigned: ${paymentBooking.workerName || 'Pravin Maruti Jadhav'} • Pay securely via Razorpay Test Mode (UPI, Card, NetBanking).`}
+                  : `Assigned: ${paymentBooking.workerName || 'Pravin Maruti Jadhav'} • ₹${(paymentBooking.totalAmount || finalAmount).toLocaleString('en-IN')} payment due after service completion.`}
               </p>
             </div>
           </div>
@@ -590,11 +593,10 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
             {!isPaid ? (
               <button
                 type="button"
-                onClick={() => setShowPaymentModal(true)}
+                onClick={onBack}
                 className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-[0.99] transition cursor-pointer"
               >
-                <CreditCard className="w-4 h-4" />
-                <span>Pay ₹{paymentBooking.totalAmount || finalAmount} with Razorpay ➔</span>
+                <span>Track Doorstep Arrival ➔</span>
               </button>
             ) : (
               <button

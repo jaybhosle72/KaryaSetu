@@ -328,8 +328,12 @@ router.post('/:id/pay', async (req, res) => {
 
     const split = booking.paymentBreakdown;
 
-    // 1. Mark booking as PAID and EN_ROUTE (worker dispatched to work site)
-    const newStatus = (booking.status === 'IN_PROGRESS') ? 'IN_PROGRESS' : 'EN_ROUTE';
+    // 1. Mark booking as PAID (preserve COMPLETED or IN_PROGRESS status)
+    const newStatus = (booking.status === 'COMPLETED')
+      ? 'COMPLETED'
+      : (booking.status === 'IN_PROGRESS')
+      ? 'IN_PROGRESS'
+      : 'EN_ROUTE';
     const updatedBooking = await DataStore.updateBooking(req.params.id, {
       paymentStatus: 'PAID',
       paymentMethod,

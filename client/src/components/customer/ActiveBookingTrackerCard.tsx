@@ -149,15 +149,36 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
     }
   };
 
-  // STRICT RULE: Only render if service is PAID!
-  if (booking.paymentStatus !== 'PAID') {
-    return null;
-  }
-
   return (
     <div className="bg-slate-950 text-white rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5 transition-all">
       
-
+      {/* Multi-booking switcher if customer has more than 1 active job */}
+      {allActiveBookings && allActiveBookings.length > 1 && (
+        <div className="flex items-center gap-2 pb-2.5 overflow-x-auto border-b border-slate-800/80">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
+            Active Bookings ({allActiveBookings.length}):
+          </span>
+          {allActiveBookings.map((b) => (
+            <button
+              key={b._id}
+              type="button"
+              onClick={() => onSelectBooking?.(b)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                b._id === booking._id
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-xs'
+                  : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+              }`}
+            >
+              <span>{b.serviceCategory}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                b.paymentStatus === 'PAID' ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950 text-amber-300'
+              }`}>
+                {b.status === 'COMPLETED' ? (b.paymentStatus === 'PAID' ? 'Paid ✓' : 'Pay Due') : b.status}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* 2. Top Minimal Header: Status, Service, Address & Price */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
@@ -187,16 +208,23 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
           </span>
         </div>
 
-        {/* Right side: Amount & Paid Verification Badge */}
+        {/* Right side: Amount & Payment Status Badge */}
         <div className="flex items-center gap-3 self-end sm:self-center">
           <div className="text-right">
             <span className="text-base font-black text-white block leading-tight">
               ₹{booking.totalAmount.toLocaleString('en-IN')}
             </span>
-            <span className="text-[10px] font-bold uppercase text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 inline" />
-              <span>Paid ✓</span>
-            </span>
+            {booking.paymentStatus === 'PAID' ? (
+              <span className="text-[10px] font-bold uppercase text-emerald-400 flex items-center gap-1 justify-end">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400 inline" />
+                <span>Paid ✓</span>
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1 justify-end">
+                <Clock className="w-3 h-3 text-amber-400 inline" />
+                <span>Pay After Service</span>
+              </span>
+            )}
           </div>
 
           {onDismiss && (
@@ -246,36 +274,61 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
 
       {/* 4. Streamlined Contextual Action Box */}
       
-      {/* CASE A: COMPLETED -> Minimal celebration & review buttons (stays here, never jumps to OTP!) */}
+      {/* CASE A: COMPLETED -> Settle Payment (if unpaid) OR Rate Service & Invoice (if paid) */}
       {isCompleted && (
-        <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+        <div className={`border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn ${
+          booking.paymentStatus === 'PAID'
+            ? 'bg-emerald-950/40 border-emerald-500/40'
+            : 'bg-amber-950/30 border-amber-500/40'
+        }`}>
           <div className="space-y-0.5">
-            <div className="flex items-center gap-2 text-emerald-400 font-black text-sm">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>Service Completed Successfully!</span>
+            <div className={`flex items-center gap-2 font-black text-sm ${
+              booking.paymentStatus === 'PAID' ? 'text-emerald-400' : 'text-amber-400'
+            }`}>
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <span>
+                {booking.paymentStatus === 'PAID'
+                  ? 'Service Completed & Escrow Released!'
+                  : 'Service Completed! Please Settle Payment'}
+              </span>
             </div>
             <p className="text-xs text-slate-300">
-              Technician <strong>{assignedWorker.name}</strong> completed the work. Cooperative escrow payment released.
+              {booking.paymentStatus === 'PAID'
+                ? `Technician ${assignedWorker.name} completed the work. Rate your experience or download your official tax invoice.`
+                : `Technician ${assignedWorker.name} has finished work. Settle ₹${booking.totalAmount.toLocaleString('en-IN')} payment to release worker escrow before reviewing.`}
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => onOpenRating(booking)}
-              className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Star className="w-3.5 h-3.5 fill-slate-950" />
-              <span>Rate Service</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenInvoice(booking)}
-              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 border border-white/20 transition cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5 text-emerald-400" />
-              <span>GST Tax Invoice</span>
-            </button>
+            {booking.paymentStatus !== 'PAID' ? (
+              <button
+                type="button"
+                onClick={() => onOpenPayment(booking)}
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.99] transition cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay Now (₹{booking.totalAmount.toLocaleString('en-IN')}) ➔</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenRating(booking)}
+                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                >
+                  <Star className="w-3.5 h-3.5 fill-slate-950" />
+                  <span>Rate Service</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenInvoice(booking)}
+                  className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 border border-white/20 transition cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>GST Tax Invoice</span>
+                </button>
+              </>
+            )}
             {onDismiss && (
               <button
                 type="button"

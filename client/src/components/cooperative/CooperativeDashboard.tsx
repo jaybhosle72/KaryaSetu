@@ -191,9 +191,9 @@ export const CooperativeDashboard: React.FC<CooperativeDashboardProps> = ({
               Apex regulatory governance, statutory 80% fair-wage enforcement, pooled social security fund administration, and AI-driven inter-cooperative workforce rebalancing across affiliated primary labour societies.
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-purple-300">
-              <span>Active Society: <strong className="text-white">{currentCoop?.name}</strong></span>
+              <span>Ecosystem: <strong className="text-white">Cooperative & Independent / Non-Govt Contractors</strong></span>
               <span>• District: <strong className="text-white">{currentCoop?.district || 'Pune'}</strong></span>
-              <span>• President: <strong className="text-white">{currentCoop?.contact?.president || 'Suresh Patil'}</strong></span>
+              <span>• Governance: <strong className="text-white">Statutory Fair-Wage & Welfare Pool</strong></span>
             </div>
           </div>
 
@@ -204,22 +204,6 @@ export const CooperativeDashboard: React.FC<CooperativeDashboardProps> = ({
             <div className="px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>100% Statutory Bylaw Compliant (80/10/6/4)</span>
-            </div>
-
-            {/* Quick Primary Cooperative Switcher */}
-            <div className="flex items-center gap-1.5 mt-1 bg-purple-900/40 p-1.5 rounded-xl border border-purple-700/50">
-              <span className="text-[10px] text-purple-300 font-bold uppercase whitespace-nowrap">Switch Society:</span>
-              <select
-                value={currentCoop?._id}
-                onChange={(e) => onSelectCoop?.(e.target.value)}
-                className="text-xs font-semibold px-2.5 py-1 bg-slate-900 text-white border border-purple-500/40 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-400 cursor-pointer"
-              >
-                {cooperatives.map(c => (
-                  <option key={c._id} value={c._id}>
-                    {c.shortName} ({c.district})
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>

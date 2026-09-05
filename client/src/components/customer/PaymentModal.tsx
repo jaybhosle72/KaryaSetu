@@ -14,13 +14,15 @@ interface PaymentModalProps {
   onClose: () => void;
   booking: Booking;
   onPaymentSuccess: (paymentResult: any) => void;
+  onProceedToRating?: () => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
   onClose,
   booking,
-  onPaymentSuccess
+  onPaymentSuccess,
+  onProceedToRating
 }) => {
   const [activeTab, setActiveTab] = useState<'UPI_QR' | 'RAZORPAY'>('UPI_QR');
   const [successTab, setSuccessTab] = useState<'DISPATCH' | 'INVOICE'>('DISPATCH');
@@ -345,11 +347,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Truck className="w-4 h-4 text-emerald-600" />
-              <span>Live Service Dispatch & ETA</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold animate-pulse">
-                {etaMinutes} Mins
-              </span>
+              {booking.status === 'COMPLETED' ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Service Completed & Settled</span>
+                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold">
+                    Settled ✓
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Truck className="w-4 h-4 text-emerald-600" />
+                  <span>Live Service Dispatch & ETA</span>
+                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold animate-pulse">
+                    {etaMinutes} Mins
+                  </span>
+                </>
+              )}
             </button>
 
             <button
@@ -758,60 +772,113 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Estimated Arrival Time (ETA) Hero Card */}
-                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 text-white shadow-xl space-y-3.5 border border-emerald-500/30">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                            Live GPS Transit
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                            Technician Dispatch
-                          </span>
+                  {/* Estimated Arrival Time (ETA) Hero Card or Completed Settlement Card */}
+                  {booking.status === 'COMPLETED' ? (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 text-white shadow-xl space-y-3.5 border border-emerald-500/30">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline" />
+                              Service Completed & Paid
+                            </span>
+                          </div>
+
+                          <div className="flex items-baseline gap-2.5 mt-2">
+                            <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                              Escrow Released
+                            </span>
+                            <span className="text-xs sm:text-sm font-bold text-emerald-300">
+                              (₹{workerAmount.toLocaleString('en-IN')} to {booking.workerName || 'Worker'})
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>100% Cooperative direct payment verified • 30-day statutory warranty active</span>
+                          </p>
                         </div>
 
-                        <div className="flex items-baseline gap-2.5 mt-2">
-                          <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                            ~{etaMinutes} Mins
-                          </span>
-                          <span className="text-xs sm:text-sm font-bold text-emerald-300">
-                            (Arriving by {expectedArrivalTime})
-                          </span>
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                        </div>
+                      </div>
+
+                      {/* 4-Stage Stepper for Completed Work */}
+                      <div className="pt-3 border-t border-slate-800/80 grid grid-cols-4 gap-1.5 text-center text-[10px]">
+                        <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
+                          <span>1. Work Done</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
+                          <span>2. Paid</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
+                          <span>3. Escrow Split</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black shadow-md animate-pulse">
+                          <Star className="w-3.5 h-3.5 mx-auto mb-1 fill-slate-950" />
+                          <span>4. Review ➔</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 text-white shadow-xl space-y-3.5 border border-emerald-500/30">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                              Live GPS Transit
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                              Technician Dispatch
+                            </span>
+                          </div>
+
+                          <div className="flex items-baseline gap-2.5 mt-2">
+                            <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                              ~{etaMinutes} Mins
+                            </span>
+                            <span className="text-xs sm:text-sm font-bold text-emerald-300">
+                              (Arriving by {expectedArrivalTime})
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
+                            <Navigation className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>Approaching your work site • Approx. 2.6 km away</span>
+                          </p>
                         </div>
 
-                        <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
-                          <Navigation className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          <span>Approaching your work site • Approx. 2.6 km away</span>
-                        </p>
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg">
+                          <Truck className="w-6 h-6 animate-pulse text-emerald-400" />
+                        </div>
                       </div>
 
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg">
-                        <Truck className="w-6 h-6 animate-pulse text-emerald-400" />
+                      {/* 4-Stage Stepper */}
+                      <div className="pt-3 border-t border-slate-800/80 grid grid-cols-4 gap-1.5 text-center text-[10px]">
+                        <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
+                          <span>Paid & Escrowed</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
+                          <span>Assigned & Ready</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-black shadow-md">
+                          <Truck className="w-3.5 h-3.5 mx-auto mb-1" />
+                          <span>En Route Now</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-medium">
+                          <KeyRound className="w-3.5 h-3.5 mx-auto mb-1" />
+                          <span>Arrival & OTP</span>
+                        </div>
                       </div>
                     </div>
-
-                    {/* 4-Stage Stepper */}
-                    <div className="pt-3 border-t border-slate-800/80 grid grid-cols-4 gap-1.5 text-center text-[10px]">
-                      <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                        <span>Paid & Escrowed</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                        <span>Assigned & Ready</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-black shadow-md">
-                        <Truck className="w-3.5 h-3.5 mx-auto mb-1" />
-                        <span>En Route Now</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-medium">
-                        <KeyRound className="w-3.5 h-3.5 mx-auto mb-1" />
-                        <span>Arrival & OTP</span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Assigned Technician Card */}
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
@@ -945,14 +1012,31 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <span>View GST Tax Invoice ➔</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="flex-1 py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
-                    >
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span>Done & Track on Dashboard</span>
-                    </button>
+                    {booking.status === 'COMPLETED' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onProceedToRating) {
+                            onProceedToRating();
+                          } else {
+                            onClose();
+                          }
+                        }}
+                        className="flex-1 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
+                      >
+                        <Star className="w-4 h-4 fill-slate-950" />
+                        <span>Rate Service & Worker ➔</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
+                      >
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        <span>Done & Track on Dashboard</span>
+                      </button>
+                    )}
                   </div>
 
                 </div>
@@ -1063,13 +1147,30 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <span>Print Tax Invoice</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                    >
-                      <span>Done & Return</span>
-                    </button>
+                    {booking.status === 'COMPLETED' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onProceedToRating) {
+                            onProceedToRating();
+                          } else {
+                            onClose();
+                          }
+                        }}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>Rate Service ➔</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      >
+                        <span>Done & Return</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

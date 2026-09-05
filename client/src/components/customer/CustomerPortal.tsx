@@ -136,36 +136,26 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
   const activeBookingRef = useRef<HTMLDivElement>(null);
   
-  // STRICT RULE: Only show services that the customer has RECENTLY or CURRENTLY PAID FOR (paymentStatus === 'PAID')
-  // Never show unpaid/pending services in the active arrival tracker!
-  const paidOngoingBookings = bookings.filter(b => 
-    b.paymentStatus === 'PAID' && 
+  // Active bookings tracker filtering:
+  // Includes non-cancelled, non-dismissed bookings that are:
+  // 1) Ongoing (ALLOCATED, EN_ROUTE, IN_PROGRESS)
+  // 2) Completed but awaiting post-service payment (paymentStatus !== 'PAID')
+  // 3) Completed and recently paid / selected
+  const activeBookings = bookings.filter(b => 
     b.status !== 'CANCELLED' && 
-    b.status !== 'COMPLETED' && 
-    !dismissedBookingIds.includes(b._id)
+    !dismissedBookingIds.includes(b._id) &&
+    (b.status !== 'COMPLETED' || b.paymentStatus !== 'PAID' || b._id === recentlyPaidBookingId || b._id === selectedActiveBookingId)
   );
 
-  // If a paid booking was recently paid for (via state or localStorage), strictly prioritize it!
-  const recentlyPaidBooking = recentlyPaidBookingId 
-    ? bookings.find(b => b._id === recentlyPaidBookingId && b.paymentStatus === 'PAID' && !dismissedBookingIds.includes(b._id))
-    : null;
-
-  // If user explicitly selected another active paid booking
   const selectedBooking = selectedActiveBookingId 
-    ? bookings.find(b => b._id === selectedActiveBookingId && b.paymentStatus === 'PAID' && !dismissedBookingIds.includes(b._id)) 
+    ? activeBookings.find(b => b._id === selectedActiveBookingId) 
     : null;
 
-  // Active booking strictly requires paymentStatus === 'PAID'
-  const activeBooking = (recentlyPaidBooking && recentlyPaidBooking.status !== 'CANCELLED')
-    ? recentlyPaidBooking
-    : (selectedBooking || paidOngoingBookings[0] || null);
+  const recentlyPaidBooking = recentlyPaidBookingId 
+    ? activeBookings.find(b => b._id === recentlyPaidBookingId)
+    : null;
 
-  // Active bookings list to pass to tracker: ONLY paid ongoing bookings + recently paid completed booking (if completed during session)
-  const activeBookings = (
-    activeBooking && activeBooking.status === 'COMPLETED' && !paidOngoingBookings.some(b => b._id === activeBooking._id)
-      ? [activeBooking, ...paidOngoingBookings]
-      : paidOngoingBookings
-  );
+  const activeBooking = selectedBooking || recentlyPaidBooking || activeBookings[0] || null;
 
   // React to navbar triggers
   useEffect(() => {
@@ -686,15 +676,37 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           isOpen={showPaymentModal}
           booking={paymentBooking}
           onClose={() => setShowPaymentModal(false)}
+          onProceedToRating={() => {
+            const currentB = paymentBooking;
+            setShowPaymentModal(false);
+            setActiveViewingBooking({
+              ...currentB,
+              paymentStatus: 'PAID',
+              status: 'COMPLETED'
+            });
+            setShowRatingModal(true);
+          }}
           onPaymentSuccess={() => {
-            if (paymentBooking) {
+            const targetBooking = paymentBooking;
+            if (targetBooking) {
               try {
-                localStorage.setItem('karyasetu_last_paid_booking_id', paymentBooking._id);
+                localStorage.setItem('karyasetu_last_paid_booking_id', targetBooking._id);
               } catch {}
-              setRecentlyPaidBookingId(paymentBooking._id);
-              setSelectedActiveBookingId(paymentBooking._id);
+              setRecentlyPaidBookingId(targetBooking._id);
+              setSelectedActiveBookingId(targetBooking._id);
             }
-            onPayBooking(paymentBooking._id);
+            onPayBooking(targetBooking._id);
+
+            // Directly prompt user for rating/review right after payment
+            setTimeout(() => {
+              setShowPaymentModal(false);
+              setActiveViewingBooking({
+                ...targetBooking,
+                paymentStatus: 'PAID',
+                status: 'COMPLETED'
+              });
+              setShowRatingModal(true);
+            }, 800);
           }}
         />
       )}

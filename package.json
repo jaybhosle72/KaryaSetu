@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "KaryaSetu - Cooperative-Owned Digital Labour & Services Marketplace (SIH Hackathon)",
   "scripts": {
-    "server": "node server/index.js",
-    "client": "cd client && npm run dev",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client run dev",
     "start": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "cd client && npm run build"
+    "build": "npm --prefix client run build"
   },
   "dependencies": {
     "concurrently": "^9.1.2"

@@ -167,7 +167,7 @@ export function App() {
     setCart([]);
     setIsCartOpen(false);
     if (newBooking) {
-      setCartPaymentBooking(newBooking);
+      showToast('Booking dispatched to Cooperative! Certified technician en route. Pay securely after service completion.', 'success');
     }
   };
 
@@ -376,7 +376,7 @@ export function App() {
     try {
       const res = await api.payBooking(id, paymentMethod);
       const paidBooking = res.booking || res;
-      setBookings(prev => prev.map(b => b._id === id ? { ...b, ...paidBooking, paymentStatus: 'PAID', status: paidBooking.status || 'EN_ROUTE' } : b));
+      setBookings(prev => prev.map(b => b._id === id ? { ...b, ...paidBooking, paymentStatus: 'PAID', status: paidBooking.status || b.status || 'COMPLETED' } : b));
       try {
         localStorage.setItem('karyasetu_last_paid_booking_id', id);
       } catch {}
@@ -481,7 +481,13 @@ export function App() {
   };
 
   if (!currentUser) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return (
+      <LoginScreen 
+        onLogin={handleLogin} 
+        currentLanguage={currentLanguage}
+        onLanguageChange={handleLanguageChange}
+      />
+    );
   }
 
   return (

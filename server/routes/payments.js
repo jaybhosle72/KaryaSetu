@@ -146,8 +146,8 @@ router.post('/verify', async (req, res) => {
     let booking = await Booking.findById(bookingId);
     if (booking) {
       booking.paymentStatus = 'PAID';
-      // Worker is now dispatched and EN_ROUTE to the customer's work site!
-      if (booking.status !== 'IN_PROGRESS') {
+      // Worker is dispatched if booking wasn't already in progress or completed
+      if (booking.status !== 'IN_PROGRESS' && booking.status !== 'COMPLETED') {
         booking.status = 'EN_ROUTE';
       }
       booking.invoiceNumber = invoiceNumber;
