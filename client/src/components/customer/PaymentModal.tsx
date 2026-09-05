@@ -8,6 +8,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { Booking } from '../../types';
 import confetti from 'canvas-confetti';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onPaymentSuccess,
   onProceedToRating
 }) => {
+  const { t, getServiceName } = useLanguage();
   const [activeTab, setActiveTab] = useState<'UPI_QR' | 'RAZORPAY'>('UPI_QR');
   const [successTab, setSuccessTab] = useState<'DISPATCH' | 'INVOICE'>('DISPATCH');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -280,8 +282,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black tracking-tight">
                   {paymentSuccess 
-                    ? (successTab === 'DISPATCH' ? 'Service Confirmed & Worker Dispatched' : 'Tax Invoice & Statutory Split')
-                    : 'Real Bank Payment (Scan & Pay from Phone)'}
+                    ? (successTab === 'DISPATCH' ? t.payment.serviceConfirmedTitle : t.payment.gstInvoiceTitle)
+                    : t.payment.title}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider">
                   {paymentSuccess ? `● ETA ${etaMinutes}m` : 'NPCI UPI LIVE'}
@@ -289,8 +291,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
               <p className="text-xs text-slate-400">
                 {paymentSuccess 
-                  ? `Booking #${booking._id || 'Direct'} • ${booking.serviceCategory || 'Service'}` 
-                  : `Booking: ${booking._id || 'Direct'} • ${booking.serviceCategory || 'Service'}`}
+                  ? `Booking #${booking._id || 'Direct'} • ${getServiceName(booking.serviceCategory || 'Service')}` 
+                  : `Booking: ${booking._id || 'Direct'} • ${getServiceName(booking.serviceCategory || 'Service')}`}
               </p>
             </div>
           </div>
@@ -316,9 +318,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               }`}
             >
               <Smartphone className="w-4 h-4" />
-              <span>Scan & Pay with Phone (UPI)</span>
+              <span>{t.payment.scanPayWithPhone}</span>
               <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold">
-                Real Bank Debit
+                {t.payment.realBankDebit}
               </span>
             </button>
 
@@ -332,7 +334,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               }`}
             >
               <CreditCard className="w-4 h-4" />
-              <span>Cards / Gateway</span>
+              <span>{t.payment.cardsGateway}</span>
             </button>
           </div>
         ) : (
@@ -347,10 +349,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              {booking.status === 'COMPLETED' ? (
+              {booking.status === 'COMPLETED' || booking.status === 'IN_PROGRESS' || paymentSuccess ? (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Service Completed & Settled</span>
+                  <span>{t.payment.serviceCompletedSettled}</span>
                   <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold">
                     Settled ✓
                   </span>
@@ -358,7 +360,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               ) : (
                 <>
                   <Truck className="w-4 h-4 text-emerald-600" />
-                  <span>Live Service Dispatch & ETA</span>
+                  <span>{t.payment.liveDispatchEta}</span>
                   <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold animate-pulse">
                     {etaMinutes} Mins
                   </span>
@@ -376,7 +378,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               }`}
             >
               <Receipt className="w-4 h-4 text-blue-600" />
-              <span>GST Tax Invoice</span>
+              <span>{t.payment.gstInvoiceTitle}</span>
             </button>
           </div>
         )}
@@ -394,7 +396,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
-                          Amount to Pay via UPI
+                          {t.payment.amountToPay}
                         </span>
                         <div className="flex items-baseline gap-2">
                           <span className="text-3xl font-black text-emerald-400 tracking-tight">
@@ -402,7 +404,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           </span>
                           {amountMode === 'TEST_1' && (
                             <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
-                              ⚡ ₹1 Bank Debit Test
+                              {t.payment.testAmount1}
                             </span>
                           )}
                         </div>
@@ -416,7 +418,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                     {/* Amount Mode Pills */}
                     <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="text-[10px] font-bold text-slate-400">Choose Test Amount:</span>
+                      <span className="text-[10px] font-bold text-slate-400">{t.payment.chooseTestAmount}</span>
                       <button
                         type="button"
                         onClick={() => setAmountMode('TEST_1')}
@@ -426,7 +428,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                       >
-                        ⚡ ₹1 Real Bank Test
+                        {t.payment.testAmount1}
                       </button>
 
                       <button
@@ -438,7 +440,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                       >
-                        Full ₹{bookingTotal.toLocaleString('en-IN')}
+                        {t.payment.fullAmount} ₹{bookingTotal.toLocaleString('en-IN')}
                       </button>
 
                       <button
@@ -450,7 +452,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                       >
-                        Custom ₹
+                        {t.payment.customAmount}
                       </button>
 
                       {amountMode === 'CUSTOM' && (
@@ -473,7 +475,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <div className="flex items-center gap-1.5">
                         <Smartphone className="w-4 h-4 text-amber-600 shrink-0" />
                         <span className="font-extrabold text-amber-900">
-                          Transfer To Payee UPI ID (VPA):
+                          {t.payment.transferToPayee}
                         </span>
                       </div>
                       {!isEditingUpi ? (
@@ -483,7 +485,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           className="px-2 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold text-[10px] flex items-center gap-1 transition cursor-pointer"
                         >
                           <Edit2 className="w-3 h-3" />
-                          <span>Change UPI ID</span>
+                          <span>{t.payment.changeUpiId}</span>
                         </button>
                       ) : (
                         <button
@@ -492,7 +494,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           className="px-2 py-1 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-[10px] flex items-center gap-1 transition cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" />
-                          <span>Reset</span>
+                          <span>{t.payment.reset}</span>
                         </button>
                       )}
                     </div>
@@ -501,7 +503,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-amber-200">
                         <code className="font-mono font-bold text-slate-800 text-xs">{payeeUpiId}</code>
                         <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          Ready to Receive Real Money
+                          {t.payment.readyToReceive}
                         </span>
                       </div>
                     ) : (
@@ -551,10 +553,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center justify-center gap-1.5 text-xs font-black text-slate-900">
                         <Smartphone className="w-4 h-4 text-emerald-600" />
-                        <span>Scan with any UPI App on your phone</span>
+                        <span>{t.payment.scanWithAnyApp}</span>
                       </div>
                       <p className="text-[11px] text-slate-500">
-                        Open <strong>Google Pay, PhonePe, Paytm, BHIM, Cred, or any Banking App</strong> on your other device
+                        {t.payment.openUpiAppsPrompt}
                       </p>
                     </div>
 
@@ -576,7 +578,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                       >
                         {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-                        <span>{copiedLink ? 'UPI Link Copied!' : 'Copy UPI Link'}</span>
+                        <span>{copiedLink ? t.payment.copied : t.payment.copyUpiLink}</span>
                       </button>
 
                       <a
@@ -584,7 +586,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 transition"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Open on this device</span>
+                        <span>{t.payment.openOnDevice}</span>
                       </a>
                     </div>
                   </div>
@@ -593,17 +595,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                     <div className="space-y-1">
                       <label className="text-xs font-black text-slate-900 block flex items-center justify-between">
-                        <span>Enter 12-Digit Bank UTR / UPI Ref No. from your phone:</span>
+                        <span>{t.payment.enterUtrPrompt}</span>
                         <button
                           type="button"
                           onClick={() => setUtrNumber(`42${Math.floor(1000000000 + Math.random() * 9000000000)}`)}
                           className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
                         >
-                          Auto-generate Sample UTR
+                          {t.payment.sampleUtr}
                         </button>
                       </label>
                       <p className="text-[10px] text-slate-500">
-                        Check your GPay / PhonePe payment confirmation screen for the 12-digit "UPI transaction ID" or "Bank Ref No."
+                        {t.payment.utrHint}
                       </p>
                     </div>
 
@@ -628,12 +630,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       {isProcessing ? (
                         <>
                           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Verifying Real Bank Payment...</span>
+                          <span>{t.payment.verifying}</span>
                         </>
                       ) : (
                         <>
                           <ShieldCheck className="w-4 h-4" />
-                          <span>Confirm & Verify Bank Payment (₹{effectiveAmount}) ➔</span>
+                          <span>{t.payment.confirmVerifyBtn.replace('{amount}', effectiveAmount.toLocaleString('en-IN'))}</span>
                         </>
                       )}
                     </button>
@@ -759,7 +761,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-base font-black text-emerald-950">
-                            Service Confirmed & Booked!
+                            {t.payment.serviceConfirmedTitle}
                           </h3>
                           <span className="px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-800 text-[9px] font-black uppercase tracking-wider">
                             Verified
@@ -773,20 +775,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </div>
 
                   {/* Estimated Arrival Time (ETA) Hero Card or Completed Settlement Card */}
-                  {booking.status === 'COMPLETED' ? (
+                  {booking.status === 'COMPLETED' || booking.status === 'IN_PROGRESS' || paymentSuccess ? (
                     <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 text-white shadow-xl space-y-3.5 border border-emerald-500/30">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline" />
-                              Service Completed & Paid
+                              {t.payment.serviceCompletedSettled}
                             </span>
                           </div>
 
                           <div className="flex items-baseline gap-2.5 mt-2">
                             <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                              Escrow Released
+                              {t.payment.escrowReleased}
                             </span>
                             <span className="text-xs sm:text-sm font-bold text-emerald-300">
                               (₹{workerAmount.toLocaleString('en-IN')} to {booking.workerName || 'Worker'})
@@ -795,7 +797,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                           <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
                             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            <span>100% Cooperative direct payment verified • 30-day statutory warranty active</span>
+                            <span>{t.payment.directPaymentWarranty}</span>
                           </p>
                         </div>
 
@@ -808,19 +810,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <div className="pt-3 border-t border-slate-800/80 grid grid-cols-4 gap-1.5 text-center text-[10px]">
                         <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                          <span>1. Work Done</span>
+                          <span>{t.payment.stepWorkDone}</span>
                         </div>
                         <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                          <span>2. Paid</span>
+                          <span>{t.payment.stepPaid}</span>
                         </div>
                         <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                          <span>3. Escrow Split</span>
+                          <span>{t.payment.stepEscrowSplit}</span>
                         </div>
                         <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black shadow-md animate-pulse">
                           <Star className="w-3.5 h-3.5 mx-auto mb-1 fill-slate-950" />
-                          <span>4. Review ➔</span>
+                          <span>{t.payment.stepReview}</span>
                         </div>
                       </div>
                     </div>
@@ -831,10 +833,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           <div className="flex items-center gap-2">
                             <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5">
                               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                              Live GPS Transit
+                              {t.payment.liveGpsTransit}
                             </span>
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                              Technician Dispatch
+                              {t.payment.technicianDispatch}
                             </span>
                           </div>
 
@@ -849,7 +851,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                           <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
                             <Navigation className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            <span>Approaching your work site • Approx. 2.6 km away</span>
+                            <span>{t.payment.approachingWorkSite}</span>
                           </p>
                         </div>
 
@@ -862,19 +864,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <div className="pt-3 border-t border-slate-800/80 grid grid-cols-4 gap-1.5 text-center text-[10px]">
                         <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                          <span>Paid & Escrowed</span>
+                          <span>{t.payment.stepPaidEscrowed}</span>
                         </div>
                         <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 mx-auto mb-1 text-emerald-400" />
-                          <span>Assigned & Ready</span>
+                          <span>{t.payment.stepAssignedReady}</span>
                         </div>
                         <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-black shadow-md">
                           <Truck className="w-3.5 h-3.5 mx-auto mb-1" />
-                          <span>En Route Now</span>
+                          <span>{t.payment.stepEnRoute}</span>
                         </div>
                         <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-medium">
                           <KeyRound className="w-3.5 h-3.5 mx-auto mb-1" />
-                          <span>Arrival & OTP</span>
+                          <span>{t.payment.stepArrivalOtp}</span>
                         </div>
                       </div>
                     </div>
@@ -885,10 +887,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
                         <UserCheck className="w-4 h-4 text-emerald-600" />
-                        <span>Assigned Service Technician</span>
+                        <span>{t.payment.assignedTechnician}</span>
                       </span>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        Govt Certified Shramik
+                        {t.payment.govtCertifiedShramik}
                       </span>
                     </div>
 
@@ -921,7 +923,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm shrink-0 cursor-pointer"
                         >
                           <Phone className="w-3.5 h-3.5" />
-                          <span>Call</span>
+                          <span>{t.payment.call}</span>
                         </a>
                       )}
                     </div>
@@ -932,20 +934,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                       <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                         <MapPin className="w-4 h-4 text-emerald-600" />
-                        <span>Service & Work Site Details</span>
+                        <span>{t.payment.serviceSiteDetails}</span>
                       </span>
                       <span className="text-[10px] font-bold text-slate-500">
-                        Immediate Dispatch
+                        {t.payment.immediateDispatch}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
                         <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-                          Service Category
+                          {t.payment.serviceCategoryLabel}
                         </span>
                         <strong className="text-xs font-black text-slate-900 block mt-0.5">
-                          {booking.serviceCategory}
+                          {getServiceName(booking.serviceCategory || '')}
                         </strong>
                         <span className="text-[11px] text-slate-600 block">
                           {booking.subTrade || 'General Diagnostics & Repair'}
@@ -954,26 +956,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                       <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
                         <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-                          Schedule / Timing
+                          {t.payment.scheduleTimingLabel}
                         </span>
                         <strong className="text-xs font-black text-slate-900 block mt-0.5">
-                          Today, Immediate On-Demand
+                          {t.payment.immediateOnDemand}
                         </strong>
                         <span className="text-[11px] text-emerald-700 font-semibold block">
-                          Dispatched at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {t.payment.dispatchedAt} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </div>
 
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                       <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-                        Work Site Address
+                        {t.payment.workSiteAddressLabel}
                       </span>
                       <strong className="text-xs font-black text-slate-900 block mt-0.5">
                         {booking.address || 'Flat 504, Windsor Park, Kothrud, Pune, Maharashtra 411038'}
                       </strong>
                       <span className="text-[10px] text-slate-500 mt-0.5 block">
-                        Verified via Sovereign GIS Geocoding
+                        {t.payment.gisVerified}
                       </span>
                     </div>
                   </div>
@@ -983,22 +985,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
                         <KeyRound className="w-4 h-4 text-amber-600" />
-                        <span>Secure Service Start OTP</span>
+                        <span>{t.payment.secureStartOtp}</span>
                       </span>
                       <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
-                        Safety Handshake
+                        {t.payment.safetyHandshake}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-amber-200">
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold block">Share with technician upon arrival:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block">{t.payment.shareWithTechnicianArrival}</span>
                         <span className="text-2xl font-black font-mono tracking-widest text-emerald-700">
                           {serviceOtp}
                         </span>
                       </div>
                       <div className="text-right text-[10px] text-slate-500 max-w-[200px] leading-tight">
-                        Work begins & 30-day cooperative warranty activates once technician verifies OTP.
+                        {t.payment.warrantyActivatesNotice}
                       </div>
                     </div>
                   </div>
@@ -1011,10 +1013,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       className="flex-1 py-3 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
                     >
                       <Receipt className="w-4 h-4 text-blue-600" />
-                      <span>View GST Tax Invoice ➔</span>
+                      <span>{t.payment.viewGstTaxInvoice}</span>
                     </button>
 
-                    {booking.status === 'COMPLETED' ? (
+                    {booking.status === 'COMPLETED' || booking.status === 'IN_PROGRESS' || paymentSuccess ? (
                       <button
                         type="button"
                         onClick={() => {
@@ -1027,7 +1029,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         className="flex-1 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
                       >
                         <Star className="w-4 h-4 fill-slate-950" />
-                        <span>Rate Service & Worker ➔</span>
+                        <span>{t.payment.rateServiceWorker}</span>
                       </button>
                     ) : (
                       <button
@@ -1036,7 +1038,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         className="flex-1 py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
                       >
                         <Check className="w-4 h-4 text-emerald-400" />
-                        <span>Done & Track on Dashboard</span>
+                        <span>{t.payment.doneTrackDashboard}</span>
                       </button>
                     )}
                   </div>
@@ -1054,14 +1056,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           <img src="/karyasetu-logo.png" alt="KaryaSetu" className="w-full h-full object-contain rounded-lg" />
                         </div>
                         <div>
-                          <span className="font-black text-slate-900 text-sm block">KaryaSetu GST Tax Invoice</span>
-                          <span className="text-[10px] text-slate-500">Invoice No: <strong className="text-slate-800">{invoiceData?.invoiceNumber || 'INV-2026'}</strong></span>
-                          <span className="text-[10px] text-slate-500 block">Date: {new Date().toLocaleDateString('en-IN')}</span>
+                          <span className="font-black text-slate-900 text-sm block">{t.payment.taxInvoiceHeader}</span>
+                          <span className="text-[10px] text-slate-500">{t.payment.invoiceNo} <strong className="text-slate-800">{invoiceData?.invoiceNumber || 'INV-2026'}</strong></span>
+                          <span className="text-[10px] text-slate-500 block">{t.payment.date} {new Date().toLocaleDateString('en-IN')}</span>
                         </div>
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                          PAID & SETTLED
+                          {t.payment.paidAndSettled}
                         </span>
                         <span className="text-[10px] text-slate-400 block mt-1">SAC: 9987 / 9954</span>
                       </div>
@@ -1071,7 +1073,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-[11px]">
                       <div>
                         <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">
-                          Bank UTR / Transaction Reference
+                          {t.payment.bankUtrLabel}
                         </span>
                         <strong className="font-mono text-emerald-800 text-xs">
                           {invoiceData?.paymentId || (utrNumber ? `UPI-${utrNumber}` : 'UPI-CONFIRMED')}
@@ -1085,12 +1087,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     {/* Customer & Worker Summary */}
                     <div className="grid grid-cols-2 gap-3 py-1 text-[11px]">
                       <div>
-                        <span className="text-slate-400 font-bold block text-[10px]">BILLED TO:</span>
+                        <span className="text-slate-400 font-bold block text-[10px]">{t.payment.billedTo}</span>
                         <strong className="text-slate-900">{booking.customerName || 'Citizen Customer'}</strong>
                         <p className="text-slate-500 text-[10px] leading-tight">{booking.address || 'Maharashtra'}</p>
                       </div>
                       <div>
-                        <span className="text-slate-400 font-bold block text-[10px]">SERVICE PROVIDER:</span>
+                        <span className="text-slate-400 font-bold block text-[10px]">{t.payment.serviceProvider}</span>
                         <strong className="text-slate-900">{booking.workerName || 'Certified Technician'}</strong>
                         <p className="text-slate-500 text-[10px]">{booking.cooperativeName || 'District Labour Cooperative'}</p>
                       </div>
@@ -1099,7 +1101,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     {/* Tax Breakdown */}
                     <div className="space-y-1.5 pt-2 border-t border-slate-200">
                       <div className="flex justify-between text-slate-600">
-                        <span>Taxable Service Base Amount:</span>
+                        <span>{t.payment.taxableBase}</span>
                         <span className="font-semibold">₹{taxableAmount.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="flex justify-between text-slate-600">
@@ -1111,7 +1113,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         <span>₹{sgst.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-200">
-                        <span>Total Paid (INR):</span>
+                        <span>{t.payment.totalPaidInr}</span>
                         <span className="text-emerald-700">₹{effectiveAmount.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
@@ -1120,7 +1122,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-[10px] text-emerald-900 space-y-0.5">
                       <span className="font-bold flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Statutory Split Verified by Cooperative DPI:</span>
+                        <span>{t.payment.statutorySplitVerified}</span>
                       </span>
                       <p>
                         ₹{workerAmount} credited to worker earnings • ₹{coopAmount} to cooperative reserve • ₹{welfareAmount} deposited in Social Security Vault.
@@ -1137,7 +1139,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <Truck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Back to Live ETA Tracker</span>
+                      <span>{t.payment.backToEtaTracker}</span>
                     </button>
 
                     <button
@@ -1146,7 +1148,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" />
-                      <span>Print Tax Invoice</span>
+                      <span>{t.payment.printInvoice}</span>
                     </button>
 
                     {booking.status === 'COMPLETED' ? (
@@ -1162,7 +1164,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         className="flex-1 py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
                       >
                         <Star className="w-3.5 h-3.5 fill-slate-950" />
-                        <span>Rate Service ➔</span>
+                        <span>{t.payment.rateServiceWorker}</span>
                       </button>
                     ) : (
                       <button
@@ -1170,7 +1172,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         onClick={onClose}
                         className="flex-1 py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                       >
-                        <span>Done & Return</span>
+                        <span>{t.payment.doneReturn}</span>
                       </button>
                     )}
                   </div>

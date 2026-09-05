@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Booking } from '../../types';
 import { Star, ShieldCheck, HeartHandshake, CheckCircle } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface RatingModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
   booking,
   onSubmitRating
 }) => {
+  const { t, getSectorTitle } = useLanguage();
   const [score, setScore] = useState(5);
   const [quality, setQuality] = useState(5);
   const [punctuality, setPunctuality] = useState(5);
@@ -55,10 +57,10 @@ export const RatingModal: React.FC<RatingModalProps> = ({
         
         <div className="bg-emerald-800 text-white p-5 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold">Rate Worker & Service</h3>
-            <p className="text-xs text-emerald-200">Holistic reputation beyond simple 5-stars</p>
+            <h3 className="text-base font-bold">{t.modals?.rating?.title || 'Rate Worker & Service'}</h3>
+            <p className="text-xs text-emerald-200">{t.modals?.rating?.subtitle || 'Holistic reputation beyond simple 5-stars'}</p>
           </div>
-          <button onClick={onClose} className="text-white/80 hover:text-white text-xl font-bold">
+          <button onClick={onClose} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">
             ✕
           </button>
         </div>
@@ -66,8 +68,8 @@ export const RatingModal: React.FC<RatingModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
           <div className="text-center pb-2">
-            <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">Overall Experience with</p>
-            <p className="text-sm font-bold text-slate-800">{booking.workerName} ({booking.serviceCategory})</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">{t.modals?.rating?.overallExp || 'Overall Experience with'}</p>
+            <p className="text-sm font-bold text-slate-800">{booking.workerName} ({getSectorTitle(booking.serviceCategory, booking.serviceCategory)})</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star
@@ -83,42 +85,42 @@ export const RatingModal: React.FC<RatingModalProps> = ({
 
           <div className="space-y-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 font-medium">Technical Quality:</span>
+              <span className="text-slate-600 font-medium">{t.modals?.rating?.technicalQuality || 'Technical Quality:'}</span>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map(v => (
                   <button
                     key={v}
                     type="button"
                     onClick={() => setQuality(v)}
-                    className={`w-6 h-6 rounded text-xs font-bold ${quality === v ? 'bg-emerald-600 text-white' : 'bg-white border'}`}
+                    className={`w-6 h-6 rounded text-xs font-bold cursor-pointer ${quality === v ? 'bg-emerald-600 text-white' : 'bg-white border'}`}
                   >{v}</button>
                 ))}
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 font-medium">Punctuality & ETA:</span>
+              <span className="text-slate-600 font-medium">{t.modals?.rating?.punctuality || 'Punctuality & ETA:'}</span>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map(v => (
                   <button
                     key={v}
                     type="button"
                     onClick={() => setPunctuality(v)}
-                    className={`w-6 h-6 rounded text-xs font-bold ${punctuality === v ? 'bg-emerald-600 text-white' : 'bg-white border'}`}
+                    className={`w-6 h-6 rounded text-xs font-bold cursor-pointer ${punctuality === v ? 'bg-emerald-600 text-white' : 'bg-white border'}`}
                   >{v}</button>
                 ))}
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 font-medium">Safety Protocols & Equipment:</span>
+              <span className="text-slate-600 font-medium">{t.modals?.rating?.safetyTools || 'Safety Protocols & Equipment:'}</span>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map(v => (
                   <button
                     key={v}
                     type="button"
                     onClick={() => setSafety(v)}
-                    className={`w-6 h-6 rounded text-xs font-bold ${safety === v ? 'bg-emerald-600 text-white' : 'bg-white border'}`}
+                    className={`w-6 h-6 rounded text-xs font-bold cursor-pointer ${safety === v ? 'bg-emerald-600 text-white' : 'bg-white border'}`}
                   >{v}</button>
                 ))}
               </div>
@@ -127,22 +129,24 @@ export const RatingModal: React.FC<RatingModalProps> = ({
 
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Feedback & Review</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              {t.common?.feedback || 'Feedback & Review'}
+            </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={2}
               className="w-full p-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-              placeholder="Share your experience..."
+              placeholder={t.modals?.rating?.commentPlaceholder || 'Share details of the cooperative work done...'}
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow transition"
+            className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow transition cursor-pointer"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Review'}
+            {isSubmitting ? (t.modals?.rating?.submitting || 'Submitting Rating...') : (t.modals?.rating?.submitBtn || 'Submit Official Review ➔')}
           </button>
         </form>
       </div>

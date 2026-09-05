@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Booking, Cooperative, Worker, DemandForecast } from '../../types';
 import { Language, translations } from '../../i18n/translations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   Zap, Wrench, Hammer, Paintbrush, Sparkles, Tv, Heart, 
   Building2, Clock, CheckCircle2, AlertTriangle, MapPin, Phone, 
@@ -90,7 +91,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   onSelectService,
   currentUser
 }) => {
-  const t = translations[currentLanguage];
+  const { language: ctxLang, t: ctxT } = useLanguage();
+  const activeLang = ctxLang || currentLanguage || 'en';
+  const t = ctxT || translations[activeLang];
 
   // 2-Page Routing: 'HOME' vs Master Sector / Legacy Category
   const [subView, setSubView] = useState<'HOME' | string>('HOME');
@@ -462,7 +465,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                             className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer shadow-2xs"
                             title="Add to Booking Cart"
                           >
-                            + Cart
+                            {t.portal.addToCart || '+ Cart'}
                           </button>
                         )}
                         <button
@@ -477,7 +480,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                           }}
                           className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-orange-600 text-white text-xs font-black transition cursor-pointer flex items-center gap-1 shadow-2xs"
                         >
-                          <span>Book</span>
+                          <span>{t.portal.book || 'Book'}</span>
                           <ArrowRight className="w-3 h-3" />
                         </button>
                       </div>
@@ -487,8 +490,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </div>
             ) : (
               <div className="text-center py-6 text-xs text-slate-500 space-y-2">
-                <p className="font-semibold text-slate-700">No cooperative services found matching "{searchQuery}".</p>
-                <p className="text-[11px] text-slate-400">Try common searches: electrician, plumber, AC, cleaning, painting, carpentry.</p>
+                <p className="font-semibold text-slate-700">{t.portal.noResultsMatching || 'No cooperative services found matching'} "{searchQuery}".</p>
+                <p className="text-[11px] text-slate-400">{t.portal.tryCommonSearches || 'Try common searches: electrician, plumber, AC, cleaning, painting, carpentry.'}</p>
               </div>
             )}
           </div>
@@ -508,10 +511,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/40">
-                      Contractor Proposal Received
+                      {t.portal.proposalReceived || 'Contractor Proposal Received'}
                     </span>
                     <span className="text-xs text-slate-300">
-                      from Mukaddam <strong>{propBooking.contractorName || 'Assigned Contractor'}</strong>
+                      {t.portal.fromMukaddam || 'from Mukaddam'} <strong>{propBooking.contractorName || 'Assigned Contractor'}</strong>
                     </span>
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-white mt-1">
@@ -524,7 +527,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </div>
 
               <div className="text-right sm:self-auto self-start">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Total Statutory Proposal Cost</span>
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">{t.portal.totalProposalCost || 'Total Statutory Proposal Cost'}</span>
                 <span className="text-2xl sm:text-3xl font-black text-emerald-400">
                   ₹{propBooking.totalAmount.toLocaleString('en-IN')}
                 </span>
@@ -534,27 +537,27 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             {/* Recommended Workforce Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-blue-300 block">👨‍🎨 Recommended Workforce</span>
+                <span className="text-[10px] uppercase font-bold text-blue-300 block">{t.portal.recommendedWorkforce || '👨‍🎨 Recommended Workforce'}</span>
                 <strong className="text-sm font-black text-white block">
                   {propBooking.proposal?.workforce?.map(w => `${w.count} ${w.role}`).join(' + ') || `${propBooking.teamSize || 4} Verified Shramiks`}
                 </strong>
-                <p className="text-[11px] text-slate-400">Determined by Mukaddam based on site scope</p>
+                <p className="text-[11px] text-slate-400">{t.portal.mukaddamSiteScope || 'Determined by Mukaddam based on site scope'}</p>
               </div>
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-amber-300 block">📅 Estimated Duration</span>
+                <span className="text-[10px] uppercase font-bold text-amber-300 block">{t.portal.estimatedDuration || '📅 Estimated Duration'}</span>
                 <strong className="text-sm font-black text-white block">
                   {propBooking.proposal?.estimatedDurationDays || propBooking.projectDurationDays || 4} Days
                 </strong>
-                <p className="text-[11px] text-slate-400">Turnaround time from start to completion</p>
+                <p className="text-[11px] text-slate-400">{t.portal.daysTurnaround || 'Turnaround time from start to completion'}</p>
               </div>
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-emerald-300 block">🛠️ Depot Equipment</span>
+                <span className="text-[10px] uppercase font-bold text-emerald-300 block">{t.portal.depotEquipment || '🛠️ Depot Equipment'}</span>
                 <strong className="text-sm font-black text-white block truncate">
                   {propBooking.proposal?.materialsAndEquipment?.join(', ') || 'Scaffolding, Putty Sanders & PPE'}
                 </strong>
-                <p className="text-[11px] text-slate-400">Supplied from cooperative tool depot</p>
+                <p className="text-[11px] text-slate-400">{t.portal.suppliedFromDepot || 'Supplied from cooperative tool depot'}</p>
               </div>
             </div>
 
@@ -569,7 +572,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <div className="text-[11px] text-slate-300 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Government-Certified Cooperative Service. Escrow payment released upon OTP verification.</span>
+                <span>{t.portal.coopGuaranteeNotice || 'Government-Certified Cooperative Service. Escrow payment released upon OTP verification.'}</span>
               </div>
 
               <button
@@ -582,7 +585,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 className="px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.02]"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Approve Contractor Plan & Start Work ➔</span>
+                <span>{t.portal.approvePlanStart || 'Approve Contractor Plan & Start Work ➔'}</span>
               </button>
             </div>
 
@@ -595,9 +598,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-              <span>{activeDomain === 'HOME_SERVICES' ? 'All Cooperative Service Sectors' : 'Contractor & Institutional Sectors'}</span>
+              <span>{activeDomain === 'HOME_SERVICES' ? (t.portal.allCoopSectors || 'All Cooperative Service Sectors') : (t.portal.contractorSectors || 'Contractor & Institutional Sectors')}</span>
               <span className="text-xs font-extrabold text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-200">
-                {visibleSectors.length} Sectors
+                {visibleSectors.length} {t.portal.sectorsCount || 'Sectors'}
               </span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
@@ -641,10 +644,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
             <div>
               <strong className="text-sm font-black text-slate-900 block">
-                Karya SOS Priority Emergency Dispatch (&lt;15 Mins)
+                {t.portal.sosTitle}
               </strong>
               <p className="text-xs text-slate-600">
-                Critical water pipeline burst, power failure, short circuit, structural minor hazard, or lockout crisis.
+                {t.portal.sosSubtitle}
               </p>
             </div>
           </div>
@@ -692,7 +695,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             });
             setShowRatingModal(true);
           }}
-          onPaymentSuccess={() => {
+          onPaymentSuccess={async () => {
             const targetBooking = paymentBooking;
             if (targetBooking) {
               try {
@@ -700,19 +703,33 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               } catch {}
               setRecentlyPaidBookingId(targetBooking._id);
               setSelectedActiveBookingId(targetBooking._id);
-            }
-            onPayBooking(targetBooking._id);
+              setPaymentBooking(prev => prev ? { ...prev, status: 'COMPLETED', paymentStatus: 'PAID' } : null);
 
-            // Directly prompt user for rating/review right after payment
-            setTimeout(() => {
-              setShowPaymentModal(false);
-              setActiveViewingBooking({
-                ...targetBooking,
-                paymentStatus: 'PAID',
-                status: 'COMPLETED'
-              });
-              setShowRatingModal(true);
-            }, 800);
+              // 1. Mark booking process as COMPLETED in backend & state
+              try {
+                await onUpdateBookingStatus(targetBooking._id, 'COMPLETED');
+              } catch (err) {
+                console.warn('Could not update booking status to COMPLETED:', err);
+              }
+
+              // 2. Settle payment escrow
+              try {
+                await onPayBooking(targetBooking._id);
+              } catch (err) {
+                console.warn('Could not settle payment:', err);
+              }
+
+              // 3. Automatically transition to review popup after payment
+              setTimeout(() => {
+                setShowPaymentModal(false);
+                setActiveViewingBooking({
+                  ...targetBooking,
+                  paymentStatus: 'PAID',
+                  status: 'COMPLETED'
+                });
+                setShowRatingModal(true);
+              }, 1200);
+            }
           }}
         />
       )}
@@ -752,23 +769,23 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <img src="/karyasetu-logo.png" alt="KaryaSetu Logo" className="w-full h-full object-contain rounded-md" />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-900 text-base leading-none">National Cooperative Charter</h3>
+                  <h3 className="font-black text-slate-900 text-base leading-none">{t.portal.charterTitle || 'National Cooperative Charter'}</h3>
                   <span className="text-[10px] text-emerald-700 font-bold">KaryaSetu Verified</span>
                 </div>
               </div>
               <button onClick={() => setShowWelfareModal(false)} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              KaryaSetu is built in compliance with the Ministry of Cooperation, Government of India. Every registered worker receives gazetted minimum wages, PM-JAY medical benefits, and verified digital identity through e-Shram.
+              {t.portal.charterDesc || 'KaryaSetu is built in compliance with the Ministry of Cooperation, Government of India. Every registered worker receives gazetted minimum wages, PM-JAY medical benefits, and verified digital identity through e-Shram.'}
             </p>
             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-bold">
-              ✓ 100% Cooperative • Zero Private Intermediary Extraction
+              {t.portal.charterBadge || '✓ 100% Cooperative • Zero Private Intermediary Extraction'}
             </div>
             <button
               onClick={() => setShowWelfareModal(false)}
               className="w-full py-2.5 rounded-xl bg-slate-950 text-white font-bold text-xs cursor-pointer hover:bg-slate-800"
             >
-              Close Charter
+              {t.portal.closeCharter || 'Close Charter'}
             </button>
           </div>
         </div>

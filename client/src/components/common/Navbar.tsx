@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { Language, translations } from '../../i18n/translations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { searchCatalog, POPULAR_SEARCH_CHIPS } from '../../utils/searchCatalog';
 
 interface NavbarProps {
@@ -34,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
   onSelectCategoryNav,
-  currentLanguage = 'en',
+  currentLanguage: propLanguage,
   onLanguageChange,
   searchQuery = '',
   onSearchChange,
@@ -42,7 +43,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectService,
   onOpenProfile
 }) => {
-  const t = translations[currentLanguage || 'en'] || translations.en;
+  const { language: ctxLang, setLanguage, t: ctxT } = useLanguage();
+  const currentLanguage = propLanguage || ctxLang;
+  const t = ctxT || translations[currentLanguage || 'en'] || translations.en;
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -384,7 +387,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
               <button
                 type="button"
-                onClick={() => onLanguageChange?.('en')}
+                onClick={() => {
+                  setLanguage('en');
+                  onLanguageChange?.('en');
+                }}
                 className={`px-2 py-1 rounded-lg text-[10px] font-black transition cursor-pointer ${
                   currentLanguage === 'en' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
@@ -394,7 +400,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => onLanguageChange?.('hi')}
+                onClick={() => {
+                  setLanguage('hi');
+                  onLanguageChange?.('hi');
+                }}
                 className={`px-2 py-1 rounded-lg text-[10px] font-black transition cursor-pointer ${
                   currentLanguage === 'hi' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
@@ -404,7 +413,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => onLanguageChange?.('mr')}
+                onClick={() => {
+                  setLanguage('mr');
+                  onLanguageChange?.('mr');
+                }}
                 className={`px-2 py-1 rounded-lg text-[10px] font-black transition cursor-pointer ${
                   currentLanguage === 'mr' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}

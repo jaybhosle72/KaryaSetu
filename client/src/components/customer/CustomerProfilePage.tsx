@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { TransparentInvoiceModal } from './TransparentInvoiceModal';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface CustomerProfilePageProps {
   currentUser: any;
@@ -24,6 +25,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
   onUpdateUser,
   onPayBooking
 }) => {
+  const { t, language, getServiceName } = useLanguage();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'BOOKINGS' | 'ADDRESSES' | 'SETTINGS'>('OVERVIEW');
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(currentUser?.name || 'Citizen Customer');
@@ -113,15 +115,15 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500" />
-          <span>← Back to Services &amp; Home</span>
+          <span>{language === 'mr' ? '← मुख्यपृष्ठ आणि सेवांकडे परत' : language === 'hi' ? '← सेवाओं और मुख्यपृष्ठ पर वापस' : '← Back to Services & Home'}</span>
         </button>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-400 font-medium">Home</span>
+          <span className="text-slate-400 font-medium">{language === 'mr' ? 'मुख्यपृष्ठ' : language === 'hi' ? 'होम' : 'Home'}</span>
           <span className="text-slate-300">/</span>
-          <span className="text-slate-400 font-medium">Citizen Portal</span>
+          <span className="text-slate-400 font-medium">{language === 'mr' ? 'नागरिक पोर्टल' : language === 'hi' ? 'नागरिक पोर्टल' : 'Citizen Portal'}</span>
           <span className="text-slate-300">/</span>
-          <span className="font-bold text-slate-900">Consumer Profile</span>
+          <span className="font-bold text-slate-900">{t.profile.title}</span>
         </div>
       </div>
 
@@ -139,12 +141,12 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{name}</h1>
                 <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>DigiLocker KYC Verified</span>
+                  <span>{language === 'mr' ? 'डिजीलॉकर केवायसी सत्यापित' : language === 'hi' ? 'डिजिलॉकर केवाईसी सत्यापित' : 'DigiLocker KYC Verified'}</span>
                 </span>
               </div>
 
               <p className="text-xs sm:text-sm text-slate-400">
-                Citizen Consumer ID: <span className="font-mono text-emerald-400 font-bold">COOP-CITIZEN-{phone.slice(-4) || 'PUN'}</span>
+                {language === 'mr' ? 'नागरिक ग्राहक आयडी:' : language === 'hi' ? 'नागरिक उपभोक्ता आईडी:' : 'Citizen Consumer ID:'} <span className="font-mono text-emerald-400 font-bold">COOP-CITIZEN-{phone.slice(-4) || 'PUN'}</span>
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-300">
@@ -155,7 +157,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 <span className="text-slate-500">•</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Active Member</span>
+                  <span>{language === 'mr' ? 'सक्रिय सदस्य' : language === 'hi' ? 'सक्रिय सदस्य' : 'Active Member'}</span>
                 </span>
               </div>
             </div>
@@ -170,14 +172,14 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
               className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 flex items-center gap-1.5 transition cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5 text-orange-400" />
-              <span>Edit Profile</span>
+              <span>{t.profile.editBtn}</span>
             </button>
             <button
               onClick={onLogout}
               className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
+              <span>{language === 'mr' ? 'लॉग आऊट' : language === 'hi' ? 'लॉग आउट' : 'Sign Out'}</span>
             </button>
           </div>
 
@@ -194,7 +196,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span>Overview &amp; Impact</span>
+            <span>{t.profile.tabOverview}</span>
           </button>
 
           <button
@@ -206,7 +208,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>Service Bookings</span>
+            <span>{t.profile.tabBookings}</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-mono">
               {customerBookings.length}
             </span>
@@ -221,7 +223,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             }`}
           >
             <MapPin className="w-4 h-4" />
-            <span>Saved Addresses</span>
+            <span>{t.profile.tabAddresses}</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-mono">
               {savedAddresses.length}
             </span>
@@ -236,7 +238,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             }`}
           >
             <User className="w-4 h-4" />
-            <span>Account Settings</span>
+            <span>{t.profile.tabSettings}</span>
           </button>
         </div>
       </div>
@@ -252,7 +254,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                  Verified Contact Credentials
+                  {language === 'mr' ? 'सत्यापित संपर्क माहिती' : language === 'hi' ? 'सत्यापित संपर्क विवरण' : 'Verified Contact Credentials'}
                 </span>
                 {!isEditing && (
                   <button
@@ -260,7 +262,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                     className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
-                    <span>Edit Details</span>
+                    <span>{t.profile.editBtn}</span>
                   </button>
                 )}
               </div>
@@ -272,7 +274,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       <Phone className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Mobile Number</span>
+                      <span className="text-[10px] text-slate-400 block font-semibold">{t.profile.phoneLabel}</span>
                       <strong className="text-slate-900 font-bold text-sm">{phone}</strong>
                     </div>
                   </div>
@@ -282,7 +284,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       <Mail className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Email Address</span>
+                      <span className="text-[10px] text-slate-400 block font-semibold">{t.profile.emailLabel}</span>
                       <strong className="text-slate-900 font-bold text-sm">{email}</strong>
                     </div>
                   </div>
@@ -292,7 +294,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       <MapPin className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Registered Primary Address</span>
+                      <span className="text-[10px] text-slate-400 block font-semibold">{t.profile.primaryAddressLabel}</span>
                       <strong className="text-slate-900 font-bold text-sm">{primaryAddress}</strong>
                     </div>
                   </div>
@@ -301,7 +303,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 <form onSubmit={handleSaveProfile} className="space-y-4 pt-1 text-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Full Name</label>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">{t.profile.nameLabel}</label>
                       <input
                         type="text"
                         value={name}
@@ -311,7 +313,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Phone Number</label>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">{t.profile.phoneLabel}</label>
                       <input
                         type="text"
                         value={phone}
@@ -321,7 +323,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email</label>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">{t.profile.emailLabel}</label>
                       <input
                         type="email"
                         value={email}
@@ -330,7 +332,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Primary Address</label>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">{t.profile.primaryAddressLabel}</label>
                       <input
                         type="text"
                         value={primaryAddress}
@@ -346,13 +348,13 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       onClick={() => setIsEditing(false)}
                       className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
                     >
-                      Cancel
+                      {t.profile.cancelBtn}
                     </button>
                     <button
                       type="submit"
                       className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm transition cursor-pointer"
                     >
-                      Save Changes
+                      {t.profile.saveBtn}
                     </button>
                   </div>
                 </form>
@@ -361,7 +363,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
               {saveSuccess && (
                 <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Profile credentials saved successfully!</span>
+                  <span>{t.profile.savedSuccess}</span>
                 </div>
               )}
             </div>
@@ -371,44 +373,44 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/60">
                 <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                  <span>Citizen Service &amp; Booking Activity</span>
+                  <span>{language === 'mr' ? 'नागरिक सेवा व बुकिंग कार्यकलाप' : language === 'hi' ? 'नागरिक सेवा एवं बुकिंग गतिविधि' : 'Citizen Service & Booking Activity'}</span>
                 </div>
                 <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full self-start sm:self-auto border border-emerald-200">
-                  Active Consumer Account
+                  {language === 'mr' ? 'सक्रिय ग्राहक खाते' : language === 'hi' ? 'सक्रिय उपभोक्ता खाता' : 'Active Consumer Account'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 block uppercase">Total Bookings</span>
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase">{t.profile.activeRequests}</span>
                   <strong className="text-xl font-black text-slate-900 block">
                     {customerBookings.length}
                   </strong>
-                  <span className="text-[10px] text-slate-400">All service requests</span>
+                  <span className="text-[10px] text-slate-400">{language === 'mr' ? 'एकूण सेवा विनंत्या' : language === 'hi' ? 'कुल सेवा अनुरोध' : 'All service requests'}</span>
                 </div>
 
                 <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 block uppercase">Completed Services</span>
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase">{t.profile.completedServices}</span>
                   <strong className="text-xl font-black text-emerald-700 block">
                     {completedJobsCount}
                   </strong>
-                  <span className="text-[10px] text-slate-400">Verified &amp; certified</span>
+                  <span className="text-[10px] text-slate-400">{language === 'mr' ? 'सत्यापित व प्रमाणित' : language === 'hi' ? 'सत्यापित व प्रमाणित' : 'Verified & certified'}</span>
                 </div>
 
                 <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 block uppercase">Saved Addresses</span>
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase">{t.profile.tabAddresses}</span>
                   <strong className="text-xl font-black text-blue-700 block">
                     {savedAddresses.length}
                   </strong>
-                  <span className="text-[10px] text-slate-400">Doorstep locations</span>
+                  <span className="text-[10px] text-slate-400">{language === 'mr' ? 'घरपोच सेवा पत्ते' : language === 'hi' ? 'घरपहुंच सेवा पते' : 'Doorstep locations'}</span>
                 </div>
 
                 <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 block uppercase">Cooperative Zone</span>
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase">{language === 'mr' ? 'सहकारी विभाग' : language === 'hi' ? 'सहकारी प्रभाग' : 'Cooperative Zone'}</span>
                   <strong className="text-sm font-black text-slate-800 block truncate mt-1">
                     Pune Municipal (PMC)
                   </strong>
-                  <span className="text-[10px] text-emerald-600 font-bold">✓ Ward 32 Active</span>
+                  <span className="text-[10px] text-emerald-600 font-bold">✓ {language === 'mr' ? 'प्रभाग ३२ सक्रिय' : language === 'hi' ? 'वार्ड 32 सक्रिय' : 'Ward 32 Active'}</span>
                 </div>
               </div>
             </div>
@@ -424,8 +426,8 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                     <Clock className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span className="block text-sm font-black text-slate-900">View Active &amp; Past Bookings</span>
-                    <span className="text-[11px] text-slate-500 font-normal">Track worker arrivals, OTP codes &amp; invoices</span>
+                    <span className="block text-sm font-black text-slate-900">{language === 'mr' ? 'सक्रिय आणि मागील बुकिंग पाहा' : language === 'hi' ? 'सक्रिय और पिछली बुकिंग देखें' : 'View Active & Past Bookings'}</span>
+                    <span className="text-[11px] text-slate-500 font-normal">{language === 'mr' ? 'कामगार आगमन, ओटीपी कोड आणि बीजक ट्रॅक करा' : language === 'hi' ? 'श्रमिक आगमन, ओटीपी कोड और इनवॉइस ट्रैक करें' : 'Track worker arrivals, OTP codes & invoices'}</span>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400" />
@@ -440,8 +442,8 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span className="block text-sm font-black text-slate-900">Manage Service Addresses</span>
-                    <span className="text-[11px] text-slate-500 font-normal">Home, office, and family properties</span>
+                    <span className="block text-sm font-black text-slate-900">{language === 'mr' ? 'सेवा पत्ते व्यवस्थापित करा' : language === 'hi' ? 'सेवा पते प्रबंधित करें' : 'Manage Service Addresses'}</span>
+                    <span className="text-[11px] text-slate-500 font-normal">{language === 'mr' ? 'घर, कार्यालय आणि इतर पत्ते' : language === 'hi' ? 'घर, कार्यालय और अन्य पते' : 'Home, office, and family properties'}</span>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400" />
@@ -457,27 +459,27 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  Your Service History &amp; Active Requests
+                  {t.profile.tabBookings}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Track technician live arrival, 4-digit doorstep verification OTP, and official GST tax invoices
+                  {language === 'mr' ? 'तंत्रज्ञांचे थेट आगमन, ४-अंकी पडताळणी ओटीपी आणि अधिकृत जीएसटी कर बीजक तपासा' : language === 'hi' ? 'तकनीशियन का लाइव आगमन, 4-अंकीय सत्यापन ओटीपी और आधिकारिक जीएसटी टैक्स इनवॉइस ट्रैक करें' : 'Track technician live arrival, 4-digit doorstep verification OTP, and official GST tax invoices'}
                 </p>
               </div>
               <span className="text-xs font-black text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
-                {customerBookings.length} Total Bookings
+                {language === 'mr' ? `${customerBookings.length} एकूण बुकिंग` : language === 'hi' ? `${customerBookings.length} कुल बुकिंग` : `${customerBookings.length} Total Bookings`}
               </span>
             </div>
 
             {customerBookings.length === 0 ? (
               <div className="py-16 text-center text-xs text-slate-500 space-y-3">
                 <Clock className="w-10 h-10 text-slate-300 mx-auto" />
-                <p className="font-bold text-slate-700 text-sm">No bookings found yet</p>
-                <p className="text-xs text-slate-400">Browse gazetted trade services and book your first verified cooperative shramik.</p>
+                <p className="font-bold text-slate-700 text-sm">{t.profile.noBookingsTitle}</p>
+                <p className="text-xs text-slate-400">{t.profile.noBookingsSubtitle}</p>
                 <button
                   onClick={onBack}
                   className="px-4 py-2 rounded-xl bg-slate-950 text-white font-bold text-xs hover:bg-slate-800 transition cursor-pointer"
                 >
-                  Browse Services
+                  {t.profile.bookFirstService}
                 </button>
               </div>
             ) : (
@@ -496,7 +498,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-black text-slate-900">{b.serviceCategory}</span>
+                            <span className="text-sm font-black text-slate-900">{getServiceName(b.serviceCategory)}</span>
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                               isCompleted
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
@@ -504,19 +506,19 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                                 ? 'bg-emerald-500 text-white animate-pulse'
                                 : 'bg-blue-100 text-blue-800 border border-blue-200'
                             }`}>
-                              {b.status}
+                              {isCompleted ? (language === 'mr' ? 'पूर्ण' : language === 'hi' ? 'पूर्ण' : 'COMPLETED') : isInProgress ? (language === 'mr' ? 'सुरू' : language === 'hi' ? 'प्रगति पर' : 'IN_PROGRESS') : b.status}
                             </span>
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                               isPaid
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : 'bg-amber-100 text-amber-800 border border-amber-200'
                             }`}>
-                              {isPaid ? '✓ PAID' : 'PENDING'}
+                              {isPaid ? (language === 'mr' ? '✓ भरणा पूर्ण' : language === 'hi' ? '✓ भुगतान पूर्ण' : '✓ PAID') : (language === 'mr' ? 'देय' : language === 'hi' ? 'लंबित' : 'PENDING')}
                             </span>
                           </div>
 
                           <p className="text-xs text-slate-600 font-medium">
-                            {b.subTrade || b.serviceCategory}
+                            {b.subTrade || getServiceName(b.serviceCategory)}
                           </p>
                           <p className="text-xs text-slate-400 flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-slate-400" />
@@ -529,7 +531,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                             ₹{amount.toLocaleString('en-IN')}
                           </span>
                           <span className="text-[11px] text-slate-400 font-semibold">
-                            {b.preferredTime || 'Immediate Dispatch'}
+                            {b.preferredTime || (language === 'mr' ? 'त्वरित सेवा' : language === 'hi' ? 'त्वरित प्रेषण' : 'Immediate Dispatch')}
                           </span>
                         </div>
                       </div>
@@ -539,14 +541,14 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                         <div className="flex flex-wrap items-center gap-3 text-slate-600">
                           <span className="flex items-center gap-1.5 font-medium">
                             <User className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Technician: <strong>{b.workerName || (b.status === 'MATCHING' ? 'Awaiting Worker Dispatch' : 'Assigned Technician')}</strong></span>
+                            <span>{language === 'mr' ? 'तंत्रज्ञ:' : language === 'hi' ? 'तकनीशियन:' : 'Technician:'} <strong>{b.workerName || (b.status === 'MATCHING' ? (language === 'mr' ? 'कामगार शोधत आहे' : language === 'hi' ? 'श्रमिक आवंटन प्रतीक्षारत' : 'Awaiting Worker Dispatch') : (language === 'mr' ? 'नियुक्त तंत्रज्ञ' : language === 'hi' ? 'आवंटित तकनीशियन' : 'Assigned Technician'))}</strong></span>
                           </span>
 
                           {/* 4-Digit OTP Badge */}
                           {!isCompleted && (
                             <div className="flex items-center gap-1.5 bg-amber-50 text-amber-900 px-3 py-1 rounded-xl border border-amber-300 font-mono">
                               <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                              <span className="text-[11px] font-bold">Doorstep OTP:</span>
+                              <span className="text-[11px] font-bold">{language === 'mr' ? 'आगमन ओटीपी:' : language === 'hi' ? 'आगमन ओटीपी:' : 'Doorstep OTP:'}</span>
                               <strong className="text-xs font-black tracking-widest bg-white px-1.5 py-0.5 rounded border border-amber-300">
                                 {b.otp || '----'}
                               </strong>
@@ -557,14 +559,14 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                           {!isCompleted && !isInProgress && (
                             <span className="flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-200 font-bold">
                               <Clock className="w-3 h-3" />
-                              <span>{b.etaMinutes ? `Arriving in ~${b.etaMinutes}m` : 'Immediate Dispatch'}</span>
+                              <span>{b.etaMinutes ? (language === 'mr' ? `~${b.etaMinutes} मिनिटांत आगमन` : language === 'hi' ? `~${b.etaMinutes} मिनट में आगमन` : `Arriving in ~${b.etaMinutes}m`) : (language === 'mr' ? 'त्वरित सेवा' : language === 'hi' ? 'त्वरित प्रेषण' : 'Immediate Dispatch')}</span>
                             </span>
                           )}
 
                           {isInProgress && (
                             <span className="flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200 font-bold animate-pulse">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>Work In-Progress On-Site</span>
+                              <span>{language === 'mr' ? 'कार्यस्थळी काम सुरू' : language === 'hi' ? 'कार्यस्थल पर कार्य प्रगति पर' : 'Work In-Progress On-Site'}</span>
                             </span>
                           )}
                         </div>
@@ -577,7 +579,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1"
                             >
                               <CreditCard className="w-3 h-3" />
-                              <span>Pay ₹{amount}</span>
+                              <span>{language === 'mr' ? `₹${amount} भरा` : language === 'hi' ? `₹${amount} भुगतान करें` : `Pay ₹${amount}`}</span>
                             </button>
                           )}
                           <button
@@ -586,7 +588,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                             className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer border border-slate-200"
                           >
                             <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>GST Tax Invoice</span>
+                            <span>{t.tracker.viewInvoice}</span>
                           </button>
                         </div>
                       </div>
@@ -604,10 +606,10 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  Saved Service Delivery Addresses
+                  {t.profile.savedAddressesTitle}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Pinpoint exact service addresses for rapid dispatch across Pune municipal wards
+                  {language === 'mr' ? 'पुणे महानगरपालिका प्रभागात जलद सेवेसाठी अचूक सेवा पत्ते निश्चित करा' : language === 'hi' ? 'पुणे नगर निगम वार्डों में त्वरित प्रेषण के लिए सटीक सेवा पते निर्धारित करें' : 'Pinpoint exact service addresses for rapid dispatch across Pune municipal wards'}
                 </p>
               </div>
 
@@ -616,20 +618,24 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto"
               >
                 <Plus className="w-4 h-4" />
-                <span>{showAddAddress ? 'Cancel' : 'Add New Address'}</span>
+                <span>{showAddAddress ? t.profile.cancelBtn : t.profile.addNewAddressBtn}</span>
               </button>
             </div>
 
             {/* Add Address Form */}
             {showAddAddress && (
               <form onSubmit={handleAddAddress} className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 animate-fadeIn">
-                <h4 className="text-xs font-black uppercase text-slate-700">Add New Service Address</h4>
+                <h4 className="text-xs font-black uppercase text-slate-700">
+                  {language === 'mr' ? 'नवीन सेवा पत्ता जोडा' : language === 'hi' ? 'नया सेवा पता जोड़ें' : 'Add New Service Address'}
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Address Label</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                      {language === 'mr' ? 'पत्ता लेबल' : language === 'hi' ? 'पता लेबल' : 'Address Label'}
+                    </label>
                     <input
                       type="text"
-                      placeholder="e.g. Vacation Villa, Rental Property"
+                      placeholder={t.profile.addressLabelPlaceholder}
                       value={newAddressLabel}
                       onChange={(e) => setNewAddressLabel(e.target.value)}
                       required
@@ -637,7 +643,9 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Locality</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                      {language === 'mr' ? 'परिसर / इलाका' : language === 'hi' ? 'क्षेत्र / इलाका' : 'Locality'}
+                    </label>
                     <input
                       type="text"
                       defaultValue="Baner / Balewadi"
@@ -645,10 +653,12 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Complete Address</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                      {language === 'mr' ? 'संपूर्ण पत्ता' : language === 'hi' ? 'पूरा पता' : 'Complete Address'}
+                    </label>
                     <input
                       type="text"
-                      placeholder="House/Flat No, Building, Street, Landmark, Pincode"
+                      placeholder={t.profile.addressTextPlaceholder}
                       value={newAddressText}
                       onChange={(e) => setNewAddressText(e.target.value)}
                       required
@@ -663,13 +673,13 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                     onClick={() => setShowAddAddress(false)}
                     className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
                   >
-                    Cancel
+                    {t.profile.cancelBtn}
                   </button>
                   <button
                     type="submit"
                     className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm transition cursor-pointer"
                   >
-                    Save Address
+                    {t.profile.saveAddressBtn}
                   </button>
                 </div>
               </form>
@@ -678,7 +688,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
             {/* Address List */}
             {savedAddresses.length === 0 ? (
               <div className="p-10 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-xs">
-                No addresses saved yet. Click 'Add New Address' above to save your service location.
+                {language === 'mr' ? 'कोणतेही पत्ते सेव्ह केलेले नाहीत. नवीन पत्ता जोडण्यासाठी वरील बटण दाबा.' : language === 'hi' ? 'अभी तक कोई पता सहेजा नहीं गया है। नया पता जोड़ने के लिए ऊपर दिए बटन पर क्लिक करें।' : 'No addresses saved yet. Click \'Add New Address\' above to save your service location.'}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -695,7 +705,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       </span>
                       {addr.isDefault && (
                         <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                          Default
+                          {language === 'mr' ? 'डीफॉल्ट' : language === 'hi' ? 'डिफ़ॉल्ट' : 'Default'}
                         </span>
                       )}
                     </div>
@@ -712,7 +722,7 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                       className="text-slate-400 hover:text-rose-600 transition cursor-pointer flex items-center gap-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span className="text-[11px]">Remove</span>
+                      <span className="text-[11px]">{language === 'mr' ? 'हटवा' : language === 'hi' ? 'हटाएं' : 'Remove'}</span>
                     </button>
                   </div>
                 </div>
@@ -728,17 +738,19 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
           <div className="space-y-8">
             <div className="pb-4 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900">
-                Account Settings &amp; Citizen Preferences
+                {language === 'mr' ? 'खाते सेटिंग्ज आणि प्राधान्ये' : language === 'hi' ? 'खाता सेटिंग्स और प्राथमिकताएं' : 'Account Settings & Citizen Preferences'}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Manage your sovereign credentials, KYC documentation, and privacy preferences
+                {language === 'mr' ? 'आपली सार्वभौम ओळख, केवायसी कागदपत्रे आणि गोपनीयता प्राधान्ये व्यवस्थापित करा' : language === 'hi' ? 'अपने क्रेडेंशियल्स, केवाईसी दस्तावेज और गोपनीयता प्राथमिकताएं प्रबंधित करें' : 'Manage your sovereign credentials, KYC documentation, and privacy preferences'}
               </p>
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-5 max-w-2xl text-xs">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">Full Legal Name (as per Aadhaar)</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">
+                    {language === 'mr' ? 'कायदेशीर पूर्ण नाव (आधारानुसार)' : language === 'hi' ? 'पूरा कानूनी नाम (आधार के अनुसार)' : 'Full Legal Name (as per Aadhaar)'}
+                  </label>
                   <input
                     type="text"
                     value={name}
@@ -749,7 +761,9 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">Primary Mobile (OTP Verified)</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">
+                    {language === 'mr' ? 'प्राथमिक मोबाइल क्रमांक (ओटीपी सत्यापित)' : language === 'hi' ? 'प्राथमिक मोबाइल नंबर (ओटीपी सत्यापित)' : 'Primary Mobile (OTP Verified)'}
+                  </label>
                   <input
                     type="text"
                     value={phone}
@@ -760,7 +774,9 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">Email Address for GST Invoices</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">
+                    {language === 'mr' ? 'जीएसटी इनव्हॉइससाठी ईमेल पत्ता' : language === 'hi' ? 'जीएसटी इनवॉइस के लिए ईमेल पता' : 'Email Address for GST Invoices'}
+                  </label>
                   <input
                     type="email"
                     value={email}
@@ -770,7 +786,9 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">Primary Service Delivery Address</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">
+                    {language === 'mr' ? 'प्राथमिक सेवा वितरण पत्ता' : language === 'hi' ? 'प्राथमिक सेवा वितरण पता' : 'Primary Service Delivery Address'}
+                  </label>
                   <input
                     type="text"
                     value={primaryAddress}
@@ -785,12 +803,12 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
                   type="submit"
                   className="px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm transition cursor-pointer"
                 >
-                  Save Account Settings
+                  {language === 'mr' ? 'खाते सेटिंग्ज जतन करा' : language === 'hi' ? 'खाता सेटिंग्स सहेजें' : 'Save Account Settings'}
                 </button>
                 {saveSuccess && (
                   <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Updated!</span>
+                    <span>{language === 'mr' ? 'अपडेट केले!' : language === 'hi' ? 'अपडेट किया गया!' : 'Updated!'}</span>
                   </span>
                 )}
               </div>
@@ -801,30 +819,35 @@ export const CustomerProfilePage: React.FC<CustomerProfilePageProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                  <strong className="text-xs font-black text-slate-900">DigiLocker Consent &amp; Privacy Rail</strong>
+                  <strong className="text-xs font-black text-slate-900">
+                    {language === 'mr' ? 'डिजीलॉकर संमती आणि गोपनीयता प्रणाली' : language === 'hi' ? 'डिजिलॉकर सहमति और गोपनीयता रेल' : 'DigiLocker Consent & Privacy Rail'}
+                  </strong>
                 </div>
                 <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Active
+                  {language === 'mr' ? 'सक्रिय' : language === 'hi' ? 'सक्रिय' : 'Active'}
                 </span>
               </div>
               <p className="text-xs text-slate-600">
-                Your data is cryptographically protected under India's Digital Personal Data Protection (DPDP) Act 2023. 
-                Service technicians only receive your doorstep address upon booking dispatch.
+                {language === 'mr' ? 'आपला डेटा भारताच्या डिजिटल वैयक्तिक डेटा संरक्षण (DPDP) कायदा २०२३ अंतर्गत सुरक्षित आहे. सेवा तंत्रज्ञांना केवळ बुकिंग रवाना झाल्यावरच पत्ता मिळतो.' : language === 'hi' ? 'आपका डेटा भारत के डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP) अधिनियम 2023 के तहत सुरक्षित है। सेवा तकनीशियनों को बुकिंग प्रेषण पर ही आपका पता मिलता है।' : 'Your data is cryptographically protected under India\'s Digital Personal Data Protection (DPDP) Act 2023. Service technicians only receive your doorstep address upon booking dispatch.'}
               </p>
             </div>
 
             {/* Danger Zone: Sign out */}
             <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
               <div>
-                <strong className="text-xs font-black text-slate-900 block">Session Management</strong>
-                <p className="text-[11px] text-slate-500">Sign out of this browser session</p>
+                <strong className="text-xs font-black text-slate-900 block">
+                  {language === 'mr' ? 'सत्र व्यवस्थापन' : language === 'hi' ? 'सत्र प्रबंधन' : 'Session Management'}
+                </strong>
+                <p className="text-[11px] text-slate-500">
+                  {language === 'mr' ? 'या ब्राउझर सत्रातून बाहेर पडा' : language === 'hi' ? 'इस ब्राउज़र सत्र से साइन आउट करें' : 'Sign out of this browser session'}
+                </p>
               </div>
               <button
                 onClick={onLogout}
                 className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Log Out</span>
+                <span>{language === 'mr' ? 'लॉग आऊट' : language === 'hi' ? 'लॉग आउट' : 'Log Out'}</span>
               </button>
             </div>
 

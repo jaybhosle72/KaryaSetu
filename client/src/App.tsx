@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, Cooperative, Worker, Booking, InstitutionalContract, DemandForecast, WelfareClaim, Dispute } from './types';
 import { Language, translations } from './i18n/translations';
+import { useLanguage } from './i18n/LanguageContext';
 import { api } from './services/api';
 import { DemoHeader } from './components/common/DemoHeader';
 import { Navbar } from './components/common/Navbar';
@@ -34,20 +35,10 @@ export function App() {
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(currentUser?.role || 'customer');
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(() => {
-    try {
-      const saved = localStorage.getItem('karyasetu_language') || localStorage.getItem('sahakar_language');
-      if (saved === 'en' || saved === 'hi' || saved === 'mr') return saved;
-    } catch {}
-    return 'en';
-  });
+  const { language: currentLanguage, setLanguage } = useLanguage();
 
   const handleLanguageChange = (lang: Language) => {
-    setCurrentLanguage(lang);
-    try {
-      localStorage.setItem('karyasetu_language', lang);
-      localStorage.setItem('sahakar_language', lang);
-    } catch {}
+    setLanguage(lang);
   };
 
   const handleLogin = (role: UserRole, userDetails: { name: string; phone: string; roleName: string; extraMeta?: any }) => {
@@ -57,11 +48,15 @@ export function App() {
     if (user.extraMeta?.workerId) {
       setSelectedWorkerId(user.extraMeta.workerId);
     }
+    if (user.extraMeta?.cooperativeId) {
+      setSelectedCoopId(user.extraMeta.cooperativeId);
+    }
     try {
       localStorage.setItem('karyasetu_current_user', JSON.stringify(user));
       localStorage.setItem('sahakar_current_user', JSON.stringify(user));
     } catch {}
     showToast(`Welcome, ${user.name}! Signed in to ${role.toUpperCase()} portal.`, 'info');
+    loadData();
   };
 
   const handleLogout = () => {
@@ -416,7 +411,7 @@ export function App() {
     try {
       const res = await api.payBooking(id, paymentMethod);
       const paidBooking = res.booking || res;
-      setBookings(prev => prev.map(b => b._id === id ? { ...b, ...paidBooking, paymentStatus: 'PAID', status: paidBooking.status || b.status || 'COMPLETED' } : b));
+      setBookings(prev => prev.map(b => b._id === id ? { ...b, ...paidBooking, paymentStatus: 'PAID', status: 'COMPLETED' } : b));
       try {
         localStorage.setItem('karyasetu_last_paid_booking_id', id);
       } catch {}
@@ -452,7 +447,10 @@ export function App() {
   const handleSubmitDispute = async (disputeData: any) => {
     try {
       const res = await api.createDispute(disputeData);
-      setDisputes(prev => [res.data, ...prev]);
+      const dispute = res?.data || res;
+      if (dispute) {
+        setDisputes(prev => [dispute, ...prev]);
+      }
       showToast(`Grievance registered. Assigned to Cooperative Mediation Committee.`, 'info');
     } catch (e: any) {
       showToast(e.message, 'info');

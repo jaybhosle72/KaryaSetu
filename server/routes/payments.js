@@ -143,55 +143,77 @@ router.post('/verify', async (req, res) => {
     const invoiceNumber = generateInvoiceNumber();
 
     // 1. Fetch & Update Booking
-    let booking = await Booking.findById(bookingId);
+    let booking = await DataStore.getBookingById(bookingId);
+    if (!booking) {
+      booking = await Booking.findOne({ $or: [{ _id: bookingId }, { id: bookingId }] });
+    }
+
+    const isFinishingWork = booking && (booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED');
+    const updatedStatus = isFinishingWork ? 'COMPLETED' : 'EN_ROUTE';
+
     if (booking) {
-      booking.paymentStatus = 'PAID';
-      // Worker is dispatched if booking wasn't already in progress or completed
-      if (booking.status !== 'IN_PROGRESS' && booking.status !== 'COMPLETED') {
-        booking.status = 'EN_ROUTE';
-      }
-      booking.invoiceNumber = invoiceNumber;
-      booking.paymentBreakdown = {
-        workerAmount: split.workerAmount,
-        coopAmount: split.coopAmount,
-        welfareAmount: split.welfareAmount,
-        platformAmount: split.platformAmount
-      };
-      booking.paymentMethod = paymentMethod;
-      booking.completedAt = new Date();
-      await booking.save();
+      booking = await DataStore.updateBooking(bookingId, {
+        paymentStatus: 'PAID',
+        status: updatedStatus,
+        invoiceNumber,
+        paymentBreakdown: {
+          workerAmount: split.workerAmount,
+          coopAmount: split.coopAmount,
+          welfareAmount: split.welfareAmount,
+          platformAmount: split.platformAmount
+        },
+        paymentMethod,
+        completedAt: isFinishingWork ? (booking.completedAt || new Date().toISOString()) : booking.completedAt,
+        paidAt: new Date().toISOString()
+      });
     }
 
-    // 2. Disburse 80% directly to Worker Earnings
+    // 2. Disburse 80% directly to Worker Earnings (cross-mode safe)
     const workerId = booking?.assignedWorkerId || 'wrk_101';
-    let worker = await Worker.findById(workerId);
-    if (worker) {
-      worker.earnings = (worker.earnings || 0) + split.workerAmount;
-      worker.completedJobs = (worker.completedJobs || 0) + 1;
-      await worker.save();
+    let worker = null;
+    try {
+      worker = await DataStore.getWorkerById(workerId);
+      if (worker) {
+        await DataStore.updateWorker(worker._id, {
+          totalEarnings: (worker.totalEarnings || 0) + split.workerAmount,
+          completedJobs: (worker.completedJobs || 0) + 1,
+          status: worker.isEmergencyDuty ? 'EMERGENCY_READY' : 'AVAILABLE'
+        });
+      }
+    } catch (wErr) {
+      console.warn('Could not update worker earnings:', wErr.message);
     }
 
-    // 3. Deposit 6% directly into Shramik Social Security Welfare Vault
+    // 3. Deposit 6% into Shramik Social Security Welfare Vault (cross-mode safe)
     const coopId = booking?.cooperativeId || 'coop_pune_elec';
-    let coop = await Cooperative.findById(coopId);
-    if (coop) {
-      coop.welfareCorpusTotal = (coop.welfareCorpusTotal || 0) + split.welfareAmount;
-      await coop.save();
+    let coop = null;
+    try {
+      coop = await DataStore.getCooperativeById(coopId);
+      if (coop) {
+        await DataStore.updateCooperative(coop._id, {
+          welfareFundBalance: (coop.welfareFundBalance || 0) + split.welfareAmount,
+          totalJobsCompleted: (coop.totalJobsCompleted || 0) + 1
+        });
+      }
+    } catch (cErr) {
+      console.warn('Could not update cooperative welfare fund:', cErr.message);
     }
 
-    // Create Welfare Record for audit trail
-    const welfareClaim = new WelfareClaim({
-      _id: `welf_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      workerId: workerId,
-      workerName: worker?.name || booking?.workerName || 'Assigned Shramik',
-      cooperativeName: coop?.name || 'Accredited Labor Cooperative',
-      type: 'PREVENTIVE_HEALTH_CAMP',
-      title: `Statutory 6% Social Security Vault Deposit (${invoiceNumber})`,
-      amount: split.welfareAmount,
-      status: 'APPROVED',
-      description: `Auto-credited 6% welfare share for Booking ${bookingId}`
-    });
-    await welfareClaim.save();
+    // Create Welfare Record for audit trail (cross-mode safe)
+    try {
+      await DataStore.createWelfareClaim({
+        workerId: workerId,
+        workerName: worker?.name || booking?.workerName || 'Assigned Shramik',
+        cooperativeName: coop?.name || 'Accredited Labor Cooperative',
+        type: 'PREVENTIVE_HEALTH_CAMP',
+        title: `Statutory 6% Social Security Vault Deposit (${invoiceNumber})`,
+        amount: split.welfareAmount,
+        status: 'APPROVED',
+        description: `Auto-credited 6% welfare share for Booking ${bookingId}`
+      });
+    } catch (welfErr) {
+      console.warn('Could not record welfare claim:', welfErr.message);
+    }
 
     // 4. Calculate GST Tax breakdown (18% inclusive)
     const taxableAmount = Math.round((totalAmount * 100) / 118);
@@ -200,7 +222,7 @@ router.post('/verify', async (req, res) => {
     const sgst = totalGst - cgst;
 
     // 5. Create immutable PaymentRecord
-    const paymentRecord = new PaymentRecord({
+    const paymentRecordData = {
       _id: `pay_rec_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       bookingId,
       customerId: 'cust_pune_01',
@@ -232,8 +254,16 @@ router.post('/verify', async (req, res) => {
         sgst,
         totalGst
       }
-    });
-    await paymentRecord.save();
+    };
+
+    let paymentRecord = paymentRecordData;
+    try {
+      const prDoc = new PaymentRecord(paymentRecordData);
+      await prDoc.save();
+      paymentRecord = prDoc;
+    } catch (prErr) {
+      console.warn('PaymentRecord save note:', prErr.message);
+    }
 
     res.json({
       success: true,

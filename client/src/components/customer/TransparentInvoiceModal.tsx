@@ -1,6 +1,7 @@
 import React from 'react';
 import { Booking } from '../../types';
 import { ShieldCheck, Printer, CheckCircle2, FileText } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface TransparentInvoiceModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
   onClose,
   booking
 }) => {
+  const { t, getSectorTitle } = useLanguage();
   if (!isOpen || !booking) return null;
 
   const split = booking.paymentBreakdown;
@@ -29,17 +31,17 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-sm font-bold">Official Cooperative Service Invoice</h3>
+            <h3 className="text-sm font-bold">{t.modals?.invoice?.title || 'Official Cooperative Service Invoice'}</h3>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+              className="flex items-center gap-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / PDF</span>
+              <span>{t.modals?.invoice?.printPdf || 'Print / PDF'}</span>
             </button>
-            <button onClick={onClose} className="text-slate-400 hover:text-white text-lg font-bold ml-2">
+            <button onClick={onClose} className="text-slate-400 hover:text-white text-lg font-bold ml-2 cursor-pointer">
               ✕
             </button>
           </div>
@@ -56,25 +58,25 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
               </div>
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  KaryaSetu Accredited Labour Cooperative Society
+                  {t.modals?.invoice?.accreditedSocietyTag || 'KaryaSetu Accredited Labour Cooperative Society'}
                 </span>
                 <h2 className="text-base font-black text-slate-900 mt-1">
                   {booking.cooperativeName || 'Pune Electrical & Mechanical Shramik Sahakari Sanstha Ltd.'}
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Reg No: MAH/PNE/LBR/2018/8842 • District: Pune • Under MSCS Act
+                  {t.modals?.invoice?.regNoLabel || 'Reg No: MAH/PNE/LBR/2018/8842 • District: Pune • Under MSCS Act'}
                 </p>
               </div>
             </div>
             <div className="text-right">
               <span className="inline-block px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">
-                PAID IN FULL
+                {t.modals?.invoice?.paidInFull || 'PAID IN FULL'}
               </span>
               <p className="text-xs font-mono text-slate-500 mt-1">
                 {booking.invoiceNumber || 'INV-KARYA-2026-9041'}
               </p>
               <p className="text-[11px] text-slate-400">
-                Date: {new Date(booking.completedAt || booking.createdAt).toLocaleDateString()}
+                {t.modals?.invoice?.dateLabel || 'Date:'} {new Date(booking.completedAt || booking.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -82,16 +84,16 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
           {/* Customer & Worker Summary */}
           <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
             <div>
-              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Service Rendered To</p>
+              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.modals?.invoice?.serviceRenderedTo || 'Service Rendered To'}</p>
               <p className="font-bold text-slate-900 mt-0.5">{booking.customerName}</p>
               <p className="text-slate-600">{booking.address}</p>
               <p className="text-slate-500 mt-1">{booking.customerPhone}</p>
             </div>
             <div>
-              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Allocated Cooperative Worker</p>
+              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.modals?.invoice?.allocatedWorker || 'Allocated Cooperative Worker'}</p>
               <p className="font-bold text-emerald-800 mt-0.5">{booking.workerName || 'Certified Technician'}</p>
-              <p className="text-slate-600">Trade: {booking.serviceCategory} ({booking.subTrade})</p>
-              <p className="text-slate-500 mt-1">Coop Badge: Level-4 Verified</p>
+              <p className="text-slate-600">{t.modals?.invoice?.tradeLabel || 'Trade:'} {getSectorTitle(booking.serviceCategory, booking.serviceCategory)} ({booking.subTrade})</p>
+              <p className="text-slate-500 mt-1">{t.modals?.invoice?.coopBadge || 'Coop Badge: Level-4 Verified'}</p>
             </div>
           </div>
 
@@ -99,27 +101,27 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                Itemized Service & Billing Summary
+                {t.modals?.invoiceTable?.itemizedBillingSummary || 'Itemized Service & Billing Summary'}
               </h4>
               <span className="text-[10px] text-emerald-700 font-semibold">
-                ✓ Official Cooperative Tax Invoice
+                {t.modals?.invoiceTable?.officialTaxInvoice || '✓ Official Cooperative Tax Invoice'}
               </span>
             </div>
 
             <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
               <thead className="bg-slate-100 text-slate-700 font-bold">
                 <tr>
-                  <th className="py-2.5 px-3 text-left">Service Item & Description</th>
-                  <th className="py-2.5 px-3 text-center">SAC Code</th>
-                  <th className="py-2.5 px-3 text-center">Qty</th>
-                  <th className="py-2.5 px-3 text-right">Amount (₹)</th>
+                  <th className="py-2.5 px-3 text-left">{t.modals?.invoiceTable?.colServiceItem || 'Service Item & Description'}</th>
+                  <th className="py-2.5 px-3 text-center">{t.modals?.invoiceTable?.colSacCode || 'SAC Code'}</th>
+                  <th className="py-2.5 px-3 text-center">{t.modals?.invoiceTable?.colQty || 'Qty'}</th>
+                  <th className="py-2.5 px-3 text-right">{t.modals?.invoiceTable?.colAmount || 'Amount (₹)'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 <tr className="bg-white">
                   <td className="py-2.5 px-3">
                     <p className="font-bold text-slate-900">{booking.serviceCategory} — {booking.subTrade}</p>
-                    <p className="text-[10px] text-slate-500">Certified doorstep maintenance with verified materials & tools</p>
+                    <p className="text-[10px] text-slate-500">{t.modals?.invoiceTable?.certifiedDooorstepDesc || 'Certified doorstep maintenance with verified materials & tools'}</p>
                   </td>
                   <td className="py-2.5 px-3 text-center font-mono text-slate-600">998719</td>
                   <td className="py-2.5 px-3 text-center font-bold text-slate-700">1</td>
@@ -128,31 +130,32 @@ export const TransparentInvoiceModal: React.FC<TransparentInvoiceModalProps> = (
 
                 <tr className="bg-slate-50/50">
                   <td className="py-2 px-3">
-                    <p className="font-medium text-slate-700">Doorstep OTP Handshake & Safety Protocol</p>
-                    <p className="text-[10px] text-slate-500">Aadhaar verified artisan with safety kit & equipment</p>
+                    <p className="font-medium text-slate-700">{t.modals?.invoiceTable?.otpHandshakeTitle || 'Doorstep OTP Handshake & Safety Protocol'}</p>
+                    <p className="text-[10px] text-slate-500">{t.modals?.invoiceTable?.otpHandshakeDesc || 'Aadhaar verified artisan with safety kit & equipment'}</p>
                   </td>
                   <td className="py-2 px-3 text-center font-mono text-slate-500">998721</td>
                   <td className="py-2 px-3 text-center text-slate-500">1</td>
-                  <td className="py-2 px-3 text-right font-semibold text-emerald-700">Included</td>
+                  <td className="py-2 px-3 text-right font-semibold text-emerald-700">{t.modals?.invoiceTable?.coveredLabel || 'Included'}</td>
                 </tr>
 
                 <tr className="bg-slate-50/50">
                   <td className="py-2 px-3">
-                    <p className="font-medium text-slate-700">Cooperative Quality Warranty (30 Days)</p>
-                    <p className="text-[10px] text-slate-500">Free rework protection covered under Society rules</p>
+                    <p className="font-medium text-slate-700">{t.modals?.invoiceTable?.warrantyTitle || 'Cooperative Quality Warranty (30 Days)'}</p>
+                    <p className="text-[10px] text-slate-500">{t.modals?.invoiceTable?.warrantyDesc || 'Free rework protection covered under Society rules'}</p>
                   </td>
                   <td className="py-2 px-3 text-center font-mono text-slate-500">WTY-30</td>
                   <td className="py-2 px-3 text-center text-slate-500">1</td>
-                  <td className="py-2 px-3 text-right font-semibold text-emerald-700">Covered</td>
+                  <td className="py-2 px-3 text-right font-semibold text-emerald-700">{t.modals?.invoiceTable?.coveredLabel || 'Covered'}</td>
                 </tr>
 
                 <tr className="bg-slate-100 font-extrabold text-slate-900">
-                  <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-slate-700">Total Invoice Value (Paid):</td>
+                  <td colSpan={3} className="py-2.5 px-3 text-right font-bold text-slate-700">{t.modals?.invoiceTable?.totalInvoiceValue || 'Total Invoice Value (Paid):'}</td>
                   <td className="py-2.5 px-3 text-right text-sm font-black text-emerald-800">₹{booking.totalAmount}</td>
                 </tr>
               </tbody>
             </table>
           </div>
+
         </div>
 
       </div>

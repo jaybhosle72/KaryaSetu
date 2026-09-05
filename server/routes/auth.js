@@ -16,10 +16,14 @@ router.post('/register', async (req, res) => {
       experienceYears,
       aadhaar,
       license,
-      cooperativeId,
-      cooperativeName,
+      cooperativeId: inputCoopId,
+      cooperativeName: inputCoopName,
+      regNumber,
       metadata = {}
     } = req.body;
+
+    let cooperativeId = inputCoopId;
+    let cooperativeName = inputCoopName;
 
     if (!name || !phone) {
       return res.status(400).json({ success: false, error: 'Full name and phone number are required.' });
@@ -38,6 +42,7 @@ router.post('/register', async (req, res) => {
 
     let linkedWorker = null;
     let linkedContractor = null;
+    let adminRegNumber = (regNumber || '').trim();
 
     if (role === 'worker') {
       const allCoops = await DataStore.getCooperatives();
@@ -70,20 +75,57 @@ router.post('/register', async (req, res) => {
         aadhaarNumber: aadhaar || `XXXX-XXXX-${cleanPhone.slice(-4)}`
       });
     } else if (role === 'admin') {
-      const coopName = cooperativeName || `${name}'s District Labour Cooperative Federation`;
-      const createdCoop = await DataStore.createCooperative({
-        name: coopName,
-        shortName: coopName,
-        district: 'Pune',
-        state: 'Maharashtra',
-        serviceCategories: ['Electrical', 'Plumbing', 'Carpentry', 'Painting', 'Deep Cleaning', 'Civil & Masonry'],
-        totalWorkers: 0,
-        activeWorkers: 0,
-        welfareFundBalance: 0,
-        totalJobsCompleted: 0
-      });
-      cooperativeId = createdCoop._id;
-      cooperativeName = createdCoop.name;
+      const coopName = (cooperativeName || '').trim() || `${name}'s District Labour Cooperative Federation`;
+      
+      const allCoops = await DataStore.getCooperatives();
+      const existingCoop = allCoops.find(c => 
+        (cooperativeId && (c._id === cooperativeId || c.id === cooperativeId)) ||
+        (c.name && c.name.toLowerCase().trim() === coopName.toLowerCase().trim())
+      );
+
+      if (existingCoop) {
+        cooperativeId = existingCoop._id || existingCoop.id;
+        cooperativeName = existingCoop.name;
+        adminRegNumber = existingCoop.regNumber || adminRegNumber;
+        try {
+          await DataStore.updateCooperative(cooperativeId, {
+            contact: {
+              ...(existingCoop.contact || {}),
+              president: name,
+              phone: cleanPhone
+            }
+          });
+        } catch (updateErr) {
+          console.warn('Could not update cooperative contact:', updateErr.message);
+        }
+      } else {
+        const defaultId = coopName === 'Brihan-Maharashtra Multi-Trade Labour Cooperative' ? 'coop_pune_multi' : `coop_${Date.now()}`;
+        if (!adminRegNumber) {
+          adminRegNumber = `MH/PNE/CS/LAB/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+        
+        const createdCoop = await DataStore.createCooperative({
+          _id: cooperativeId || defaultId,
+          name: coopName,
+          shortName: coopName.length > 30 ? coopName.split(' ').slice(0, 3).join(' ') : coopName,
+          regNumber: adminRegNumber,
+          district: 'Pune',
+          state: 'Maharashtra',
+          serviceCategories: ['Electrical', 'Plumbing', 'Carpentry', 'Painting', 'Deep Cleaning', 'Civil & Masonry'],
+          totalWorkers: 0,
+          activeWorkers: 0,
+          welfareFundBalance: 0,
+          totalJobsCompleted: 0,
+          contact: {
+            president: name,
+            secretary: 'Joint Registrar, Pune',
+            phone: cleanPhone,
+            email: email || `${cleanPhone}@sahakarseva.org`
+          }
+        });
+        cooperativeId = createdCoop._id;
+        cooperativeName = createdCoop.name;
+      }
     }
 
     const newUser = await DataStore.createUser({
@@ -99,7 +141,8 @@ router.post('/register', async (req, res) => {
       metadata: {
         ...metadata,
         trade: trade || linkedWorker?.trade,
-        license: license || linkedContractor?.licenseNumber
+        license: license || linkedContractor?.licenseNumber,
+        regNumber: adminRegNumber || undefined
       }
     });
 

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: karyasetu-dpi
+    env: node
+    plan: free
+    buildCommand: npm run render-build
+    startCommand: node server/index.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RESET_DB_ON_START
+        value: "false"

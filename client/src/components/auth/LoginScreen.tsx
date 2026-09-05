@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole } from '../../types';
-import { Language } from '../../i18n/translations';
+import { Language, translations } from '../../i18n/translations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   Users, HardHat, Briefcase, Building, ArrowRight, 
   CheckCircle2, Award, Lock, Phone, UserPlus, LogIn,
@@ -19,6 +20,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   currentLanguage: propLanguage,
   onLanguageChange
 }) => {
+  const { language: contextLang, setLanguage: setContextLang } = useLanguage();
   const [internalLanguage, setInternalLanguage] = useState<Language>(() => {
     try {
       const saved = localStorage.getItem('karyasetu_language') || localStorage.getItem('sahakar_language');
@@ -27,10 +29,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     return 'en';
   });
 
-  const currentLanguage = propLanguage || internalLanguage;
+  const currentLanguage = propLanguage || internalLanguage || contextLang;
+  const t = (translations[currentLanguage] || translations.en) as typeof translations['en'];
 
   const handleLangSelect = (lang: Language) => {
     setInternalLanguage(lang);
+    setContextLang(lang);
     if (onLanguageChange) {
       onLanguageChange(lang);
     } else {
@@ -75,6 +79,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [adminName, setAdminName] = useState('');
   const [adminPhone, setAdminPhone] = useState('');
   const [adminCoop, setAdminCoop] = useState('Brihan-Maharashtra Multi-Trade Labour Cooperative');
+  const [adminRegNo, setAdminRegNo] = useState('MH/PNE/CS/LAB/2026/0491');
 
   // Fetch real registered users from backend on mount
   const fetchRegisteredUsers = async () => {
@@ -94,7 +99,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginPhone.trim()) {
-      setErrorMessage('Please enter your registered mobile number.');
+      setErrorMessage(t.auth.phoneRequired);
       return;
     }
     setIsLoading(true);
@@ -144,7 +149,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       if (selectedRole === 'customer') {
         if (!custName.trim() || !custPhone.trim()) {
-          throw new Error('Please enter your full name and phone number.');
+          throw new Error(t.auth.namePhoneRequired);
         }
         regPayload = {
           name: custName.trim(),
@@ -155,7 +160,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         roleName = 'Citizen Customer';
       } else if (selectedRole === 'worker') {
         if (!workerName.trim() || !workerPhone.trim()) {
-          throw new Error('Please enter worker name and phone number.');
+          throw new Error(t.auth.namePhoneRequired);
         }
         regPayload = {
           name: workerName.trim(),
@@ -186,6 +191,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           name: adminName.trim(),
           phone: adminPhone.trim(),
           cooperativeName: adminCoop.trim(),
+          regNumber: adminRegNo.trim() || 'MH/PNE/CS/LAB/2026/0491',
           role: 'admin'
         };
         roleName = 'Cooperative Board President';
@@ -274,10 +280,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
           <div>
             <span className="text-xl font-black text-slate-900 tracking-tight block leading-none">
-              KaryaSetu
+              {t.brandName}
             </span>
             <span className="text-[10px] text-slate-400 font-medium">
-              National Cooperative Digital Public Infrastructure (DPI)
+              {t.brandSubtitle}
             </span>
           </div>
         </div>
@@ -329,13 +335,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
               <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Production Real-Database Authentication
+                {t.auth.dpiAuthTag}
               </span>
               <h1 className="text-2xl font-black text-slate-900 mt-1">
-                Access KaryaSetu DPI
+                {t.auth.accessTitle}
               </h1>
               <p className="text-xs text-slate-500">
-                Log in or register on Device 1 (Customer), Device 2 (Worker), or Device 3 (Contractor)
+                {t.auth.accessSubtitle}
               </p>
             </div>
 
@@ -349,7 +355,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 }`}
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
+                <span>{t.auth.signInTab}</span>
               </button>
               <button
                 type="button"
@@ -359,7 +365,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>New Registration</span>
+                <span>{t.auth.registerTab}</span>
               </button>
             </div>
           </div>
@@ -380,8 +386,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 {selectedRole === 'customer' && <span className="w-2 h-2 rounded-full bg-blue-600" />}
               </div>
               <div className="mt-2">
-                <span className="text-xs font-black block">Customer</span>
-                <span className="text-[10px] text-slate-500">Book individual or team services</span>
+                <span className="text-xs font-black block">{t.auth.customerRoleTitle}</span>
+                <span className="text-[10px] text-slate-500">{t.auth.customerRoleDesc}</span>
               </div>
             </button>
 
@@ -399,8 +405,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 {selectedRole === 'worker' && <span className="w-2 h-2 rounded-full bg-emerald-600" />}
               </div>
               <div className="mt-2">
-                <span className="text-xs font-black block">Worker (Shramik)</span>
-                <span className="text-[10px] text-slate-500">Receive & accept matching jobs</span>
+                <span className="text-xs font-black block">{t.auth.workerRoleTitle}</span>
+                <span className="text-[10px] text-slate-500">{t.auth.workerRoleDesc}</span>
               </div>
             </button>
 
@@ -418,8 +424,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 {selectedRole === 'contractor' && <span className="w-2 h-2 rounded-full bg-orange-600" />}
               </div>
               <div className="mt-2">
-                <span className="text-xs font-black block">Contractor / Mukaddam</span>
-                <span className="text-[10px] text-slate-500">Size projects & allocate crews</span>
+                <span className="text-xs font-black block">{t.auth.contractorRoleTitle}</span>
+                <span className="text-[10px] text-slate-500">{t.auth.contractorRoleDesc}</span>
               </div>
             </button>
 
@@ -437,8 +443,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 {selectedRole === 'admin' && <span className="w-2 h-2 rounded-full bg-amber-600" />}
               </div>
               <div className="mt-2">
-                <span className="text-xs font-black block">Cooperative Admin</span>
-                <span className="text-[10px] text-slate-500">Board governance & disputes</span>
+                <span className="text-xs font-black block">{t.auth.coopRoleTitle}</span>
+                <span className="text-[10px] text-slate-500">{t.auth.coopRoleDesc}</span>
               </div>
             </button>
           </div>
@@ -448,14 +454,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  Registered {selectedRole.toUpperCase()} accounts in database:
+                  {t.auth.registeredAccounts.replace('{role}', selectedRole.toUpperCase())}
                 </span>
                 <button
                   type="button"
                   onClick={fetchRegisteredUsers}
                   className="text-[10px] text-slate-500 hover:text-slate-800 flex items-center gap-1 font-bold cursor-pointer"
                 >
-                  <RefreshCw className="w-3 h-3" /> Refresh
+                  <RefreshCw className="w-3 h-3" /> {t.auth.refresh}
                 </button>
               </div>
 
@@ -487,7 +493,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <form onSubmit={handleLoginSubmit} className="space-y-4 pt-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Registered Mobile Number
+                  {t.auth.mobileLabel}
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -496,12 +502,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     required
                     value={loginPhone}
                     onChange={(e) => setLoginPhone(e.target.value)}
-                    placeholder="+91 98220 12345"
+                    placeholder={t.auth.mobilePlaceholder}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Enter the phone number used during registration.
+                  {t.auth.mobileHint}
                 </p>
               </div>
 
@@ -512,7 +518,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   className="w-full sm:flex-1 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
                   <LogIn className="w-4 h-4 text-emerald-400" />
-                  <span>{isLoading ? 'Authenticating...' : `Sign In as ${selectedRole.toUpperCase()} ➔`}</span>
+                  <span>{isLoading ? t.common.loading : t.auth.signInBtn.replace('{role}', selectedRole.toUpperCase())}</span>
                 </button>
 
                 <button
@@ -520,7 +526,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   onClick={() => { setAuthMode('REGISTER'); setErrorMessage(''); }}
                   className="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer"
                 >
-                  Create New Account
+                  {t.auth.createNewAccount}
                 </button>
               </div>
             </form>
@@ -533,18 +539,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.fullName}</label>
                       <input
                         type="text"
                         required
                         value={custName}
                         onChange={(e) => setCustName(e.target.value)}
-                        placeholder="e.g. Aakash Deshmukh"
+                        placeholder={t.auth.fullNamePlaceholder}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.mobileLabel} *</label>
                       <input
                         type="text"
                         required
@@ -556,12 +562,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Service Address</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.serviceAddress}</label>
                     <input
                       type="text"
                       value={custAddress}
                       onChange={(e) => setCustAddress(e.target.value)}
-                      placeholder="e.g. Flat 402, Mayur Residency, Kothrud, Pune 411038"
+                      placeholder={t.auth.serviceAddressPlaceholder}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
                     />
                   </div>
@@ -573,18 +579,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.fullName}</label>
                       <input
                         type="text"
                         required
                         value={workerName}
                         onChange={(e) => setWorkerName(e.target.value)}
-                        placeholder="e.g. Ramesh Shankar Patil"
+                        placeholder={t.auth.fullNamePlaceholder}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.mobileLabel} *</label>
                       <input
                         type="text"
                         required
@@ -597,26 +603,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Primary Trade *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.serviceTrade}</label>
                       <select
                         value={workerTrade}
                         onChange={(e) => setWorkerTrade(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900"
                       >
-                        <option value="Electrical">Electrical</option>
-                        <option value="Plumbing">Plumbing</option>
-                        <option value="Painting">Painting & Renovation</option>
-                        <option value="Carpentry">Carpentry</option>
-                        <option value="Deep Cleaning">Deep Cleaning</option>
-                        <option value="Appliance Repair">Appliance Repair (AC, RO, Fridge)</option>
+                        <option value="Electrical">{t.trades?.electrical || 'Electrical'}</option>
+                        <option value="Plumbing">{t.trades?.plumbing || 'Plumbing'}</option>
+                        <option value="Painting">{t.trades?.painting || 'Painting & Renovation'}</option>
+                        <option value="Carpentry">{t.trades?.carpentry || 'Carpentry'}</option>
+                        <option value="Deep Cleaning">{t.trades?.cleaning || 'Deep Cleaning'}</option>
+                        <option value="Appliance Repair">{t.trades?.appliances || 'Appliance Repair'}</option>
                         <option value="Masonry">Masonry & Civil Labour</option>
-                        <option value="Gardening">Gardening & Landscaping</option>
-                        <option value="Caregiver">Caregiver & Home Care</option>
-                        <option value="Driver">Driver on Demand</option>
+                        <option value="Gardening">{t.trades?.gardening || 'Gardening & Landscaping'}</option>
+                        <option value="Caregiver">{t.trades?.caregivers || 'Caregiver & Home Care'}</option>
+                        <option value="Driver">{t.trades?.drivers || 'Driver on Demand'}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Experience (Years)</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.experienceYears}</label>
                       <input
                         type="number"
                         min={1}
@@ -628,12 +634,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Aadhaar / e-Shram UAN</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.aadhaarNo}</label>
                     <input
                       type="text"
                       value={workerAadhaar}
                       onChange={(e) => setWorkerAadhaar(e.target.value)}
-                      placeholder="e.g. XXXX-XXXX-4012"
+                      placeholder="XXXX-XXXX-4012"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono"
                     />
                   </div>
@@ -645,18 +651,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Contractor / Mukaddam Name *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.fullName}</label>
                       <input
                         type="text"
                         required
                         value={contractorName}
                         onChange={(e) => setContractorName(e.target.value)}
-                        placeholder="e.g. Ramesh Patil"
+                        placeholder={t.auth.fullNamePlaceholder}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.mobileLabel} *</label>
                       <input
                         type="text"
                         required
@@ -668,22 +674,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Labour License Number</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.contractorLicense}</label>
                     <input
                       type="text"
                       value={contractorLicense}
                       onChange={(e) => setContractorLicense(e.target.value)}
-                      placeholder="e.g. LIC/CLRA/PNE/2026/8812"
+                      placeholder="LIC/CLRA/PNE/2026/8812"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Managed Trades (comma-separated)</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.contractorTrades}</label>
                     <input
                       type="text"
                       value={contractorTrades}
                       onChange={(e) => setContractorTrades(e.target.value)}
-                      placeholder="e.g. Painting, Plumbing, Civil, Deep Cleaning"
+                      placeholder="Painting, Plumbing, Civil, Deep Cleaning"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
                     />
                   </div>
@@ -695,18 +701,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Officer Name *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.fullName}</label>
                       <input
                         type="text"
                         required
                         value={adminName}
                         onChange={(e) => setAdminName(e.target.value)}
-                        placeholder="e.g. Suresh Patil"
+                        placeholder={t.auth.fullNamePlaceholder}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.mobileLabel} *</label>
                       <input
                         type="text"
                         required
@@ -718,13 +724,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Cooperative Society Name</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.coopName}</label>
                     <input
                       type="text"
                       value={adminCoop}
                       onChange={(e) => setAdminCoop(e.target.value)}
-                      placeholder="e.g. Brihan-Maharashtra Multi-Trade Labour Cooperative"
+                      placeholder="Brihan-Maharashtra Multi-Trade Labour Cooperative"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t.auth.coopRegNo || 'Cooperative Registration No. (MSCS / State Act) *'}</label>
+                    <input
+                      type="text"
+                      value={adminRegNo}
+                      onChange={(e) => setAdminRegNo(e.target.value)}
+                      placeholder={t.auth.coopRegNoPlaceholder || 'MH/PNE/CS/LAB/2026/0491'}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono"
                     />
                   </div>
                 </div>
@@ -737,7 +753,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   className="w-full sm:flex-1 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>{isLoading ? 'Creating Account...' : `Complete ${selectedRole.toUpperCase()} Registration ➔`}</span>
+                  <span>{isLoading ? t.common.loading : t.auth.registerBtn}</span>
                 </button>
 
                 <button
@@ -745,7 +761,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   onClick={() => { setAuthMode('LOGIN'); setErrorMessage(''); }}
                   className="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer"
                 >
-                  Already Registered? Sign In
+                  {t.auth.alreadyRegistered}
                 </button>
               </div>
             </form>
@@ -754,7 +770,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           {/* Clean Slate Button for Testing */}
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[11px] text-slate-400">
-              Testing on multiple devices? Ensure each device signs into its respective role.
+              {t.auth.testMultiDeviceNote}
             </span>
             <button
               type="button"
@@ -763,7 +779,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               title="Purges all bookings from MongoDB so you can test fresh from zero"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear Test Bookings</span>
+              <span>{t.auth.clearBookings}</span>
             </button>
           </div>
 

@@ -38,17 +38,21 @@ const initialSeedUsers = [];
 async function seedMongoIfEmpty() {
   if (getDBMode() === 'mongodb') {
     try {
-      // Purge any legacy mock/demo records so database starts 100% clean and empty
-      await Booking.deleteMany({});
-      await Worker.deleteMany({});
-      await Contractor.deleteMany({});
-      await User.deleteMany({});
-      await InstitutionalContract.deleteMany({});
-      await WelfareClaim.deleteMany({});
-      await Dispute.deleteMany({});
-      await DemandForecast.deleteMany({});
-      await Cooperative.deleteMany({});
-      console.log('🧹 Database initialized to 100% empty state. Ready for real user-entered data.');
+      // Only purge if explicitly configured via environment variable
+      if (process.env.RESET_DB_ON_START === 'true') {
+        await Booking.deleteMany({});
+        await Worker.deleteMany({});
+        await Contractor.deleteMany({});
+        await User.deleteMany({});
+        await InstitutionalContract.deleteMany({});
+        await WelfareClaim.deleteMany({});
+        await Dispute.deleteMany({});
+        await DemandForecast.deleteMany({});
+        await Cooperative.deleteMany({});
+        console.log('🧹 Database reset requested: Initialized to 100% empty state.');
+      } else {
+        console.log('📦 Database ready: Preserving existing users, cooperatives, and records.');
+      }
     } catch (e) {
       console.warn('Cleanup error on MongoDB:', e.message);
     }
@@ -135,9 +139,12 @@ const DataStore = {
     }
     return null;
   },
-  async createCooperative(coopData) {
+  async createCooperative(coopData = {}) {
+    const timestamp = Date.now();
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const regNum = (coopData.regNumber && String(coopData.regNumber).trim()) || `MH/PNE/CS/LAB/${new Date().getFullYear()}/${randomSuffix}`;
     const doc = {
-      _id: coopData._id || `coop_${Date.now()}`,
+      _id: coopData._id || `coop_${timestamp}`,
       name: coopData.name || 'Labour Cooperative Society',
       shortName: coopData.shortName || coopData.name || 'Coop Society',
       district: coopData.district || 'Pune',
@@ -154,7 +161,14 @@ const DataStore = {
         welfareShare: 6,
         platformShare: 4
       },
-      ...coopData
+      contact: {
+        president: coopData.contact?.president || 'Cooperative Board President',
+        secretary: coopData.contact?.secretary || 'Joint Registrar, Pune',
+        phone: coopData.contact?.phone || '+91 98220 99887',
+        email: coopData.contact?.email || 'board@sahakarseva.org'
+      },
+      ...coopData,
+      regNumber: regNum
     };
     if (getDBMode() === 'mongodb') {
       const created = new Cooperative(doc);

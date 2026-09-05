@@ -9,6 +9,7 @@ import {
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend 
 } from 'recharts';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface FederationDashboardProps {
   cooperatives: Cooperative[];
@@ -33,6 +34,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
   onResolveDispute,
   onDisburseWelfare
 }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'SOCIETIES' | 'AI_BALANCING' | 'WORKFORCE_WAGE' | 'WELFARE_VAULT' | 'OPERATIONS_TRUST'>('SOCIETIES');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [rebalanceSuccessMsg, setRebalanceSuccessMsg] = useState<string>('');
@@ -97,13 +99,13 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="max-w-3xl space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black uppercase tracking-wider border border-purple-500/30">
-              <Globe className="w-3.5 h-3.5 text-purple-400" /> Apex State Federation Administration
+              <Globe className="w-3.5 h-3.5 text-purple-400" /> {language === 'mr' ? 'सर्वोच्च राज्य महासंघ प्रशासन' : language === 'hi' ? 'शीर्ष राज्य महासंघ प्रशासन' : 'Apex State Federation Administration'}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Maharashtra State Labour Cooperative Federation (MSLCF)
+              {language === 'mr' ? 'महाराष्ट्र राज्य कामगार सहकारी महासंघ (MSLCF)' : language === 'hi' ? 'महाराष्ट्र राज्य श्रम सहकारी महासंघ (MSLCF)' : 'Maharashtra State Labour Cooperative Federation (MSLCF)'}
             </h1>
             <p className="text-xs sm:text-sm text-purple-200/90 leading-relaxed">
-              Central regulatory governance, statutory 80% fair-wage enforcement, pooled social security fund administration, and AI-driven inter-cooperative workforce rebalancing across affiliated primary labour societies.
+              {language === 'mr' ? 'केंद्रीय नियामक प्रशासन, वैधानिक ८०% न्याय्य वेतन अंमलबजावणी, सामाजिक सुरक्षा निधी प्रशासन आणि संलग्न प्राथमिक सोसायट्यांमध्ये AI-आधारित कार्यबल संतुलन.' : language === 'hi' ? 'केंद्रीय नियामक शासन, वैधानिक 80% पारिश्रमिक प्रवर्तन, सामाजिक सुरक्षा निधि प्रबंधन और संबद्ध प्राथमिक समितियों में एआई-संचालित कार्यबल संतुलन।' : 'Central regulatory governance, statutory 80% fair-wage enforcement, pooled social security fund administration, and AI-driven inter-cooperative workforce rebalancing across affiliated primary labour societies.'}
             </p>
           </div>
 
@@ -113,7 +115,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
             </div>
             <div className="px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>100% Statutory Bylaw Compliant</span>
+              <span>{language === 'mr' ? '१००% वैधानिक उपविधी अनुपालन' : language === 'hi' ? '100% वैधानिक उपनियम अनुपालन' : '100% Statutory Bylaw Compliant'}</span>
             </div>
           </div>
         </div>
@@ -125,53 +127,53 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
         {/* KPI 1: Member Cooperatives */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-black uppercase tracking-wider">Member Societies</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">{language === 'mr' ? 'सदस्य संस्था' : language === 'hi' ? 'सदस्य समितियां' : 'Member Societies'}</span>
             <Building2 className="w-4 h-4 text-purple-600" />
           </div>
-          <p className="text-2xl font-black text-slate-900">{cooperatives.length} Primary Coops</p>
-          <p className="text-[11px] text-purple-700 font-semibold">Active in 5 Pune Wards</p>
+          <p className="text-2xl font-black text-slate-900">{cooperatives.length} {language === 'mr' ? 'प्राथमिक संस्था' : language === 'hi' ? 'प्राथमिक समितियां' : 'Primary Coops'}</p>
+          <p className="text-[11px] text-purple-700 font-semibold">{language === 'mr' ? 'पुण्यातील ५ प्रभागांमध्ये सक्रिय' : language === 'hi' ? 'पुणे के 5 वार्डों में सक्रिय' : 'Active in 5 Pune Wards'}</p>
         </div>
 
         {/* KPI 2: Total Accredited Workforce */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-black uppercase tracking-wider">Accredited Shramiks</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">{language === 'mr' ? 'प्रमाणित श्रमिक' : language === 'hi' ? 'प्रमाणित श्रमिक' : 'Accredited Shramiks'}</span>
             <Users className="w-4 h-4 text-blue-600" />
           </div>
-          <p className="text-2xl font-black text-slate-900">{totalWorkersCount} Certified</p>
-          <p className="text-[11px] text-emerald-700 font-semibold">100% Verified Skill Badges</p>
+          <p className="text-2xl font-black text-slate-900">{totalWorkersCount} {language === 'mr' ? 'प्रमाणित' : language === 'hi' ? 'प्रमाणित' : 'Certified'}</p>
+          <p className="text-[11px] text-emerald-700 font-semibold">{language === 'mr' ? '१००% पडताळणी केलेले कौशल्य बॅज' : language === 'hi' ? '100% सत्यापित कौशल्य बैज' : '100% Verified Skill Badges'}</p>
         </div>
 
         {/* KPI 3: Federation Welfare Corpus */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-amber-700">
-            <span className="text-[10px] font-black uppercase tracking-wider">Pooled Welfare Vault</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">{language === 'mr' ? 'कल्याण निधी तिजोरी' : language === 'hi' ? 'एकत्रित कल्याण कोष' : 'Pooled Welfare Vault'}</span>
             <HeartHandshake className="w-4 h-4 text-amber-600" />
           </div>
           <p className="text-2xl font-black text-amber-600">₹{totalWelfareFund.toLocaleString('en-IN')}</p>
-          <p className="text-[11px] text-amber-800 font-semibold">PM-JAY & Accidental Cover</p>
+          <p className="text-[11px] text-amber-800 font-semibold">{language === 'mr' ? 'आयुष्मान भारत व अपघात संरक्षण' : language === 'hi' ? 'पीएम-जय और दुर्घटना कवर' : 'PM-JAY & Accidental Cover'}</p>
         </div>
 
         {/* KPI 4: Direct Worker Wages Disbursed */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-emerald-700">
-            <span className="text-[10px] font-black uppercase tracking-wider">Wages Disbursed</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">{language === 'mr' ? 'वितरित वेतन' : language === 'hi' ? 'वितरित पारिश्रमिक' : 'Wages Disbursed'}</span>
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
           <p className="text-2xl font-black text-emerald-700">
             ₹{totalWagesDistributed.toLocaleString('en-IN')}
           </p>
-          <p className="text-[11px] text-emerald-800 font-semibold">80% Statutory Floor Enforced</p>
+          <p className="text-[11px] text-emerald-800 font-semibold">{language === 'mr' ? '८०% वैधानिक दर लागू' : language === 'hi' ? '80% वैधानिक न्यूनतम लागू' : '80% Statutory Floor Enforced'}</p>
         </div>
 
         {/* KPI 5: Emergency Response Speed */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1 col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-black uppercase tracking-wider">Emergency Response</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">{language === 'mr' ? 'तातडीचा प्रतिसाद' : language === 'hi' ? 'आपातकालीन प्रतिक्रिया' : 'Emergency Response'}</span>
             <Sparkles className="w-4 h-4 text-indigo-600" />
           </div>
-          <p className="text-2xl font-black text-slate-900">~14 Mins</p>
-          <p className="text-[11px] text-indigo-700 font-semibold">Average SOS Doorstep ETA</p>
+          <p className="text-2xl font-black text-slate-900">~14 {language === 'mr' ? 'मिनिटे' : language === 'hi' ? 'मिनट' : 'Mins'}</p>
+          <p className="text-[11px] text-indigo-700 font-semibold">{language === 'mr' ? 'सरासरी आपत्कालीन पोहोच वेळ' : language === 'hi' ? 'औसत आपातकालीन आगमन समय' : 'Average SOS Doorstep ETA'}</p>
         </div>
 
       </div>
@@ -188,7 +190,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>1. Member Societies Registry</span>
+          <span>{language === 'mr' ? '१. सदस्य संस्था नोंदणी' : language === 'hi' ? '1. सदस्य समितियां रजिस्ट्री' : '1. Member Societies Registry'}</span>
           <span className="ml-1 px-1.5 py-0.5 rounded-md bg-purple-800 text-purple-200 text-[10px]">
             {cooperatives.length}
           </span>
@@ -203,7 +205,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          <span>2. AI Demand & Workforce Balancing</span>
+          <span>{language === 'mr' ? '२. AI मागणी आणि कामगार संतुलन' : language === 'hi' ? '2. एआई मांग एवं कार्यबल संतुलन' : '2. AI Demand & Workforce Balancing'}</span>
           <span className="ml-1 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-bold">
             Live Heatmap
           </span>
@@ -218,7 +220,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>3. Workforce & 80% Fair-Wage Audit</span>
+          <span>{language === 'mr' ? '३. कामगार आणि ८०% वेतन तपासणी' : language === 'hi' ? '3. कार्यबल एवं 80% पारिश्रमिक ऑडिट' : '3. Workforce & 80% Fair-Wage Audit'}</span>
         </button>
 
         <button
@@ -230,7 +232,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
           }`}
         >
           <HeartHandshake className="w-4 h-4" />
-          <span>4. Social Security & Insurance Vault</span>
+          <span>{language === 'mr' ? '४. सामाजिक सुरक्षा व विमा तिजोरी' : language === 'hi' ? '4. सामाजिक सुरक्षा एवं बीमा कोष' : '4. Social Security & Insurance Vault'}</span>
         </button>
 
         <button
@@ -242,7 +244,7 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
           }`}
         >
           <Scale className="w-4 h-4" />
-          <span>5. Operations & Dispute Arbitration</span>
+          <span>{language === 'mr' ? '५. संचलन आणि वाद निवारण' : language === 'hi' ? '5. संचालन एवं विवाद मध्यस्थता' : '5. Operations & Dispute Arbitration'}</span>
           {disputes.filter(d => d.status !== 'RESOLVED').length > 0 && (
             <span className="ml-1 px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-bold">
               {disputes.filter(d => d.status !== 'RESOLVED').length}

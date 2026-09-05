@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MapPin, Navigation, Compass, Sparkles } from 'lucide-react';
 import { GeoLocationCoords } from '../../types';
 import { Language, translations } from '../../i18n/translations';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export const PUNE_LOCALITIES: GeoLocationCoords[] = [
   { lat: 18.5074, lng: 73.8077, area: 'Kothrud, Pune', address: 'Flat 504, Windsor Park, Kothrud, Pune 411038' },
@@ -25,9 +26,11 @@ export const CustomerLocationBar: React.FC<CustomerLocationBarProps> = ({
   currentLocation,
   onLocationChange,
   onOpenMap,
-  currentLanguage = 'en'
+  currentLanguage
 }) => {
-  const t = translations[currentLanguage] || translations.en;
+  const { language: ctxLang, t: ctxT } = useLanguage();
+  const activeLang = currentLanguage || ctxLang || 'en';
+  const t = ctxT || translations[activeLang] || translations.en;
   const [isDetecting, setIsDetecting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>('');
 
@@ -104,7 +107,7 @@ export const CustomerLocationBar: React.FC<CustomerLocationBarProps> = ({
         <button
           type="button"
           onClick={onOpenMap}
-          title="Click to set or adjust location on Google Map"
+          title={t.modals?.location?.subtitle || 'Click to set or adjust location on Google Map'}
           className="flex-1 flex items-center gap-2.5 text-left px-2.5 py-1.5 rounded-xl hover:bg-slate-50 transition cursor-pointer min-w-0"
         >
           <div className="w-8 h-8 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-red-100/80 transition">
@@ -114,14 +117,14 @@ export const CustomerLocationBar: React.FC<CustomerLocationBarProps> = ({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                {currentLocation.area || 'Set Location on Google Map'}
+                {currentLocation.area || (t.modals?.location?.subtitle || 'Set Location on Google Map')}
               </span>
               <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold border border-red-100/80">
                 Google Map ➔
               </span>
             </div>
             <p className="text-[11px] text-slate-500 truncate max-w-full">
-              {currentLocation.address || `${currentLocation.lat.toFixed(2)}° N, ${currentLocation.lng.toFixed(2)}° E • Click to adjust on map`}
+              {currentLocation.address || `${currentLocation.lat.toFixed(2)}° N, ${currentLocation.lng.toFixed(2)}° E`}
             </p>
           </div>
         </button>
@@ -134,12 +137,12 @@ export const CustomerLocationBar: React.FC<CustomerLocationBarProps> = ({
           type="button"
           onClick={handleDetectGPS}
           disabled={isDetecting}
-          title="Set to your current GPS location"
+          title={t.customer?.currentLocation || 'Set to your current GPS location'}
           className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-bold text-xs flex items-center gap-1.5 transition border border-blue-200/60 cursor-pointer shrink-0 disabled:opacity-60 shadow-2xs"
         >
           <Navigation className={`w-3.5 h-3.5 text-blue-600 ${isDetecting ? 'animate-spin' : ''}`} />
           <span className="whitespace-nowrap">
-            {isDetecting ? 'Detecting...' : 'Current Location'}
+            {isDetecting ? (activeLang === 'hi' ? 'खोज जारी...' : activeLang === 'mr' ? 'शोध सुरू...' : 'Detecting...') : (t.customer?.currentLocation || 'Current Location')}
           </span>
         </button>
       </div>

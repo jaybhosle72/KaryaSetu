@@ -7,16 +7,7 @@ const WelfareClaimSchema = new mongoose.Schema({
   cooperativeName: { type: String, required: true },
   type: { 
     type: String, 
-    enum: [
-      'ACCIDENT_INSURANCE_PREMIUM', 
-      'CHILD_EDUCATION_SCHOLARSHIP', 
-      'PREVENTIVE_HEALTH_CAMP', 
-      'EMERGENCY_MEDICAL_AID', 
-      'UP_SKILLING_GRANT',
-      'PENSION_DIVIDEND',
-      'TOOL_SUBSIDY',
-      'SAFETY_EQUIPMENT_GRANT'
-    ], 
+    default: 'PREVENTIVE_HEALTH_CAMP',
     required: true 
   },
   title: { type: String, required: true },

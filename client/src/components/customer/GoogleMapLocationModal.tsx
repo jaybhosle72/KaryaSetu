@@ -6,6 +6,7 @@ import {
 import { GeoLocationCoords } from '../../types';
 import { PUNE_LOCALITIES } from './CustomerLocationBar';
 import { getGoogleMapsApiKey, setGoogleMapsApiKey, loadGoogleMapsApi } from '../../utils/googleMapsLoader';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface GoogleMapLocationModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const GoogleMapLocationModal: React.FC<GoogleMapLocationModalProps> = ({
   currentLocation,
   onConfirmLocation
 }) => {
+  const { t } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -325,14 +327,14 @@ export const GoogleMapLocationModal: React.FC<GoogleMapLocationModalProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-black text-white tracking-tight">
-                  Google Maps Location Selector
+                  {t.modals?.location?.title || 'Google Maps Location Selector'}
                 </h3>
                 <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">
                   Google Maps API Active
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                Search an address or click anywhere on the Google Map to pin your exact doorstep
+                {t.modals?.location?.dragPinHint || 'Search an address or click anywhere on the Google Map to pin your exact doorstep'}
               </p>
             </div>
           </div>
@@ -403,7 +405,7 @@ export const GoogleMapLocationModal: React.FC<GoogleMapLocationModalProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Google Maps (e.g. Kothrud, Paud Road, Pune)..."
+                placeholder={t.modals?.location?.searchPlaceholder || 'Search Google Maps (e.g. Kothrud, Paud Road, Pune)...'}
                 className="w-full pl-10 pr-20 py-2.5 bg-white text-xs font-semibold text-slate-800 focus:outline-none border border-slate-300 rounded-2xl shadow-sm placeholder:text-slate-400"
               />
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -411,7 +413,7 @@ export const GoogleMapLocationModal: React.FC<GoogleMapLocationModalProps> = ({
                 type="submit"
                 className="absolute right-1.5 top-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] rounded-xl transition cursor-pointer"
               >
-                Search
+                {t.common?.search || 'Search'}
               </button>
             </form>
           </div>
@@ -474,7 +476,7 @@ export const GoogleMapLocationModal: React.FC<GoogleMapLocationModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
               >
-                Cancel
+                {t.common?.cancel || 'Cancel'}
               </button>
               <button
                 type="button"
@@ -482,7 +484,7 @@ export const GoogleMapLocationModal: React.FC<GoogleMapLocationModalProps> = ({
                 className="px-5 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-xs font-black transition cursor-pointer shadow-sm flex items-center gap-1.5"
               >
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Confirm & Set Location ➔</span>
+                <span>{t.modals?.location?.confirmBtn || 'Confirm & Set Location ➔'}</span>
               </button>
             </div>
           </div>

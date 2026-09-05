@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Worker, Booking, WelfareClaim } from '../../types';
 import { WorkerNavigationModal } from './WorkerNavigationModal';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   ShieldCheck, Award, HeartHandshake, Phone, MapPin, 
   CheckCircle2, AlertTriangle, Wallet, Check, Star, 
@@ -34,6 +35,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   onAcceptJob,
   currentUser
 }) => {
+  const { language, t, getSectorTitle, getServiceName } = useLanguage();
   const currentWorker = workers.find(w => 
     (currentUser?.extraMeta?.workerId && w._id === currentUser.extraMeta.workerId) ||
     (currentUser?.phone && w.phone === currentUser.phone) ||
@@ -159,9 +161,9 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200">
             <HardHat className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-black text-slate-900">No Registered Shramik Profile Found</h2>
+          <h2 className="text-xl font-black text-slate-900">{t.worker.noWorkerFound}</h2>
           <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-            There are currently no active worker profiles registered in the cooperative database. Please sign out and register a new worker account or sign in with your registered worker mobile number.
+            {t.worker.registerPrompt}
           </p>
         </div>
       </div>
@@ -184,7 +186,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
             {currentWorker.name}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Trade: <strong className="text-slate-800">{currentWorker.trade}</strong> • Member of <strong className="text-slate-800">{currentWorker.cooperativeName}</strong>
+            Trade: <strong className="text-slate-800">{getServiceName(currentWorker.trade)}</strong> • Member of <strong className="text-slate-800">{currentWorker.cooperativeName}</strong>
           </p>
         </div>
 
@@ -192,7 +194,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
           {/* Worker Switcher if multiple workers */}
           {workers.length > 1 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-bold uppercase hidden sm:inline">Switch Worker:</span>
+              <span className="text-xs text-slate-400 font-bold uppercase hidden sm:inline">{t.worker.switchWorker}</span>
               <select
                 value={currentWorker._id}
                 onChange={(e) => onSelectWorker(e.target.value)}
@@ -202,7 +204,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                   const hasJob = bookings.some(b => b.assignedWorkerId === w._id && b.status !== 'COMPLETED');
                   return (
                     <option key={w._id} value={w._id}>
-                      {hasJob ? '🟢 ' : ''}{w.name} ({w.trade}){hasJob ? ' • [ACTIVE JOB]' : ''}
+                      {hasJob ? '🟢 ' : ''}{w.name} ({getServiceName(w.trade)}){hasJob ? ' • [ACTIVE JOB]' : ''}
                     </option>
                   );
                 })}
@@ -220,7 +222,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
             }`}
           >
             <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400'}`} />
-            <span>{isAvailable ? 'Available for Jobs' : 'Offline / On Break'}</span>
+            <span>{isAvailable ? t.worker.statusOnline : t.worker.statusOffline}</span>
           </button>
         </div>
       </div>
@@ -274,23 +276,23 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full">
-                      ⚡ Immediate Dispatch Ready
+                      ⚡ {t.portal?.instant || 'Immediate'} Dispatch
                     </span>
                     <span className="text-sm font-black text-emerald-700">
-                      ₹{Math.round(job.totalAmount * 0.8)} <span className="text-[10px] text-slate-500 font-normal">(80% Escrow)</span>
+                      ₹{Math.round(job.totalAmount * 0.8)} <span className="text-[10px] text-slate-500 font-normal">({t.worker.directEscrowRate})</span>
                     </span>
                   </div>
 
                   <div>
                     <h4 className="text-base font-black text-slate-900">
-                      {job.serviceCategory} • {job.subTrade}
+                      {getSectorTitle(job.serviceCategory, job.serviceCategory)} • {getServiceName(job.subTrade)}
                     </h4>
                     <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-1">
                       <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                       <span>{job.address}</span>
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Customer: <strong>{job.customerName}</strong> ({job.customerPhone})
+                      {t.worker.customerLabel} <strong>{job.customerName}</strong> ({job.customerPhone})
                     </p>
                     {job.notes && (
                       <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded-xl mt-1.5 border border-slate-100 italic">
@@ -318,7 +320,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                   className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
                   <Check className="w-4 h-4" />
-                  <span>{isAcceptingJobId === job._id ? 'Accepting & Assigning...' : 'Accept Job & Start Navigation ➔'}</span>
+                  <span>{isAcceptingJobId === job._id ? t.common.loading : `${t.worker.acceptBtn} ➔`}</span>
                 </button>
               </div>
             ))}
@@ -519,7 +521,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
           <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-lg font-black text-slate-900">Assigned Jobs & Workflow</h3>
+                <h3 className="text-lg font-black text-slate-900">{t.worker.activeJobTitle}</h3>
                 <p className="text-xs text-slate-500">Live booking dispatch, customer navigation, and status milestones</p>
               </div>
               {activeJob && (
@@ -537,10 +539,10 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                     <span className="text-xl">⚡</span>
                     <div>
                       <span className="text-[10px] uppercase font-black tracking-wider text-emerald-200 block">
-                        Incoming Customer Job Dispatched to You
+                        {t.worker.incomingAlert}
                       </span>
                       <p className="text-xs font-bold text-white">
-                        Customer <strong>{activeJob.customerName}</strong> booked <strong>{activeJob.serviceCategory}</strong>
+                        {t.worker.customerLabel} <strong>{activeJob.customerName}</strong> ({getSectorTitle(activeJob.serviceCategory, activeJob.serviceCategory)})
                       </p>
                     </div>
                   </div>
@@ -568,7 +570,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>{acceptedJobIds.includes(activeJob._id) ? '✓ Accepted' : '✓ Accept Request'}</span>
+                      <span>{acceptedJobIds.includes(activeJob._id) ? `✓ ${t.common.confirm}` : `✓ ${t.worker.acceptBtn}`}</span>
                     </button>
                     <a
                       href={`tel:${activeJob.customerPhone}`}
@@ -584,14 +586,14 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                   <div>
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Exact Service Booked</span>
                     <h4 className="text-base font-black text-slate-900 mt-0.5">
-                      {activeJob.serviceCategory} • {activeJob.subTrade}
+                      {getSectorTitle(activeJob.serviceCategory, activeJob.serviceCategory)} • {getServiceName(activeJob.subTrade)}
                     </h4>
                     <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-1">
                       <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                       <span>{activeJob.address}</span>
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Customer: <strong>{activeJob.customerName}</strong> ({activeJob.customerPhone})
+                      {t.worker.customerLabel} <strong>{activeJob.customerName}</strong> ({activeJob.customerPhone})
                     </p>
                     {activeJob.notes && (
                       <div className="mt-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
@@ -601,11 +603,11 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                   </div>
 
                   <div className="text-left sm:text-right shrink-0">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Your Earning</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">{t.worker.estPayoutLabel}</span>
                     <span className="text-2xl font-black text-emerald-700">
                       ₹{Math.round(activeJob.totalAmount * 0.8)}
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-bold block">Direct Escrow Payout</span>
+                    <span className="text-[10px] text-emerald-600 font-bold block">{t.worker.directEscrowRate}</span>
                   </div>
                 </div>
 
@@ -634,7 +636,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-2 shadow-md transition cursor-pointer animate-pulse"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>{isAcceptingJobId === activeJob._id ? 'Accepting...' : '✓ Accept Job Request & Confirm ➔'}</span>
+                        <span>{isAcceptingJobId === activeJob._id ? t.common.loading : `✓ ${t.worker.acceptBtn} ➔`}</span>
                       </button>
                       <a
                         href={`tel:${activeJob.customerPhone}`}
@@ -674,8 +676,8 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         <CheckCircle2 className="w-4 h-4" />
                         <span>
                           {acceptedJobIds.includes(activeJob._id)
-                            ? '✓ Job Request Accepted'
-                            : (isAcceptingJobId === activeJob._id ? 'Accepting...' : '✓ Accept Job Request')}
+                            ? `✓ ${t.common.confirm}`
+                            : (isAcceptingJobId === activeJob._id ? t.common.loading : `✓ ${t.worker.acceptBtn}`)}
                         </span>
                       </button>
 
@@ -687,7 +689,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
                       >
                         <Navigation className="w-4 h-4 text-emerald-400" />
-                        <span>1. Start Navigation (En Route) ➔</span>
+                        <span>1. {t.worker.tripStartBtn} ➔</span>
                       </button>
                       <a
                         href={`tel:${activeJob.customerPhone}`}
@@ -717,7 +719,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                           className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
                         >
                           <MapPin className="w-4 h-4 text-white" />
-                          <span>2. Arrived at Customer Doorstep ➔</span>
+                          <span>2. {t.worker.arrivedBtn} ➔</span>
                         </button>
 
                         <a
@@ -734,10 +736,10 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
                             <strong className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                              <span>🔐 Customer Doorstep OTP Required to Start Work</span>
+                              <span>🔐 {t.worker.verifyOtpTitle}</span>
                             </strong>
                             <p className="text-[11px] text-slate-600 mt-0.5">
-                              Ask customer <strong>{activeJob.customerName}</strong> for the 4-digit code displayed on their screen.
+                              {t.worker.otpPrompt}
                             </p>
                           </div>
                           {activeJob.otp && (
@@ -797,7 +799,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                             className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>{isVerifyingOtp ? 'Verifying...' : 'Confirm OTP & Start Work ➔'}</span>
+                            <span>{isVerifyingOtp ? t.common.loading : `${t.worker.verifyAndReleaseBtn} ➔`}</span>
                           </button>
                         </div>
 
@@ -838,8 +840,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               </div>
             ) : (
               <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
-                <p className="font-bold text-slate-700 text-sm">No Active Booking in Progress</p>
-                <p className="mt-1">You are available in the Pune ward pool. New customer bookings will alert you here.</p>
+                <p className="font-bold text-slate-700 text-sm">{t.worker.noCompletedJobs}</p>
               </div>
             )}
           </div>
@@ -848,11 +849,11 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
           <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-lg font-black text-slate-900">Worker Earnings & Payout Ledger</h3>
+                <h3 className="text-lg font-black text-slate-900">{t.worker.completedLedgerTitle}</h3>
                 <p className="text-xs text-slate-500">Verified direct bank deposits and OTP-settled service compensations</p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Balance</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">{t.worker.earningsCard}</span>
                 <span className="text-xl font-black text-emerald-700">
                   ₹{(currentWorker.totalEarnings || 0).toLocaleString('en-IN')}
                 </span>
@@ -893,8 +894,8 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                   {completedJobs.slice(0, 5).map((job) => (
                     <div key={job._id} className="py-3 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-slate-900">{job.serviceCategory} - {job.subTrade}</p>
-                        <p className="text-slate-400 text-[11px]">{job.address} • Customer: {job.customerName}</p>
+                        <p className="font-bold text-slate-900">{getSectorTitle(job.serviceCategory, job.serviceCategory)} - {getServiceName(job.subTrade)}</p>
+                        <p className="text-slate-400 text-[11px]">{job.address} • {t.worker.customerLabel} {job.customerName}</p>
                       </div>
                       <div className="text-right">
                         <span className="text-sm font-black text-emerald-700">+₹{Math.round(job.totalAmount * 0.8)}</span>
@@ -905,7 +906,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 py-3 italic bg-slate-50/50 rounded-xl p-3 border border-dashed border-slate-200 text-center">
-                  No completed jobs recorded yet. Accept incoming job requests above to build your ledger.
+                  {t.worker.noCompletedJobs}
                 </p>
               )}
             </div>

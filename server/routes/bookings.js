@@ -299,12 +299,7 @@ const handleUpdateStatus = async (req, res) => {
           });
         }
       }
-      if (booking.assignedWorkerIds && booking.assignedWorkerIds.length > 0) {
-        await Worker.updateMany(
-          { _id: { $in: booking.assignedWorkerIds } },
-          { status: 'AVAILABLE', $inc: { completedJobs: 1 } }
-        );
-      }
+      // Note: team worker status update is handled individually above or via DataStore
     }
 
     const updated = await DataStore.updateBooking(req.params.id, updates);
@@ -361,16 +356,14 @@ router.post('/:id/pay', async (req, res) => {
       platformAmount: Math.round(booking.totalAmount * 0.04)
     };
 
-    const newStatus = (booking.status === 'COMPLETED')
-      ? 'COMPLETED'
-      : (booking.status === 'IN_PROGRESS')
-      ? 'IN_PROGRESS'
-      : 'EN_ROUTE';
+    const isFinishingWork = booking.status === 'COMPLETED' || booking.status === 'IN_PROGRESS';
+    const newStatus = isFinishingWork ? 'COMPLETED' : 'EN_ROUTE';
 
     const updatedBooking = await DataStore.updateBooking(req.params.id, {
       paymentStatus: 'PAID',
       paymentMethod,
       status: newStatus,
+      completedAt: isFinishingWork ? (booking.completedAt || new Date().toISOString()) : booking.completedAt,
       paidAt: new Date().toISOString()
     });
 

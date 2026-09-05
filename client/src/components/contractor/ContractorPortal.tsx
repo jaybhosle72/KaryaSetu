@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Booking, Worker, Contractor } from '../../types';
 import { api } from '../../services/api';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ContractorPortalProps {
   contractorUser?: {
@@ -31,6 +32,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
   onOnboardWorker,
   onSubmitProposal
 }) => {
+  const { t, language, getServiceName } = useLanguage();
   const [activeTab, setActiveTab] = useState<'REQUESTS' | 'COMMUNITY' | 'PROJECTS' | 'EARNINGS'>('REQUESTS');
   
   // State for worker allocation modal
@@ -194,21 +196,21 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                    CLRA Certified Labour Contractor
+                    {language === 'mr' ? 'सीएलआरए प्रमाणित कामगार कंत्राटदार' : language === 'hi' ? 'सीएलआरए प्रमाणित श्रम ठेकेदार' : 'CLRA Certified Labour Contractor'}
                   </span>
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    Active Gang Leader
+                    {language === 'mr' ? 'सक्रिय मुकादम' : language === 'hi' ? 'सक्रिय मुकादम' : 'Active Gang Leader'}
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                   {contractorName}
                 </h1>
                 <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span>Permit: <strong className="text-slate-200 font-mono">{licenseNumber}</strong></span>
+                  <span>{language === 'mr' ? 'परवाना:' : language === 'hi' ? 'परमिट:' : 'Permit:'} <strong className="text-slate-200 font-mono">{licenseNumber}</strong></span>
                   <span>•</span>
-                  <span>Cooperative: <strong className="text-slate-200">{cooperativeName}</strong></span>
+                  <span>{language === 'mr' ? 'सहकारी समिती:' : language === 'hi' ? 'सहकारी समिति:' : 'Cooperative:'} <strong className="text-slate-200">{cooperativeName}</strong></span>
                   <span>•</span>
-                  <span>Phone: <strong className="text-slate-200">{contractorPhone}</strong></span>
+                  <span>{language === 'mr' ? 'फोन:' : language === 'hi' ? 'फोन:' : 'Phone:'} <strong className="text-slate-200">{contractorPhone}</strong></span>
                 </p>
               </div>
             </div>
@@ -219,7 +221,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                 className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-sm flex items-center gap-2 cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>+ Onboard Shramik</span>
+                <span>{language === 'mr' ? '+ नवीन श्रमिक नोंदणी' : language === 'hi' ? '+ नया श्रमिक जोड़ें' : '+ Onboard Shramik'}</span>
               </button>
             </div>
           </div>
@@ -228,61 +230,61 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
             <div className="bg-slate-900/90 rounded-2xl p-4 border border-slate-800">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Managed Community Size
+                {language === 'mr' ? 'व्यवस्थापित कामगार संख्या' : language === 'hi' ? 'प्रबंधित कार्यबल संख्या' : 'Managed Community Size'}
               </span>
               <div className="text-2xl font-black text-white mt-1 flex items-center gap-2">
-                <span>{communityWorkers.length} Shramiks</span>
+                <span>{communityWorkers.length} {language === 'mr' ? 'श्रमिक' : language === 'hi' ? 'श्रमिक' : 'Shramiks'}</span>
                 <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-full">
                   100% KYC
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
-                Painting, Deep Cleaning & Masonry
+                {language === 'mr' ? 'रंगकाम, सखोल स्वच्छता आणि गवंडीकाम' : language === 'hi' ? 'पेंटिंग, गहरी सफाई और राजमिस्त्री' : 'Painting, Deep Cleaning & Masonry'}
               </span>
             </div>
 
             <div className="bg-slate-900/90 rounded-2xl p-4 border border-slate-800">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Pending Team Requests
+                {language === 'mr' ? 'प्रलंबित संघ मागण्या' : language === 'hi' ? 'लंबित टीम अनुरोध' : 'Pending Team Requests'}
               </span>
               <div className="text-2xl font-black text-amber-400 mt-1 flex items-center gap-2">
-                <span>{pendingRequests.length} Orders</span>
+                <span>{pendingRequests.length} {language === 'mr' ? 'मागण्या' : language === 'hi' ? 'ऑर्डर' : 'Orders'}</span>
                 <span className="text-[10px] text-amber-300 font-bold bg-amber-950/60 px-2 py-0.5 rounded-full animate-pulse">
-                  Action Needed
+                  {language === 'mr' ? 'कृती आवश्यक' : language === 'hi' ? 'कार्रवाई आवश्यक' : 'Action Needed'}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
-                Requires crew worker allocation
+                {language === 'mr' ? 'कामगारांचे वाटप आवश्यक' : language === 'hi' ? 'श्रमिक आवंटन आवश्यक' : 'Requires crew worker allocation'}
               </span>
             </div>
 
             <div className="bg-slate-900/90 rounded-2xl p-4 border border-slate-800">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Ongoing Crew Contracts
+                {language === 'mr' ? 'चालू प्रकल्प कंत्राटे' : language === 'hi' ? 'जारी टीम अनुबंध' : 'Ongoing Crew Contracts'}
               </span>
               <div className="text-2xl font-black text-blue-400 mt-1 flex items-center gap-2">
-                <span>{ongoingProjects.length} Active</span>
+                <span>{ongoingProjects.length} {language === 'mr' ? 'सक्रिय' : language === 'hi' ? 'सक्रिय' : 'Active'}</span>
                 <span className="text-[10px] text-blue-300 font-bold bg-blue-950/60 px-2 py-0.5 rounded-full">
-                  On Site
+                  {language === 'mr' ? 'कार्यस्थळी' : language === 'hi' ? 'कार्यस्थल पर' : 'On Site'}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
-                Housing societies & large flats
+                {language === 'mr' ? 'गृहनिर्माण संस्था आणि मोठे फ्लॅट्स' : language === 'hi' ? 'हाउसिंग सोसायटी और बड़े फ्लैट' : 'Housing societies & large flats'}
               </span>
             </div>
 
             <div className="bg-slate-900/90 rounded-2xl p-4 border border-slate-800">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Community Welfare Corpus
+                {language === 'mr' ? 'समुदाय कल्याण निधी' : language === 'hi' ? 'समुदाय कल्याण कोष' : 'Community Welfare Corpus'}
               </span>
               <div className="text-2xl font-black text-emerald-400 mt-1 flex items-center gap-2">
                 <span>₹68,400</span>
                 <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-full">
-                  6% Reserve
+                  {language === 'mr' ? '६% राखीव' : language === 'hi' ? '6% आरक्षित' : '6% Reserve'}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
-                Accumulated from team contracts
+                {language === 'mr' ? 'संघ कंत्राटांमधून संचित' : language === 'hi' ? 'टीम अनुबंधों से संचित' : 'Accumulated from team contracts'}
               </span>
             </div>
           </div>
@@ -303,7 +305,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             }`}
           >
             <Briefcase className="w-4 h-4 text-blue-400" />
-            <span>Incoming Team Requests</span>
+            <span>{language === 'mr' ? 'आलेल्या संघ मागण्या' : language === 'hi' ? 'आने वाले टीम अनुरोध' : 'Incoming Team Requests'}</span>
             {pendingRequests.length > 0 && (
               <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black flex items-center justify-center">
                 {pendingRequests.length}
@@ -320,7 +322,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             }`}
           >
             <Users className="w-4 h-4 text-emerald-400" />
-            <span>Worker Community Roster ({communityWorkers.length})</span>
+            <span>{language === 'mr' ? 'कामगार समुदाय यादी' : language === 'hi' ? 'श्रमिक समुदाय रोस्टर' : 'Worker Community Roster'} ({communityWorkers.length})</span>
           </button>
 
           <button
@@ -332,7 +334,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             }`}
           >
             <HardHat className="w-4 h-4 text-amber-400" />
-            <span>Crew Projects ({ongoingProjects.length + completedProjects.length})</span>
+            <span>{language === 'mr' ? 'पथक प्रकल्प' : language === 'hi' ? 'क्रू परियोजनाएं' : 'Crew Projects'} ({ongoingProjects.length + completedProjects.length})</span>
           </button>
 
           <button
@@ -344,7 +346,7 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             }`}
           >
             <DollarSign className="w-4 h-4 text-emerald-400" />
-            <span>Community Settlements (80/10/6/4)</span>
+            <span>{language === 'mr' ? 'समुदाय समझोता आणि देयके (८०/१०/६/४)' : language === 'hi' ? 'समुदाय निपटान (80/10/6/4)' : 'Community Settlements (80/10/6/4)'}</span>
           </button>
 
         </div>

@@ -17,12 +17,25 @@ const matchingRoutes = require('./routes/matching');
 const paymentRoutes = require('./routes/payments');
 const authRoutes = require('./routes/auth');
 
+const path = require('path');
+const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Path to built client
+const clientDistPath = path.join(__dirname, '../client/dist');
+const hasBuiltClient = fs.existsSync(clientDistPath);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static assets in production if client is built
+if (hasBuiltClient) {
+  app.use(express.static(clientDistPath));
+  console.log(`📦 Serving production client from: ${clientDistPath}`);
+}
 
 // Request logging in dev
 app.use((req, res, next) => {
@@ -30,8 +43,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Root landing & redirect to frontend UI
-app.get('/', (req, res) => {
+// Root landing & redirect to frontend UI (only in development if client not yet built)
+if (!hasBuiltClient) {
+  app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -130,7 +144,8 @@ app.get('/', (req, res) => {
       </body>
     </html>
   `);
-});
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -165,6 +180,16 @@ app.use('/api/contractors', contractorRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/auth', authRoutes);
+
+// In production, serve index.html for all non-API GET requests (SPA client-side routing)
+if (hasBuiltClient) {
+  app.get('*', (req, res) => {
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({ success: false, error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {

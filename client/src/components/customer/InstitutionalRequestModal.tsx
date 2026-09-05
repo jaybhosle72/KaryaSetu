@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Building2, Users, Calendar, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface InstitutionalRequestModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
   onClose,
   onSubmitContract
 }) => {
+  const { t } = useLanguage();
   const [clientName, setClientName] = useState('Green Meadows Co-operative Housing Society (RWA)');
   const [clientType, setClientType] = useState<'Housing Society' | 'Educational Institution' | 'Commercial Complex' | 'Healthcare / Hospital'>('Housing Society');
   const [address, setAddress] = useState('Pan Card Club Road, Baner, Pune 411045');
@@ -64,14 +66,14 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
             </div>
             <div>
               <span className="text-[11px] uppercase tracking-wider font-bold text-blue-200">
-                Institutional & Society Market
+                {t.modals?.institutional?.tag || 'Institutional & Society Market'}
               </span>
               <h2 className="text-lg font-black tracking-tight">
-                Request Dedicated Cooperative Crew SLA
+                {t.modals?.institutional?.title || 'Request Dedicated Cooperative Crew SLA'}
               </h2>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/80 hover:text-white text-xl font-bold p-1">
+          <button onClick={onClose} className="text-white/80 hover:text-white text-xl font-bold p-1 cursor-pointer">
             ✕
           </button>
         </div>
@@ -82,7 +84,7 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Institution / Society Name
+                {t.modals?.institutional?.instName || 'Institution / Society Name'}
               </label>
               <input
                 type="text"
@@ -94,7 +96,7 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Institution Type
+                {t.modals?.institutional?.instType || 'Institution Type'}
               </label>
               <select
                 value={clientType}
@@ -111,7 +113,7 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Campus / Society Address
+              {t.modals?.institutional?.serviceAddress || 'Campus / Society Address'}
             </label>
             <input
               type="text"
@@ -126,57 +128,57 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
           <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200 space-y-3">
             <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider flex items-center gap-1.5">
               <Users className="w-4 h-4 text-blue-700" />
-              Configure Multi-Trade Dedicated Workforce
+              {t.modals?.institutional?.requestedTrades || 'Configure Multi-Trade Dedicated Workforce'}
             </h4>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-center">
-                <p className="text-xs font-bold text-slate-800">Electricians</p>
+                <p className="text-xs font-bold text-slate-800">{t.modals?.institutional?.electricians || 'Electricians'}</p>
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <button
                     type="button"
                     onClick={() => setElectriciansCount(Math.max(0, electriciansCount - 1))}
-                    className="w-6 h-6 rounded bg-slate-100 font-bold"
+                    className="w-6 h-6 rounded bg-slate-100 font-bold cursor-pointer"
                   >-</button>
                   <span className="font-extrabold text-sm">{electriciansCount}</span>
                   <button
                     type="button"
                     onClick={() => setElectriciansCount(electriciansCount + 1)}
-                    className="w-6 h-6 rounded bg-slate-100 font-bold"
+                    className="w-6 h-6 rounded bg-slate-100 font-bold cursor-pointer"
                   >+</button>
                 </div>
               </div>
 
               <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-center">
-                <p className="text-xs font-bold text-slate-800">Plumbers</p>
+                <p className="text-xs font-bold text-slate-800">{t.modals?.institutional?.plumbers || 'Plumbers'}</p>
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <button
                     type="button"
                     onClick={() => setPlumbersCount(Math.max(0, plumbersCount - 1))}
-                    className="w-6 h-6 rounded bg-slate-100 font-bold"
+                    className="w-6 h-6 rounded bg-slate-100 font-bold cursor-pointer"
                   >-</button>
                   <span className="font-extrabold text-sm">{plumbersCount}</span>
                   <button
                     type="button"
                     onClick={() => setPlumbersCount(plumbersCount + 1)}
-                    className="w-6 h-6 rounded bg-slate-100 font-bold"
+                    className="w-6 h-6 rounded bg-slate-100 font-bold cursor-pointer"
                   >+</button>
                 </div>
               </div>
 
               <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-center">
-                <p className="text-xs font-bold text-slate-800">Cleaners</p>
+                <p className="text-xs font-bold text-slate-800">{t.modals?.institutional?.cleaners || 'Cleaners'}</p>
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <button
                     type="button"
                     onClick={() => setCleanersCount(Math.max(0, cleanersCount - 1))}
-                    className="w-6 h-6 rounded bg-slate-100 font-bold"
+                    className="w-6 h-6 rounded bg-slate-100 font-bold cursor-pointer"
                   >-</button>
                   <span className="font-extrabold text-sm">{cleanersCount}</span>
                   <button
                     type="button"
                     onClick={() => setCleanersCount(cleanersCount + 1)}
-                    className="w-6 h-6 rounded bg-slate-100 font-bold"
+                    className="w-6 h-6 rounded bg-slate-100 font-bold cursor-pointer"
                   >+</button>
                 </div>
               </div>
@@ -184,7 +186,7 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
 
             <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Contract Duration</label>
+                <label className="block text-slate-600 font-medium mb-1">{t.modals?.institutional?.durationMonths || 'Contract Duration'}</label>
                 <select
                   value={durationMonths}
                   onChange={(e) => setDurationMonths(Number(e.target.value))}
@@ -196,7 +198,7 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
                 </select>
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Monthly Retainer (₹)</label>
+                <label className="block text-slate-600 font-medium mb-1">{t.modals?.institutional?.monthlyBudget || 'Monthly Retainer (₹)'}</label>
                 <input
                   type="number"
                   value={monthlyBudget}
@@ -217,9 +219,9 @@ export const InstitutionalRequestModal: React.FC<InstitutionalRequestModalProps>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-700/30 flex items-center justify-center gap-2 transition"
+            className="w-full py-3 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-700/30 flex items-center justify-center gap-2 transition cursor-pointer"
           >
-            {isSubmitting ? 'Registering Institutional Contract...' : 'Submit Institutional Contract Request'}
+            {isSubmitting ? (t.modals?.institutional?.submitting || 'Registering Institutional Contract...') : (t.modals?.institutional?.submitBtn || 'Submit Institutional Contract Request')}
           </button>
 
         </form>

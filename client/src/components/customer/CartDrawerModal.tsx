@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShoppingBag, X, Trash2, HeartHandshake, ArrowRight, Plus, Minus } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export interface CartItem {
   id: string;
@@ -31,6 +32,7 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
   onClearCart,
   onCheckout
 }) => {
+  const { language, t, getSectorTitle, getServiceName, getDuration } = useLanguage();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!isOpen) return null;
@@ -60,9 +62,9 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
               <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">Your Booking Cart</h3>
+              <h3 className="text-base font-black text-slate-900">{t.cart.title}</h3>
               <p className="text-xs text-slate-500">
-                {totalItemsCount} {totalItemsCount === 1 ? 'service' : 'services'} selected
+                {totalItemsCount} {t.portal?.tradesCount || 'services'}
               </p>
             </div>
           </div>
@@ -73,7 +75,7 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
                 onClick={onClearCart}
                 className="text-[11px] font-bold text-slate-400 hover:text-rose-600 transition px-2 py-1"
               >
-                Clear Cart
+                {t.common.delete}
               </button>
             )}
             <button
@@ -92,15 +94,15 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
               <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                 <ShoppingBag className="w-8 h-8" />
               </div>
-              <h4 className="text-sm font-black text-slate-800">Your cart is empty</h4>
+              <h4 className="text-sm font-black text-slate-800">{t.cart.emptyMessage}</h4>
               <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                Explore services like Electrician, AC Repair, or Bathroom Cleaning to add services to your cart.
+                {t.cart.browsePrompt}
               </p>
               <button
                 onClick={onClose}
                 className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm"
               >
-                Browse Services
+                {t.nav.exploreServices}
               </button>
             </div>
           ) : (
@@ -115,11 +117,11 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
                     <div className="space-y-0.5 flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          {item.category}
+                          {getSectorTitle(item.category, item.category)}
                         </span>
                       </div>
                       <h4 className="text-xs font-bold text-slate-900 truncate">
-                        {item.name}
+                        {getServiceName(item.name)}
                       </h4>
                       <p className="text-xs font-extrabold text-slate-900">
                         ₹{item.price}{' '}
@@ -168,47 +170,19 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
                 <div className="flex items-center justify-between font-bold text-emerald-950 pb-1 border-b border-emerald-200/60">
                   <span className="flex items-center gap-1.5">
                     <HeartHandshake className="w-4 h-4 text-emerald-600" />
-                    <span>Verified Cooperative Service</span>
+                    <span>{t.verifiedCoopBadge}</span>
                   </span>
                   <span className="text-[10px] text-emerald-700 uppercase tracking-wider font-extrabold">
-                    Govt-Certified Shramiks
+                    {t.nav.govtRatesTag}
                   </span>
-                </div>
-
-                <div className="space-y-1.5 text-[11px] text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>Doorstep OTP Verification</span>
-                    </span>
-                    <span className="font-semibold text-emerald-800">Included</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      <span>Standard Rate Card & Fair Pricing</span>
-                    </span>
-                    <span className="font-semibold text-blue-800">Guaranteed</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                      <span>30-Day Cooperative Service Warranty</span>
-                    </span>
-                    <span className="font-semibold text-purple-800">Protected</span>
-                  </div>
                 </div>
               </div>
 
               {/* Total Summary */}
               <div className="p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Amount Payable</span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">{t.cart.totalLabel}</span>
                   <span className="text-2xl font-black text-white">₹{totalAmount}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">Cooperative Guarantee</span>
-                  <span className="text-xs text-slate-300 font-medium">30 Days Free Rework</span>
                 </div>
               </div>
             </>
@@ -223,7 +197,7 @@ export const CartDrawerModal: React.FC<CartDrawerModalProps> = ({
               disabled={isSubmitting}
               className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition disabled:opacity-50"
             >
-              <span>{isSubmitting ? 'Matching with Pune Cooperatives...' : `Book Now • ₹${totalAmount}`}</span>
+              <span>{isSubmitting ? t.common.loading : `${t.portal.bookNow} • ₹${totalAmount}`}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

@@ -4,6 +4,7 @@ import {
   Users, Briefcase, User, Award, CheckCircle2, ChevronDown, Wrench, 
   Zap, Hammer, Paintbrush, Tv, Heart, Car, Star, Layers
 } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   currentUser,
   onSubmitBooking
 }) => {
+  const { t, getSectorTitle, getServiceName } = useLanguage();
   const [bookingMode, setBookingMode] = useState<'SOLO_WORKER' | 'CONTRACTOR_TEAM'>('SOLO_WORKER');
   
   // Customer site scope details (Customer does NOT guess worker count)
@@ -155,10 +157,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         <div className="bg-slate-950 text-white p-5 flex items-center justify-between flex-shrink-0">
           <div>
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-400 block">
-              Cooperative Workforce Dispatch
+              {t.modals?.booking?.title || 'Cooperative Workforce Dispatch'}
             </span>
             <h2 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
-              Book {serviceCategory} ({subTrade})
+              {t.bookService || 'Book'} {getSectorTitle(serviceCategory, serviceCategory)} ({subTrade})
             </h2>
           </div>
           <button
@@ -176,9 +178,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Wrench className="w-3.5 h-3.5 text-orange-600" />
-                <span>Select Type of Worker (Trade Role)</span>
+                <span>{t.modals?.booking?.workerType || 'Select Type of Worker (Trade Role)'}</span>
               </label>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Accredited Roster</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">{t.sectorDetail?.verifiedRail || 'Accredited Roster'}</span>
             </div>
 
             <select
@@ -202,7 +204,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           {/* Service Delivery Model: Solo Worker vs Contractor Community */}
           <div>
             <label className="block font-bold text-slate-700 mb-1.5">
-              Service Delivery Model
+              {t.sectorDetail?.serviceDeliveryModel || 'Service Delivery Model'}
             </label>
             <div className="grid grid-cols-2 gap-2.5">
               <button
@@ -220,9 +222,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <User className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-black text-xs block">Solo Worker</span>
+                  <span className="font-black text-xs block">{t.sectorDetail?.soloWorker || 'Solo Worker'}</span>
                   <span className={`text-[10px] ${bookingMode === 'SOLO_WORKER' ? 'text-slate-300' : 'text-slate-500'}`}>
-                    1 Dedicated Shramik
+                    {t.sectorDetail?.soloWorkerDesc || '1 Dedicated Shramik'}
                   </span>
                 </div>
               </button>
@@ -242,9 +244,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <Briefcase className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-black text-xs block">Contractor Team</span>
+                  <span className="font-black text-xs block">{t.sectorDetail?.contractorTeam || 'Contractor Team'}</span>
                   <span className={`text-[10px] ${bookingMode === 'CONTRACTOR_TEAM' ? 'text-blue-200' : 'text-slate-500'}`}>
-                    Community gang of workers
+                    {t.sectorDetail?.contractorTeamDesc || 'Community gang of workers'}
                   </span>
                 </div>
               </button>
@@ -257,17 +259,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold uppercase text-blue-800 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Site Scope & Property Details</span>
+                  <span>{t.modals?.booking?.siteScopeHeading || 'Site Scope & Property Details'}</span>
                 </span>
                 <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                  Contractor Workforce Sizing
+                  {t.modals?.booking?.contractorWorkforceSizing || 'Contractor Workforce Sizing'}
                 </span>
               </div>
 
               {/* Property / Site Type */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Property / Site Type
+                  {t.modals?.booking?.propertySiteType || 'Property / Site Type'}
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {['1 BHK', '2 BHK', '3 BHK', '4+ BHK / Villa', 'Office', 'Housing Society'].map((pt) => (
@@ -291,7 +293,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Work Scope
+                    {t.modals?.booking?.workScope || 'Work Scope'}
                   </label>
                   <div className="grid grid-cols-3 gap-1">
                     {(['Interior', 'Exterior', 'Both'] as const).map((sc) => (
@@ -313,13 +315,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Approx Area / Rooms
+                    {t.modals?.booking?.approxAreaRooms || 'Approx Area / Rooms'}
                   </label>
                   <input
                     type="text"
                     value={approxArea}
                     onChange={(e) => setApproxArea(e.target.value)}
-                    placeholder="e.g. 1,200 sq.ft or 3 rooms"
+                    placeholder={t.modals?.booking?.approxAreaPlaceholder || 'e.g. 1,200 sq.ft or 3 rooms'}
                     className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white font-bold text-xs focus:outline-none"
                   />
                 </div>
@@ -328,13 +330,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               {/* Special Instructions & Notes */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Specific Work Instructions (Optional)
+                  {t.modals?.booking?.specificInstructions || 'Specific Work Instructions (Optional)'}
                 </label>
                 <input
                   type="text"
                   value={specialRequirements}
                   onChange={(e) => setSpecialRequirements(e.target.value)}
-                  placeholder="e.g. Waterproofing on ceiling, pastel colors, scaffolding needed..."
+                  placeholder={t.modals?.booking?.instructionsPlaceholder || 'e.g. Waterproofing on ceiling, pastel colors, scaffolding needed...'}
                   className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white font-medium text-xs focus:outline-none"
                 />
               </div>
@@ -343,19 +345,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <div className="p-2.5 bg-blue-100/70 rounded-xl border border-blue-200/80 text-[11px] text-blue-950 space-y-1">
                 <div className="flex items-center gap-1.5 font-black text-blue-900">
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-700 flex-shrink-0" />
-                  <span>Customer Does Not Need to Estimate Workers</span>
+                  <span>{t.modals?.booking?.noEstimateNeededTitle || 'Customer Does Not Need to Estimate Workers'}</span>
                 </div>
                 <p className="text-[10px] text-blue-800 leading-snug">
-                  You don't need to guess how many painters or labourers are required. A licensed Mukaddam evaluates your site details, determines the exact crew (skilled craftsmen + helpers) and days, and provides an itemized proposal with transparent statutory rates.
+                  {t.modals?.booking?.noEstimateNeededDesc || "You don't need to guess how many painters or labourers are required. A licensed Mukaddam evaluates your site details, determines the exact crew (skilled craftsmen + helpers) and days, and provides an itemized proposal with transparent statutory rates."}
                 </p>
               </div>
             </div>
           )}
 
+
           {/* Customer info */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Customer Name</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">{t.modals?.booking?.customerName || 'Customer Name'}</label>
               <input
                 type="text"
                 value={customerName}
@@ -365,7 +368,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Phone Number</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">{t.modals?.booking?.customerPhone || 'Phone Number'}</label>
               <input
                 type="tel"
                 value={customerPhone}
@@ -378,7 +381,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
           {/* Service Address */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">Service Address</label>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">{t.modals?.booking?.address || 'Service Address'}</label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
@@ -396,7 +399,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                Service Pricing & Inclusions
+                {t.modals?.booking?.servicePricingInclusions || 'Service Pricing & Inclusions'}
               </span>
               <span className="text-base font-black text-slate-900">
                 ₹{estimatedAmount.toLocaleString('en-IN')}
@@ -407,25 +410,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <div className="flex items-center justify-between px-1">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                  <span>Doorstep OTP Verification</span>
+                  <span>{t.modals?.booking?.doorstepOtpVerification || 'Doorstep OTP Verification'}</span>
                 </span>
-                <span className="font-bold text-emerald-700">Included</span>
+                <span className="font-bold text-emerald-700">{t.modals?.booking?.included || 'Included'}</span>
               </div>
 
               <div className="flex items-center justify-between px-1">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600" />
-                  <span>Government-Accredited Shramik</span>
+                  <span>{t.modals?.booking?.govtAccreditedShramik || 'Government-Accredited Shramik'}</span>
                 </span>
-                <span className="font-bold text-blue-700">Certified</span>
+                <span className="font-bold text-blue-700">{t.modals?.booking?.certified || 'Certified'}</span>
               </div>
 
               <div className="flex items-center justify-between px-1">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-purple-600" />
-                  <span>Cooperative Service Warranty</span>
+                  <span>{t.modals?.booking?.coopServiceWarranty || 'Cooperative Service Warranty'}</span>
                 </span>
-                <span className="font-bold text-purple-700">30 Days</span>
+                <span className="font-bold text-purple-700">{t.modals?.booking?.warrantyDays || '30 Days'}</span>
               </div>
             </div>
           </div>
@@ -435,8 +438,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <HeartHandshake className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <span>
               {bookingMode === 'CONTRACTOR_TEAM'
-                ? `Dispatched to licensed Mukaddam to evaluate site scope and calculate optimal workforce.`
-                : `Dispatching accredited ${selectedWorkerType} (${selectedWorkerTier} tier) from nearest cooperative.`
+                ? (t.modals?.booking?.dispatchedToMukaddam || 'Dispatched to licensed Mukaddam to evaluate site scope and calculate optimal workforce.')
+                : `${t.modals?.booking?.dispatchingAccredited || 'Dispatching accredited'} ${selectedWorkerType} (${selectedWorkerTier} tier) ${t.modals?.booking?.tierFromCoop || 'from nearest cooperative.'}`
               }
             </span>
           </div>
@@ -448,12 +451,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             className="w-full py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition cursor-pointer flex-shrink-0"
           >
             {isSubmitting ? (
-              <span>Submitting Request...</span>
+              <span>{t.modals?.booking?.submitting || 'Submitting Request...'}</span>
             ) : (
               <span>
                 {bookingMode === 'CONTRACTOR_TEAM'
-                  ? `Request Contractor Proposal (Mukaddam Sizing) ➔`
-                  : `Request ${selectedWorkerType} (${selectedWorkerTier}) ➔`
+                  ? (t.modals?.booking?.requestContractorProposalBtn || 'Request Contractor Proposal (Mukaddam Sizing) ➔')
+                  : `${t.modals?.booking?.requestWorkerBtn || 'Request'} ${selectedWorkerType} (${selectedWorkerTier}) ➔`
                 }
               </span>
             )}
@@ -464,3 +467,4 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     </div>
   );
 };
+
