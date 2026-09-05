@@ -1229,7 +1229,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
                   <input
                     type="text"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
                     required
                     className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 font-semibold focus:bg-white focus:outline-none text-xs"
                   />
