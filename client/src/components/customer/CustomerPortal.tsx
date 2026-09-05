@@ -55,6 +55,7 @@ interface CustomerPortalProps {
   preselectedService?: any;
   onClearPreselectedService?: () => void;
   onSelectService?: (sectorId: string, service: any) => void;
+  currentUser?: { name: string; phone: string; address?: string; roleName?: string } | null;
 }
 
 export const CustomerPortal: React.FC<CustomerPortalProps> = ({
@@ -86,7 +87,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   onSearchChange,
   preselectedService: propPreselectedService,
   onClearPreselectedService,
-  onSelectService
+  onSelectService,
+  currentUser
 }) => {
   const t = translations[currentLanguage];
 
@@ -213,6 +215,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           onRemoveItem={onRemoveItem || onRemoveFromCart}
           onClearCart={onClearCart}
           onOpenCart={onOpenCart}
+          currentUser={currentUser}
         />
       );
     }
@@ -230,6 +233,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         onUpdateQuantity={onUpdateQuantity || (() => {})}
         onRemoveItem={onRemoveItem || onRemoveFromCart || (() => {})}
         onClearCart={onClearCart}
+        currentUser={currentUser}
       />
     );
   }
@@ -365,6 +369,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               setActiveViewingBooking(b);
               setShowRatingModal(true);
             }}
+            onApproveProposal={onApproveProposal}
             currentLanguage={currentLanguage}
           />
         </section>
@@ -660,6 +665,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           isOpen={showEmergencyModal}
           onClose={() => setShowEmergencyModal(false)}
           onSubmitEmergency={onEmergencyBooking}
+          currentUser={currentUser}
         />
       )}
 

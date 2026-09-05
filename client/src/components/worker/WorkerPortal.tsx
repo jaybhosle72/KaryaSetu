@@ -17,6 +17,8 @@ interface WorkerPortalProps {
   onUpdateBookingStatus: (id: string, status: string) => Promise<void>;
   onVerifyOtp?: (id: string, otp: string) => Promise<any>;
   onAddSkill?: (workerId: string, skillName: string) => Promise<void>;
+  onAcceptJob?: (bookingId: string, workerId: string) => Promise<any>;
+  currentUser?: any;
 }
 
 export const WorkerPortal: React.FC<WorkerPortalProps> = ({
@@ -28,9 +30,15 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   onUpdateWorkerStatus,
   onUpdateBookingStatus,
   onVerifyOtp,
-  onAddSkill
+  onAddSkill,
+  onAcceptJob,
+  currentUser
 }) => {
-  const currentWorker = workers.find(w => w._id === selectedWorkerId) || workers[0];
+  const currentWorker = workers.find(w => 
+    (currentUser?.extraMeta?.workerId && w._id === currentUser.extraMeta.workerId) ||
+    (currentUser?.phone && w.phone === currentUser.phone) ||
+    w._id === selectedWorkerId
+  ) || workers[0];
   const [activeTab, setActiveTab] = useState<'JOBS' | 'EARNINGS' | 'WELFARE'>('JOBS');
   const [isAddingSkill, setIsAddingSkill] = useState(false);
   const [newSkillInput, setNewSkillInput] = useState('');
@@ -40,27 +48,23 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   const [workerOtpError, setWorkerOtpError] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isArrivedAtDoorstep, setIsArrivedAtDoorstep] = useState(false);
+  const [isAcceptingJobId, setIsAcceptingJobId] = useState<string | null>(null);
 
   // Check all bookings assigned to this worker
   const myBookings = bookings.filter(b => b.assignedWorkerId === currentWorker?._id);
   const activeJob = myBookings.find(b => b.status !== 'COMPLETED') || null;
   const completedJobs = myBookings.filter(b => b.status === 'COMPLETED');
 
-  // Check if ANY worker has an active solo booking in progress
-  const anyActiveSoloBooking = bookings.find(b => 
+  // Available matching jobs in worker's trade awaiting acceptance
+  const currentWorkerTrade = currentWorker?.trade?.toLowerCase() || '';
+  const availableMatchingJobs = bookings.filter(b => 
     b.bookingMode !== 'CONTRACTOR_TEAM' && 
-    b.status !== 'COMPLETED' && 
-    b.assignedWorkerId
+    b.status === 'MATCHING' && 
+    !b.assignedWorkerId &&
+    (currentWorkerTrade === '' || b.serviceCategory?.toLowerCase().includes(currentWorkerTrade) || currentWorkerTrade.includes(b.serviceCategory?.toLowerCase()))
   );
 
-  // Auto-switch to assigned worker so the exact booked service appears immediately
-  useEffect(() => {
-    if (!activeJob && anyActiveSoloBooking && anyActiveSoloBooking.assignedWorkerId && anyActiveSoloBooking.assignedWorkerId !== currentWorker?._id) {
-      onSelectWorker(anyActiveSoloBooking.assignedWorkerId);
-    }
-  }, [activeJob, anyActiveSoloBooking, currentWorker?._id, onSelectWorker]);
-
-  const isAvailable = currentWorker.status !== 'OFF_DUTY';
+  const isAvailable = currentWorker?.status !== 'OFF_DUTY';
 
   const handleToggleAvailability = () => {
     const nextStatus = isAvailable ? 'OFF_DUTY' : 'AVAILABLE';
@@ -145,28 +149,77 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
         </div>
       </div>
 
-      {/* Active Job Alert Banner if another worker has the active job */}
-      {anyActiveSoloBooking && anyActiveSoloBooking.assignedWorkerId !== currentWorker._id && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shrink-0">
-              ⚡
-            </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
-                Active Customer Dispatch In Progress
-              </span>
-              <p className="text-xs font-bold text-slate-900">
-                Customer <strong>{anyActiveSoloBooking.customerName}</strong> booked <strong>{anyActiveSoloBooking.serviceCategory}</strong> ({anyActiveSoloBooking.subTrade}), assigned to <strong>{anyActiveSoloBooking.workerName}</strong>.
-              </p>
-            </div>
+      {/* Real Available Job Requests in Worker's Trade */}
+      {availableMatchingJobs.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+              <span>Incoming Real Job Dispatches In Your Trade ({availableMatchingJobs.length})</span>
+            </span>
+            <span className="text-[11px] text-slate-500 font-bold">
+              Trade: {currentWorker.trade} • Live Cooperative Matching
+            </span>
           </div>
-          <button
-            onClick={() => onSelectWorker(anyActiveSoloBooking.assignedWorkerId!)}
-            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black transition self-start sm:self-auto cursor-pointer"
-          >
-            Switch to {anyActiveSoloBooking.workerName?.split(' ')[0] || 'Worker'} ➔
-          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {availableMatchingJobs.map(job => (
+              <div 
+                key={job._id}
+                className="p-5 rounded-3xl bg-white border-2 border-emerald-500 shadow-md flex flex-col justify-between gap-4 transition hover:shadow-lg"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full">
+                      ⚡ Immediate Dispatch Ready
+                    </span>
+                    <span className="text-sm font-black text-emerald-700">
+                      ₹{Math.round(job.totalAmount * 0.8)} <span className="text-[10px] text-slate-500 font-normal">(80% Escrow)</span>
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-black text-slate-900">
+                      {job.serviceCategory} • {job.subTrade}
+                    </h4>
+                    <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                      <span>{job.address}</span>
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Customer: <strong>{job.customerName}</strong>
+                    </p>
+                    {job.notes && (
+                      <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded-xl mt-1.5 border border-slate-100 italic">
+                        "{job.notes}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isAcceptingJobId === job._id}
+                  onClick={async () => {
+                    if (onAcceptJob) {
+                      setIsAcceptingJobId(job._id);
+                      try {
+                        await onAcceptJob(job._id, currentWorker._id);
+                      } catch (err: any) {
+                        alert(err.message || 'Failed to accept job');
+                      } finally {
+                        setIsAcceptingJobId(null);
+                      }
+                    }
+                  }}
+                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{isAcceptingJobId === job._id ? 'Accepting & Assigning...' : 'Accept Job & Start Navigation ➔'}</span>
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

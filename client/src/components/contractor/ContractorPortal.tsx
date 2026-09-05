@@ -22,7 +22,6 @@ interface ContractorPortalProps {
   onOnboardWorker?: (data: any) => Promise<Worker | void>;
   onSubmitProposal?: (bookingId: string, proposalData: any) => Promise<any>;
 }
-
 export const ContractorPortal: React.FC<ContractorPortalProps> = ({
   contractorUser,
   bookings,
@@ -147,9 +146,9 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
     return a.name.localeCompare(b.name);
   });
 
-  // Team bookings relevant to contractor
+  // Real team bookings from backend database
   const teamBookings = bookings.filter(b => b.bookingMode === 'CONTRACTOR_TEAM');
-  const pendingRequests = teamBookings.filter(b => b.status === 'MATCHING' || (b.assignedWorkerIds && b.assignedWorkerIds.length < (b.teamSize || 1)));
+  const pendingRequests = teamBookings.filter(b => b.status === 'MATCHING' || b.status === 'PROPOSAL_PENDING' || b.status === 'PROPOSAL_RECEIVED' || (b.assignedWorkerIds && b.assignedWorkerIds.length < (b.teamSize || 1)));
   const ongoingProjects = teamBookings.filter(b => b.status === 'ALLOCATED' || b.status === 'IN_PROGRESS');
   const completedProjects = teamBookings.filter(b => b.status === 'COMPLETED');
 

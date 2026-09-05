@@ -6,6 +6,8 @@ const InstitutionalContract = require('../models/InstitutionalContract');
 const DemandForecast = require('../models/DemandForecast');
 const WelfareClaim = require('../models/WelfareClaim');
 const Dispute = require('../models/Dispute');
+const User = require('../models/User');
+const Contractor = require('../models/Contractor');
 const {
   seedCooperatives,
   seedWorkers,
@@ -16,7 +18,41 @@ const {
   seedContractors
 } = require('../data/seedData');
 
-const seedDisputes = [];
+const seedDisputes = [
+  {
+    _id: "dsp_001",
+    bookingId: "bk_1001",
+    customerName: "Aditya Deshpande",
+    customerPhone: "+91 98900 11223",
+    workerId: "wrk_101",
+    workerName: "Santosh Baburao Kadam",
+    cooperativeId: "coop_pune_elec",
+    cooperativeName: "Pune Electrical Sahakari",
+    serviceCategory: "Electrical",
+    issueType: "QUALITY_OF_WORK",
+    description: "Switchgear MCB replacement was prompt, but customer requested additional clarification on the surge warranty certificate.",
+    status: "RESOLVED",
+    resolution: "Cooperative Technical Inspector verified the IS-732 certificate and provided formal 1-year cooperative warranty letter.",
+    resolvedAt: "2026-08-31T14:00:00.000Z",
+    date: "2026-08-30"
+  },
+  {
+    _id: "dsp_002",
+    bookingId: "bk_1002",
+    customerName: "Rohit Sharma",
+    customerPhone: "+91 97654 32109",
+    workerId: "wrk_102",
+    workerName: "Pravin Maruti Jadhav",
+    cooperativeId: "coop_pune_plumb",
+    cooperativeName: "Maha Jal Sahakari",
+    serviceCategory: "Plumbing",
+    issueType: "TIMELINESS_DELAY",
+    description: "Heavy rain caused 5-minute traffic delay during emergency pipeline transit.",
+    status: "UNDER_MEDIATION",
+    resolution: "Cooperative coordinator contacted customer in real-time and waived emergency transit surcharge.",
+    date: "2026-09-01"
+  }
+];
 
 // Initialize in-memory store with deep copy of seed data
 const store = getInMemoryStore();
@@ -28,6 +64,47 @@ store.bookings = JSON.parse(JSON.stringify(seedBookings));
 store.welfareLedger = JSON.parse(JSON.stringify(seedWelfareLedger));
 store.disputes = JSON.parse(JSON.stringify(seedDisputes));
 store.contractors = JSON.parse(JSON.stringify(seedContractors));
+store.users = [];
+
+// Seed initial system users mapped to workers, contractors, and cooperatives
+const initialSeedUsers = [
+  {
+    _id: 'usr_cust_01',
+    name: 'Aakash Deshmukh',
+    phone: '+91 98220 11223',
+    role: 'customer',
+    address: 'Flat 402, Mayur Residency, Kothrud, Pune 411038'
+  },
+  ...seedWorkers.map(w => ({
+    _id: `usr_${w._id}`,
+    name: w.name,
+    phone: w.phone,
+    role: 'worker',
+    workerId: w._id,
+    cooperativeId: w.cooperativeId,
+    cooperativeName: w.cooperativeName,
+    metadata: { trade: w.trade, skills: w.verifiedSkills }
+  })),
+  ...seedContractors.map(c => ({
+    _id: `usr_${c._id}`,
+    name: c.name,
+    phone: c.phone,
+    role: 'contractor',
+    contractorId: c._id,
+    cooperativeId: c.cooperativeId,
+    cooperativeName: c.cooperativeName,
+    metadata: { license: c.licenseNumber, trades: c.tradesManaged }
+  })),
+  {
+    _id: 'usr_admin_01',
+    name: 'Suresh Patil',
+    phone: '+91 98220 99887',
+    role: 'admin',
+    cooperativeId: 'coop_pune_multi',
+    cooperativeName: 'Brihan-Maharashtra Multi-Trade Labour Cooperative'
+  }
+];
+store.users = JSON.parse(JSON.stringify(initialSeedUsers));
 
 async function seedMongoIfEmpty() {
   if (getDBMode() === 'mongodb') {
@@ -42,6 +119,19 @@ async function seedMongoIfEmpty() {
         await Booking.insertMany(seedBookings);
         await WelfareClaim.insertMany(seedWelfareLedger);
       }
+
+      const contractorCount = await Contractor.countDocuments();
+      if (contractorCount === 0) {
+        await Contractor.insertMany(seedContractors);
+        console.log('🌱 Seeded contractors into MongoDB.');
+      }
+
+      const userCount = await User.countDocuments();
+      if (userCount === 0) {
+        await User.insertMany(initialSeedUsers);
+        console.log('🌱 Seeded initial users into MongoDB.');
+      }
+
       const disputeCount = await Dispute.countDocuments();
       if (disputeCount === 0) {
         await Dispute.insertMany(seedDisputes);
@@ -55,6 +145,66 @@ async function seedMongoIfEmpty() {
 
 // Universal collection accessors
 const DataStore = {
+  // Users (Authentication & Profile)
+  async getUsers(filter = {}) {
+    if (getDBMode() === 'mongodb') {
+      const q = {};
+      if (filter.role) q.role = filter.role;
+      return await User.find(q);
+    }
+    return store.users.filter(u => {
+      if (filter.role && u.role !== filter.role) return false;
+      return true;
+    });
+  },
+
+  async getUserByPhone(phone, role = null) {
+    if (!phone) return null;
+    const digits = phone.replace(/\D/g, '').slice(-10);
+    if (!digits) return null;
+    const regexPattern = digits.split('').join('\\D*');
+
+    if (getDBMode() === 'mongodb') {
+      const q = { phone: { $regex: regexPattern } };
+      if (role) q.role = role;
+      return await User.findOne(q);
+    }
+    return store.users.find(u => {
+      const uDigits = (u.phone || '').replace(/\D/g, '').slice(-10);
+      if (uDigits !== digits) return false;
+      if (role && u.role !== role) return false;
+      return true;
+    });
+  },
+
+  async getUserById(id) {
+    if (getDBMode() === 'mongodb') return await User.findOne({ $or: [{ _id: id }, { id }] });
+    return store.users.find(u => u._id === id || u.id === id);
+  },
+
+  async createUser(userData) {
+    const doc = {
+      _id: `usr_${Date.now()}`,
+      ...userData
+    };
+    if (getDBMode() === 'mongodb') {
+      const created = new User(doc);
+      return await created.save();
+    }
+    store.users.unshift(doc);
+    return doc;
+  },
+
+  async updateUser(id, updates) {
+    if (getDBMode() === 'mongodb') return await User.findOneAndUpdate({ $or: [{ _id: id }, { id }] }, updates, { new: true });
+    const idx = store.users.findIndex(u => u._id === id || u.id === id);
+    if (idx !== -1) {
+      store.users[idx] = { ...store.users[idx], ...updates };
+      return store.users[idx];
+    }
+    return null;
+  },
+
   // Cooperatives
   async getCooperatives() {
     if (getDBMode() === 'mongodb') return await Cooperative.find();
@@ -79,13 +229,13 @@ const DataStore = {
     if (getDBMode() === 'mongodb') {
       const q = {};
       if (filter.cooperativeId) q.cooperativeId = filter.cooperativeId;
-      if (filter.trade) q.trade = filter.trade;
+      if (filter.trade) q.trade = { $regex: new RegExp(filter.trade, 'i') };
       if (filter.status) q.status = filter.status;
       return await Worker.find(q);
     }
     return store.workers.filter(w => {
       if (filter.cooperativeId && w.cooperativeId !== filter.cooperativeId) return false;
-      if (filter.trade && w.trade.toLowerCase() !== filter.trade.toLowerCase()) return false;
+      if (filter.trade && !w.trade.toLowerCase().includes(filter.trade.toLowerCase())) return false;
       if (filter.status && w.status !== filter.status) return false;
       return true;
     });
@@ -107,24 +257,26 @@ const DataStore = {
     const doc = {
       _id: `wrk_${Date.now()}`,
       rating: 4.9,
+      customerRating: 4.88,
       reliabilityScore: 98,
-      experienceYears: 5,
-      completedJobsCount: 0,
+      experienceYears: workerData.experienceYears || 3,
+      completedJobs: 0,
       totalEarnings: 0,
       currentWorkload: 0,
-      maxDailyCapacity: 3,
+      maxDailyCapacity: 4,
       status: 'AVAILABLE',
       isEmergencyDuty: false,
       verifiedSkills: [{
-        name: `${workerData.primaryTrade || 'Multi-Trade'} Certified`,
+        name: `${workerData.trade || 'Certified'} Professional`,
         issuer: workerData.cooperativeName || 'Maharashtra Labour Cooperative',
         verifiedDate: new Date().toISOString().split('T')[0]
       }],
-      kycStatus: {
-        aadhaarVerified: true,
-        policeClearance: true,
-        eshramLinked: true,
-        lastVerified: new Date().toISOString().split('T')[0]
+      welfareDetails: {
+        pmjayCardNumber: `PMJAY-MH-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+        accidentalInsuranceActive: true,
+        insuranceCoverageAmount: 500000,
+        welfareContributionBalance: 0,
+        pensionCreditTier: 'Silver Tier'
       },
       ...workerData
     };
@@ -137,14 +289,31 @@ const DataStore = {
   },
 
   // Bookings
-  async getBookings() {
-    if (getDBMode() === 'mongodb') return await Booking.find().sort({ createdAt: -1 });
-    return [...store.bookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  async getBookings(filter = {}) {
+    if (getDBMode() === 'mongodb') {
+      const q = {};
+      if (filter.status) q.status = filter.status;
+      if (filter.assignedWorkerId) q.assignedWorkerId = filter.assignedWorkerId;
+      if (filter.contractorId) q.contractorId = filter.contractorId;
+      if (filter.bookingMode) q.bookingMode = filter.bookingMode;
+      return await Booking.find(q).sort({ createdAt: -1 });
+    }
+    return [...store.bookings]
+      .filter(b => {
+        if (filter.status && b.status !== filter.status) return false;
+        if (filter.assignedWorkerId && b.assignedWorkerId !== filter.assignedWorkerId) return false;
+        if (filter.contractorId && b.contractorId !== filter.contractorId) return false;
+        if (filter.bookingMode && b.bookingMode !== filter.bookingMode) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   },
+
   async getBookingById(id) {
     if (getDBMode() === 'mongodb') return await Booking.findOne({ $or: [{ _id: id }, { id }] });
     return store.bookings.find(b => b._id === id || b.id === id);
   },
+
   async createBooking(bookingData) {
     const doc = {
       _id: `bk_${Date.now()}`,
@@ -158,6 +327,7 @@ const DataStore = {
     store.bookings.unshift(doc);
     return doc;
   },
+
   async updateBooking(id, updates) {
     if (getDBMode() === 'mongodb') return await Booking.findOneAndUpdate({ $or: [{ _id: id }, { id }] }, updates, { new: true });
     const idx = store.bookings.findIndex(b => b._id === id || b.id === id);
@@ -166,6 +336,80 @@ const DataStore = {
       return store.bookings[idx];
     }
     return null;
+  },
+
+  // Atomic Worker Acceptance
+  async acceptBooking(bookingId, workerId) {
+    const worker = await this.getWorkerById(workerId);
+    if (!worker) throw new Error(`Worker with ID ${workerId} not found`);
+
+    if (getDBMode() === 'mongodb') {
+      // Atomic find & update: only accept if status is MATCHING and assignedWorkerId is null or empty
+      const updatedBooking = await Booking.findOneAndUpdate(
+        {
+          $or: [{ _id: bookingId }, { id: bookingId }],
+          status: 'MATCHING',
+          $or: [{ assignedWorkerId: null }, { assignedWorkerId: { $exists: false } }, { assignedWorkerId: '' }]
+        },
+        {
+          assignedWorkerId: worker._id,
+          workerName: worker.name,
+          workerPhone: worker.phone,
+          cooperativeId: worker.cooperativeId || undefined,
+          cooperativeName: worker.cooperativeName || undefined,
+          status: 'ALLOCATED',
+          etaMinutes: 15,
+          allocationRationale: `Accepted in real-time by verified ${worker.trade} shramik ${worker.name} (${worker.cooperativeName}).`
+        },
+        { new: true }
+      );
+
+      if (!updatedBooking) {
+        throw new Error('Job is no longer available or has already been accepted by another worker.');
+      }
+
+      await Worker.findOneAndUpdate(
+        { $or: [{ _id: worker._id }, { id: worker._id }] },
+        { status: 'ON_DUTY', $inc: { currentWorkload: 1 } }
+      );
+
+      return updatedBooking;
+    }
+
+    // In-memory atomic check
+    const bookingIdx = store.bookings.findIndex(b => (b._id === bookingId || b.id === bookingId) && b.status === 'MATCHING' && !b.assignedWorkerId);
+    if (bookingIdx === -1) {
+      throw new Error('Job is no longer available or has already been accepted by another worker.');
+    }
+
+    store.bookings[bookingIdx] = {
+      ...store.bookings[bookingIdx],
+      assignedWorkerId: worker._id,
+      workerName: worker.name,
+      workerPhone: worker.phone,
+      cooperativeId: worker.cooperativeId || store.bookings[bookingIdx].cooperativeId,
+      cooperativeName: worker.cooperativeName || store.bookings[bookingIdx].cooperativeName,
+      status: 'ALLOCATED',
+      etaMinutes: 15,
+      allocationRationale: `Accepted in real-time by verified ${worker.trade} shramik ${worker.name} (${worker.cooperativeName}).`
+    };
+
+    const wIdx = store.workers.findIndex(w => w._id === worker._id);
+    if (wIdx !== -1) {
+      store.workers[wIdx].status = 'ON_DUTY';
+      store.workers[wIdx].currentWorkload = (store.workers[wIdx].currentWorkload || 0) + 1;
+    }
+
+    return store.bookings[bookingIdx];
+  },
+
+  // Clear demo / mock bookings for clean testing
+  async clearAllBookings() {
+    if (getDBMode() === 'mongodb') {
+      await Booking.deleteMany({});
+    }
+    store.bookings = [];
+    return { success: true, message: 'All bookings cleared successfully. Ready for clean real-user workflow.' };
   },
 
   // Institutional Contracts
@@ -250,13 +494,51 @@ const DataStore = {
     return null;
   },
 
-  // Contractor methods
-  async getContractors() {
-    return store.contractors || [];
+  // Contractors & Mukaddam
+  async getContractors(filter = {}) {
+    if (getDBMode() === 'mongodb') {
+      const q = {};
+      if (filter.cooperativeId) q.cooperativeId = filter.cooperativeId;
+      return await Contractor.find(q);
+    }
+    return (store.contractors || []).filter(c => {
+      if (filter.cooperativeId && c.cooperativeId !== filter.cooperativeId) return false;
+      return true;
+    });
   },
+
   async getContractorById(id) {
+    if (getDBMode() === 'mongodb') return await Contractor.findOne({ $or: [{ _id: id }, { id }] });
     return (store.contractors || []).find(c => c._id === id || c.id === id);
   },
+
+  async createContractor(contractorData) {
+    const doc = {
+      _id: `cnt_${Date.now()}`,
+      rating: 4.88,
+      completedContracts: 0,
+      workerIds: [],
+      communitySize: 0,
+      ...contractorData
+    };
+    if (getDBMode() === 'mongodb') {
+      const created = new Contractor(doc);
+      return await created.save();
+    }
+    store.contractors.unshift(doc);
+    return doc;
+  },
+
+  async updateContractor(id, updates) {
+    if (getDBMode() === 'mongodb') return await Contractor.findOneAndUpdate({ $or: [{ _id: id }, { id }] }, updates, { new: true });
+    const idx = store.contractors.findIndex(c => c._id === id || c.id === id);
+    if (idx !== -1) {
+      store.contractors[idx] = { ...store.contractors[idx], ...updates };
+      return store.contractors[idx];
+    }
+    return null;
+  },
+
   async allocateWorkersToTeamBooking(bookingId, workerIds) {
     if (getDBMode() === 'mongodb') {
       const assignedWorkers = await Worker.find({ _id: { $in: workerIds } });
@@ -268,7 +550,7 @@ const DataStore = {
           teamSize: workerIds.length,
           status: 'ALLOCATED',
           assignedWorkerId: workerIds[0],
-          workerName: workerNames,
+          workerName: workerNames || `${workerIds.length} Verified Shramiks`,
           allocationRationale: `Contractor allocated ${workerIds.length} verified shramiks from cooperative community.`
         },
         { new: true }
@@ -298,7 +580,21 @@ const DataStore = {
     
     return store.bookings[bookingIdx];
   },
+
   async addWorkerToContractorCommunity(contractorId, workerId) {
+    if (getDBMode() === 'mongodb') {
+      const contractor = await Contractor.findOne({ $or: [{ _id: contractorId }, { id: contractorId }] });
+      if (contractor) {
+        if (!contractor.workerIds.includes(workerId)) {
+          contractor.workerIds.push(workerId);
+          contractor.communitySize = contractor.workerIds.length;
+          await contractor.save();
+        }
+        return contractor;
+      }
+      return null;
+    }
+
     const cIdx = (store.contractors || []).findIndex(c => c._id === contractorId);
     if (cIdx !== -1) {
       if (!store.contractors[cIdx].workerIds.includes(workerId)) {
@@ -310,7 +606,7 @@ const DataStore = {
     return null;
   },
 
-  // Reset to initial seed
+  // Reset demo
   async resetDemoData() {
     store.cooperatives = JSON.parse(JSON.stringify(seedCooperatives));
     store.workers = JSON.parse(JSON.stringify(seedWorkers));
@@ -319,6 +615,8 @@ const DataStore = {
     store.bookings = JSON.parse(JSON.stringify(seedBookings));
     store.welfareLedger = JSON.parse(JSON.stringify(seedWelfareLedger));
     store.disputes = JSON.parse(JSON.stringify(seedDisputes));
+    store.contractors = JSON.parse(JSON.stringify(seedContractors));
+    store.users = JSON.parse(JSON.stringify(initialSeedUsers));
     
     if (getDBMode() === 'mongodb') {
       await Cooperative.deleteMany({});
@@ -328,6 +626,9 @@ const DataStore = {
       await Booking.deleteMany({});
       await WelfareClaim.deleteMany({});
       await Dispute.deleteMany({});
+      await Contractor.deleteMany({});
+      await User.deleteMany({});
+
       await Cooperative.insertMany(seedCooperatives);
       await Worker.insertMany(seedWorkers);
       await InstitutionalContract.insertMany(seedContracts);
@@ -335,6 +636,8 @@ const DataStore = {
       await Booking.insertMany(seedBookings);
       await WelfareClaim.insertMany(seedWelfareLedger);
       await Dispute.insertMany(seedDisputes);
+      await Contractor.insertMany(seedContractors);
+      await User.insertMany(initialSeedUsers);
     }
     return { message: 'Demo data reset successfully.' };
   }

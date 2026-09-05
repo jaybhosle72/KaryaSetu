@@ -37,6 +37,7 @@ interface ServiceCategoryDetailPageProps {
   onRemoveItem: (id: string) => void;
   onClearCart?: () => void;
   workers?: Worker[];
+  currentUser?: { name: string; phone: string; address?: string } | null;
 }
 
 interface CategoryConfig {
@@ -1332,7 +1333,8 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
-  workers = []
+  workers = [],
+  currentUser
 }) => {
   const config = CATEGORY_DATA[categoryId] || CATEGORY_DATA.ac;
 
@@ -1396,13 +1398,13 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
     setIsCheckingOut(true);
     try {
       await onSubmitBooking({
-        customerName: 'Rahul Sharma',
-        customerPhone: '+91 98229 33445',
+        customerName: currentUser?.name || 'Registered Customer',
+        customerPhone: currentUser?.phone || '+91 98229 00000',
         serviceCategory: config.title,
         subTrade: cart.map(i => `${i.name} (x${i.quantity})`).join(', '),
         urgency: 'STANDARD',
-        address: 'Flat 402, Mayur Residency, Kothrud, Pune 411038',
-        preferredTime: 'Tomorrow, 10:00 AM',
+        address: currentUser?.address || 'Flat 402, Mayur Residency, Kothrud, Pune 411038',
+        preferredTime: 'Immediate / Next Available Slot',
         estimatedPrice: totalAmount,
         notes: `Selected ${totalItemsCount} services. Split: ₹${workerEarning} direct to technician, ₹${welfareShare} to PM-JAY welfare.`
       });

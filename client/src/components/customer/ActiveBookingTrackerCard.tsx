@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Clock, ShieldCheck, Phone, MapPin, CheckCircle2, 
   Copy, Check, CreditCard, FileText, 
-  Star, KeyRound, Sparkles, X
+  Star, KeyRound, Sparkles, X, Users, Briefcase, ChevronRight, Radio
 } from 'lucide-react';
 import { Booking, Worker } from '../../types';
 import { Language, translations } from '../../i18n/translations';
@@ -18,6 +18,7 @@ interface ActiveBookingTrackerCardProps {
   onOpenPayment: (booking: Booking) => void;
   onOpenInvoice: (booking: Booking) => void;
   onOpenRating: (booking: Booking) => void;
+  onApproveProposal?: (bookingId: string) => Promise<any>;
   currentLanguage?: Language;
 }
 
@@ -32,28 +33,32 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
   onOpenPayment,
   onOpenInvoice,
   onOpenRating,
+  onApproveProposal,
   currentLanguage = 'en'
 }) => {
-  // Optimistic local status to guarantee smooth transition without jumps
   const [localStatus, setLocalStatus] = useState<string>(booking.status);
   const [copiedOtp, setCopiedOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
 
   useEffect(() => {
     setLocalStatus(booking.status);
   }, [booking.status, booking._id]);
 
   const effectiveStatus = localStatus || booking.status;
+  const isContractorTeam = booking.bookingMode === 'CONTRACTOR_TEAM';
   const isCompleted = effectiveStatus === 'COMPLETED';
   const isInProgress = effectiveStatus === 'IN_PROGRESS';
   const isEnRoute = effectiveStatus === 'EN_ROUTE';
+  const isAllocated = effectiveStatus === 'ALLOCATED';
+  const isMatching = effectiveStatus === 'MATCHING';
+  const isProposalPending = effectiveStatus === 'PROPOSAL_PENDING';
+  const isProposalReceived = effectiveStatus === 'PROPOSAL_RECEIVED';
 
   // Live ETA countdown in minutes & seconds
-  const initialMinutes = booking.etaMinutes || 14;
+  const initialMinutes = booking.etaMinutes || 15;
   const [remainingSeconds, setRemainingSeconds] = useState(initialMinutes * 60);
-
-  // Live work duration timer when IN_PROGRESS
   const [elapsedWorkSeconds, setElapsedWorkSeconds] = useState(45);
 
   useEffect(() => {
@@ -96,15 +101,15 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
     return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
   };
 
-  // Find worker details
+  // Find worker details from real database workers
   const assignedWorker = workers.find(w => w._id === booking.assignedWorkerId) || {
-    _id: booking.assignedWorkerId || 'wrk_102',
-    name: booking.workerName || 'Pravin Maruti Jadhav',
-    phone: booking.workerPhone || '+91 98221 00102',
+    _id: booking.assignedWorkerId,
+    name: booking.workerName || 'Assigned Cooperative Technician',
+    phone: booking.workerPhone || '+91 98221 00101',
     trade: booking.serviceCategory || 'Electrical',
     customerRating: 4.88,
-    completedJobs: 340,
-    cooperativeName: booking.cooperativeName || 'Maha Jal Sahakari'
+    completedJobs: 0,
+    cooperativeName: booking.cooperativeName || 'Maharashtra Labour Cooperative'
   };
 
   const otpCode = booking.otp || '4821';
@@ -149,6 +154,21 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
     }
   };
 
+  const handleApproveProposalClick = async () => {
+    setIsApproving(true);
+    try {
+      if (onApproveProposal) {
+        await onApproveProposal(booking._id);
+      } else {
+        await onUpdateBookingStatus(booking._id, 'MATCHING');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to approve proposal');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
   return (
     <div className="bg-slate-950 text-white rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5 transition-all">
       
@@ -180,7 +200,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
         </div>
       )}
 
-      {/* 2. Top Minimal Header: Status, Service, Address & Price */}
+      {/* Top Header: Status, Service, Address & Price */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
@@ -188,11 +208,30 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
               : isInProgress
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+              : isProposalReceived
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              : isProposalPending
+              ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40'
+              : isMatching
+              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 animate-pulse'
               : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${isCompleted ? 'bg-emerald-400' : isInProgress ? 'bg-emerald-400 animate-ping' : 'bg-blue-400'}`} />
+            <span className={`w-2 h-2 rounded-full ${
+              isCompleted ? 'bg-emerald-400' 
+              : isInProgress ? 'bg-emerald-400 animate-ping' 
+              : isMatching ? 'bg-indigo-400 animate-ping'
+              : isProposalReceived ? 'bg-amber-400 animate-bounce'
+              : 'bg-blue-400'
+            }`} />
             <span>
-              {isCompleted ? '✓ Completed' : isInProgress ? '⚡ In-Progress' : '🚗 En Route'}
+              {isCompleted ? '✓ Completed' 
+               : isInProgress ? '⚡ In-Progress' 
+               : isEnRoute ? '🚗 En Route' 
+               : isAllocated ? '👷 Technician Assigned'
+               : isProposalReceived ? '📋 Proposal Received'
+               : isProposalPending ? '⏳ Awaiting Proposal'
+               : isContractorTeam ? '✓ Proposal Approved'
+               : '📡 Matching Professional'}
             </span>
           </span>
 
@@ -212,7 +251,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
         <div className="flex items-center gap-3 self-end sm:self-center">
           <div className="text-right">
             <span className="text-base font-black text-white block leading-tight">
-              ₹{booking.totalAmount.toLocaleString('en-IN')}
+              ₹{Number(booking.totalAmount || 0).toLocaleString('en-IN')}
             </span>
             {booking.paymentStatus === 'PAID' ? (
               <span className="text-[10px] font-bold uppercase text-emerald-400 flex items-center gap-1 justify-end">
@@ -222,7 +261,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
             ) : (
               <span className="text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1 justify-end">
                 <Clock className="w-3 h-3 text-amber-400 inline" />
-                <span>Pay After Service</span>
+                <span>{isCompleted ? 'Pay Now' : 'Pay After Service'}</span>
               </span>
             )}
           </div>
@@ -240,41 +279,186 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
         </div>
       </div>
 
-      {/* 3. Minimal 5-Stage Milestone Progress Bar */}
-      <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
-        <div className="flex items-center gap-1 text-emerald-400 whitespace-nowrap">
-          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>1. Confirmed</span>
-        </div>
-        <div className={`h-0.5 flex-1 mx-1.5 rounded ${isEnRoute || isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+      {/* Milestone Progress Bar */}
+      {isContractorTeam ? (
+        /* 5-Stage Contractor Team Milestone */
+        <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+          <div className="flex items-center gap-1 text-emerald-400 whitespace-nowrap">
+            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>1. Requirement</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isProposalReceived || isMatching || isAllocated || isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
 
-        <div className={`flex items-center gap-1 whitespace-nowrap ${isEnRoute ? 'text-blue-400 font-black' : isInProgress || isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
-          {isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> : <Clock className="w-3.5 h-3.5 flex-shrink-0" />}
-          <span>2. En Route</span>
-        </div>
-        <div className={`h-0.5 flex-1 mx-1.5 rounded ${isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isProposalReceived ? 'text-amber-400 font-black' : isMatching || isAllocated || isInProgress || isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isMatching || isAllocated || isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+            <span>2. Proposal</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isMatching || isAllocated || isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
 
-        <div className={`flex items-center gap-1 whitespace-nowrap ${!isInProgress && !isCompleted ? 'text-amber-400 font-black' : 'text-emerald-400'}`}>
-          {isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> : <KeyRound className="w-3.5 h-3.5 flex-shrink-0" />}
-          <span>3. Doorstep OTP</span>
-        </div>
-        <div className={`h-0.5 flex-1 mx-1.5 rounded ${isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isMatching ? 'text-emerald-400 font-black' : isAllocated || isInProgress || isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isAllocated || isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+            <span>3. Approved</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isAllocated || isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
 
-        <div className={`flex items-center gap-1 whitespace-nowrap ${isInProgress ? 'text-emerald-400 font-black animate-pulse' : isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
-          {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> : <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />}
-          <span>4. In-Progress</span>
-        </div>
-        <div className={`h-0.5 flex-1 mx-1.5 rounded ${isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isAllocated || isInProgress ? 'text-blue-400 font-black' : isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+            <span>4. Crew Dispatched</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
 
-        <div className={`flex items-center gap-1 whitespace-nowrap ${isCompleted ? 'text-emerald-400 font-black' : 'text-slate-500'}`}>
-          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>5. Completed</span>
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isCompleted ? 'text-emerald-400 font-black' : 'text-slate-500'}`}>
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>5. Completed</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* 5-Stage Solo Worker Milestone */
+        <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isMatching ? 'text-indigo-400 font-black animate-pulse' : 'text-emerald-400'}`}>
+            {isAllocated || isEnRoute || isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Radio className="w-3.5 h-3.5" />}
+            <span>1. Matching</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isAllocated || isEnRoute || isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
 
-      {/* 4. Streamlined Contextual Action Box */}
-      
-      {/* CASE A: COMPLETED -> Settle Payment (if unpaid) OR Rate Service & Invoice (if paid) */}
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isAllocated || isEnRoute ? 'text-blue-400 font-black' : isInProgress || isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> : <Clock className="w-3.5 h-3.5 flex-shrink-0" />}
+            <span>2. En Route</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isAllocated || isEnRoute ? 'text-amber-400 font-black' : isInProgress || isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> : <KeyRound className="w-3.5 h-3.5 flex-shrink-0" />}
+            <span>3. Doorstep OTP</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isInProgress || isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isInProgress ? 'text-emerald-400 font-black animate-pulse' : isCompleted ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> : <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />}
+            <span>4. In-Progress</span>
+          </div>
+          <div className={`h-0.5 flex-1 mx-1.5 rounded ${isCompleted ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+
+          <div className={`flex items-center gap-1 whitespace-nowrap ${isCompleted ? 'text-emerald-400 font-black' : 'text-slate-500'}`}>
+            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>5. Completed</span>
+          </div>
+        </div>
+      )}
+
+      {/* Contextual Action Cards */}
+
+      {/* ================= CASE 1: CONTRACTOR PROPOSAL RECEIVED ================= */}
+      {isContractorTeam && isProposalReceived && (
+        <div className="bg-amber-950/40 border-2 border-amber-500/60 rounded-2xl p-5 space-y-4 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/30 pb-3">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-900/60 px-2.5 py-0.5 rounded-full border border-amber-500/40">
+                Action Required • Review Contractor Plan
+              </span>
+              <h4 className="text-lg font-black text-white mt-1">
+                Mukaddam Workforce Proposal Formulated
+              </h4>
+            </div>
+            <div className="text-left sm:text-right">
+              <span className="text-[10px] uppercase font-bold text-amber-300 block">Proposed Total</span>
+              <span className="text-2xl font-black text-white">₹{Number(booking.totalAmount || 0).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Workforce Sizing</span>
+              <span className="text-sm font-black text-emerald-400 mt-0.5 block">
+                {booking.teamSize || 3} Verified Shramiks
+              </span>
+            </div>
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Estimated Duration</span>
+              <span className="text-sm font-black text-white mt-0.5 block">
+                {booking.projectDurationDays || 2} Days
+              </span>
+            </div>
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Equipment / Depot</span>
+              <span className="text-xs font-semibold text-slate-300 mt-0.5 block truncate">
+                {booking.proposal?.notes || 'Cooperative Depot Included'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <p className="text-xs text-slate-300">
+              Contractor <strong>{booking.contractorName || 'Mukaddam'}</strong> has submitted this plan. Approving authorizes crew dispatch from the cooperative.
+            </p>
+            <button
+              type="button"
+              disabled={isApproving}
+              onClick={handleApproveProposalClick}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg hover:scale-[1.02] active:scale-[0.99] transition cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{isApproving ? 'Approving Plan...' : 'Approve Proposal & Dispatch Crew ➔'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= CASE 2: CONTRACTOR PROPOSAL PENDING ================= */}
+      {isContractorTeam && isProposalPending && (
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3 animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center font-black flex-shrink-0 animate-pulse">
+              📋
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white">
+                Project Requirement Submitted to Mukaddam
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Contractor <strong>{booking.contractorName || 'Mukaddam'}</strong> is evaluating your site specs and sizing master craftsmen + helpers.
+              </p>
+            </div>
+          </div>
+          <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs text-slate-400">
+            <strong>Scope:</strong> {booking.projectScope?.taskDescription || booking.subTrade} ({booking.projectScope?.propertyType || 'Residential'}, ~{booking.projectScope?.approxAreaSqFt || 1200} sq.ft)
+          </div>
+        </div>
+      )}
+
+      {/* ================= CASE 3: SOLO WORKER MATCHING ================= */}
+      {!isContractorTeam && isMatching && !booking.assignedWorkerId && (
+        <div className="bg-indigo-950/30 border border-indigo-500/40 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-black text-xl flex-shrink-0 relative">
+              <span className="animate-spin text-2xl">📡</span>
+              <span className="absolute -inset-1 rounded-2xl border-2 border-indigo-400/40 border-t-transparent animate-spin" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-white">
+                  Broadcasting to Verified Cooperative Professionals
+                </h4>
+                <span className="text-[10px] text-indigo-300 font-bold bg-indigo-950 px-2 py-0.5 rounded-full border border-indigo-800 animate-pulse">
+                  Pool Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Your request for <strong>{booking.serviceCategory}</strong> is available to certified shramiks in Pune.
+              </p>
+              <p className="text-xs text-slate-400 font-mono">
+                Target Response: &lt; 3 mins • Escrow protected
+              </p>
+            </div>
+          </div>
+
+          <div className="text-xs text-indigo-200 bg-indigo-900/40 px-3.5 py-2.5 rounded-xl border border-indigo-500/30 self-start sm:self-auto">
+            <span>Waiting for eligible worker to click <strong>Accept Job</strong> on their device.</span>
+          </div>
+        </div>
+      )}
+
+      {/* ================= CASE 4: COMPLETED ================= */}
       {isCompleted && (
         <div className={`border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn ${
           booking.paymentStatus === 'PAID'
@@ -295,7 +479,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
             <p className="text-xs text-slate-300">
               {booking.paymentStatus === 'PAID'
                 ? `Technician ${assignedWorker.name} completed the work. Rate your experience or download your official tax invoice.`
-                : `Technician ${assignedWorker.name} has finished work. Settle ₹${booking.totalAmount.toLocaleString('en-IN')} payment to release worker escrow before reviewing.`}
+                : `Technician ${assignedWorker.name} has finished work. Settle ₹${Number(booking.totalAmount || 0).toLocaleString('en-IN')} payment to release worker escrow before reviewing.`}
             </p>
           </div>
 
@@ -307,7 +491,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
                 className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.99] transition cursor-pointer"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Pay Now (₹{booking.totalAmount.toLocaleString('en-IN')}) ➔</span>
+                <span>Pay Now (₹{Number(booking.totalAmount || 0).toLocaleString('en-IN')}) ➔</span>
               </button>
             ) : (
               <>
@@ -342,7 +526,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
         </div>
       )}
 
-      {/* CASE B: IN_PROGRESS -> Active work timer & Complete Service button */}
+      {/* ================= CASE 5: IN_PROGRESS ================= */}
       {isInProgress && (
         <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn">
           <div className="flex items-center gap-3">
@@ -387,8 +571,8 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
         </div>
       )}
 
-      {/* CASE C: ALLOCATED / EN_ROUTE -> Arrival Countdown & Clean Doorstep OTP */}
-      {!isCompleted && !isInProgress && (
+      {/* ================= CASE 6: ALLOCATED / EN_ROUTE ================= */}
+      {!isCompleted && !isInProgress && (isAllocated || isEnRoute) && (
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 animate-fadeIn">
           {/* Worker Info & ETA */}
           <div className="flex items-center gap-3">
@@ -403,7 +587,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
                 </span>
               </div>
               <p className="text-xs text-slate-300">
-                Arriving in <strong className="text-blue-400">~{formatCountdown(remainingSeconds)}</strong> (~1.1 km away)
+                {isEnRoute ? 'En Route to your location' : 'Assigned from Cooperative'} • Arriving in <strong className="text-blue-400">~{formatCountdown(remainingSeconds)}</strong>
               </p>
               <a
                 href={`tel:${assignedWorker.phone || '+91 98221 00102'}`}

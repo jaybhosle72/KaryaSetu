@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, ShieldAlert, Clock, MapPin, Zap, Wrench, CheckCircle2 } from 'lucide-react';
 
 interface EmergencySOSModalProps {
@@ -11,19 +11,29 @@ interface EmergencySOSModalProps {
     address: string;
     notes: string;
   }) => Promise<void>;
+  currentUser?: { name: string; phone: string; address?: string } | null;
 }
 
 export const EmergencySOSModal: React.FC<EmergencySOSModalProps> = ({
   isOpen,
   onClose,
-  onSubmitEmergency
+  onSubmitEmergency,
+  currentUser
 }) => {
-  const [customerName, setCustomerName] = useState('Ananya Iyer');
-  const [customerPhone, setCustomerPhone] = useState('+91 98229 88776');
+  const [customerName, setCustomerName] = useState(currentUser?.name || 'Registered Customer');
+  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '+91 98229 00000');
   const [emergencyType, setEmergencyType] = useState('Water Leakage');
-  const [address, setAddress] = useState('Row House 12, Baner-Pashan Link Road, Pune 411045');
-  const [notes, setNotes] = useState('Severe main pipeline rupture; water flooding utility area');
+  const [address, setAddress] = useState(currentUser?.address || 'Baner-Pashan Link Road, Pune 411045');
+  const [notes, setNotes] = useState('Urgent assistance required; pipeline or electrical fault');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.name) setCustomerName(currentUser.name);
+      if (currentUser.phone) setCustomerPhone(currentUser.phone);
+      if (currentUser.address) setAddress(currentUser.address);
+    }
+  }, [currentUser]);
 
   if (!isOpen) return null;
 

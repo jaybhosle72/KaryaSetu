@@ -412,7 +412,237 @@ const seedForecasts = [
   }
 ];
 
-const seedBookings = [];
+const seedBookings = [
+  {
+    _id: "bk_1001",
+    customerName: "Aditya Deshpande",
+    customerPhone: "+91 98900 11223",
+    serviceCategory: "Electrical",
+    subTrade: "Switchgear Repair",
+    type: "HOUSEHOLD",
+    urgency: "STANDARD",
+    address: "Flat 402, Mayur Residency, Kothrud, Pune 411038",
+    cooperativeId: "coop_pune_elec",
+    cooperativeName: "Pune Electrical Sahakari",
+    assignedWorkerId: "wrk_101",
+    workerName: "Santosh Baburao Kadam",
+    workerPhone: "+91 98221 00101",
+    status: "COMPLETED",
+    totalAmount: 500,
+    paymentBreakdown: {
+      workerAmount: 400,     // 80%
+      coopAmount: 50,        // 10%
+      welfareAmount: 30,     // 6%
+      platformAmount: 20     // 4%
+    },
+    paymentStatus: "PAID",
+    paymentMethod: "UPI (Google Pay)",
+    invoiceNumber: "INV-COOP-2026-00412",
+    createdAt: "2026-08-30T10:15:00.000Z",
+    completedAt: "2026-08-30T11:45:00.000Z",
+    ratings: {
+      score: 5,
+      comment: "Santosh ji arrived on time, was extremely courteous, diagnosed the MCB tripping in 10 minutes. Proud to support our local worker cooperative!",
+      quality: 5,
+      punctuality: 5,
+      safety: 5,
+      cooperativeEndorsement: true
+    }
+  },
+  {
+    _id: "bk_1002",
+    customerName: "Rohit & Megha Sharma",
+    customerPhone: "+91 97654 32109",
+    serviceCategory: "Plumbing",
+    subTrade: "Burst Pipe Emergency",
+    type: "EMERGENCY",
+    urgency: "EMERGENCY",
+    address: "Row House 7, Nyati Estate, Baner, Pune 411045",
+    cooperativeId: "coop_pune_plumb",
+    cooperativeName: "Maha Jal Sahakari",
+    assignedWorkerId: "wrk_102",
+    workerName: "Pravin Maruti Jadhav",
+    workerPhone: "+91 98221 00102",
+    status: "IN_PROGRESS",
+    totalAmount: 650,
+    paymentBreakdown: {
+      workerAmount: 520,     // 80%
+      coopAmount: 65,        // 10%
+      welfareAmount: 39,     // 6%
+      platformAmount: 26     // 4%
+    },
+    paymentStatus: "PENDING",
+    paymentMethod: "Awaiting Completion",
+    invoiceNumber: "INV-COOP-2026-00413",
+    createdAt: "2026-09-01T22:30:00.000Z",
+    etaMinutes: 8,
+    otp: "4821",
+    emergencyTriggerReason: "Main supply pipeline rupture; water flooding parking and utility area"
+  },
+  {
+    _id: "bk_team_101",
+    customerName: "Amanora Residents Association",
+    customerPhone: "+91 99222 33445",
+    serviceCategory: "Painting & Waterproofing",
+    subTrade: "Exterior Waterproofing & Paint",
+    type: "HOUSEHOLD",
+    urgency: "STANDARD",
+    bookingMode: "CONTRACTOR_TEAM",
+    teamSize: 3,
+    projectDurationDays: 2,
+    contractorId: "cnt_101",
+    contractorName: "Balasaheb Ramchandra Shinde",
+    assignedWorkerIds: ["wrk_101", "wrk_102", "wrk_104"],
+    workerName: "Santosh Baburao Kadam, Pravin Maruti Jadhav, Sunita Ramesh Kamble",
+    address: "Tower 9, Amanora Town, Hadapsar, Pune 411028",
+    cooperativeId: "coop_pune_multi",
+    cooperativeName: "Brihan-Maharashtra Multi-Trade Labour Cooperative",
+    status: "ALLOCATED",
+    totalAmount: 18500,
+    projectScope: {
+      taskDescription: "Exterior Waterproofing & Weathercoat Painting for Tower 9",
+      propertyType: "12-Story Housing Society Tower",
+      scopeType: "Exterior Facade & Parapet Walls",
+      approxAreaSqFt: 12500,
+      preferredStartDate: "05 Sep 2026 (09:00 AM)",
+      specialRequirements: "Pressure wash exterior facade to remove monsoon moss & efflorescence. Inject polyurethane waterproofing sealant into parapet hairline cracks. Apply 1 coat exterior damp-proof primer followed by 2 coats of elastomeric weathercoat. Terrace 3-phase power & water tap available near lift room. Society corridor barricading required."
+    },
+    proposal: {
+      workforce: [
+        { role: "Master Waterproofing Specialist", count: 2, skills: "Polyurethane crack injection, elastomeric coating, EN-361 high-rope rigging" },
+        { role: "Site Scaffolding & Material Assistant", count: 1, skills: "Material batch mixing, pressure washing, safety barricading" }
+      ],
+      estimatedDurationDays: 2,
+      estimatedCost: 18500,
+      materialsAndEquipment: [
+        "Heavy-duty Aluminium Suspended Scaffolding (2 Units)",
+        "150-Bar High-Pressure Facade Washer",
+        "Airless Paint Sprayer with 30m Hose",
+        "EN 361 Fall-Arrest Safety Harnesses & Helmets",
+        "Protective Canvas Floor Drop Sheets"
+      ],
+      notes: "Mukaddam Balasaheb Shinde on-site supervision. 80% minimum gazetted wages deposited to workers' bank accounts. 1-year cooperative guarantee."
+    },
+    paymentBreakdown: {
+      workerAmount: 14800,
+      coopAmount: 1850,
+      welfareAmount: 1110,
+      platformAmount: 740
+    },
+    paymentStatus: "PENDING",
+    invoiceNumber: "INV-TEAM-2026-00089",
+    allocationRationale: "Contractor assigned certified painter shramiks with multi-year cooperative warranty.",
+    createdAt: "2026-09-02T10:00:00.000Z"
+  },
+  {
+    _id: "bk_team_102",
+    customerName: "Pooja Agarwal (Baner Tech Residency)",
+    customerPhone: "+91 98331 44556",
+    serviceCategory: "Deep Cleaning",
+    subTrade: "Commercial Floor Buffing & Post-Construction Sanitization",
+    type: "HOUSEHOLD",
+    urgency: "STANDARD",
+    bookingMode: "CONTRACTOR_TEAM",
+    teamSize: 4,
+    projectDurationDays: 1,
+    contractorId: "cnt_101",
+    contractorName: "Balasaheb Ramchandra Shinde",
+    assignedWorkerIds: [],
+    address: "B-Wing, Baner Tech Residency, Baner, Pune 411045",
+    cooperativeId: "coop_pune_multi",
+    cooperativeName: "Brihan-Maharashtra Multi-Trade Labour Cooperative",
+    status: "MATCHING",
+    totalAmount: 9600,
+    paymentBreakdown: {
+      workerAmount: 7680,
+      coopAmount: 960,
+      welfareAmount: 576,
+      platformAmount: 384
+    },
+    paymentStatus: "PENDING",
+    invoiceNumber: "INV-TEAM-2026-00090",
+    allocationRationale: "Awaiting contractor team allocation of 4 certified deep-cleaning workers from community.",
+    createdAt: "2026-09-03T08:30:00.000Z"
+  },
+  {
+    _id: "bk_team_103",
+    customerName: "Dr. Vikram & Ananya Deshmukh",
+    customerPhone: "+91 98229 11002",
+    serviceCategory: "Painting & Renovation",
+    subTrade: "Full Interior Painting & Surface Repair (3 BHK)",
+    type: "HOUSEHOLD",
+    urgency: "STANDARD",
+    bookingMode: "CONTRACTOR_TEAM",
+    teamSize: 4,
+    projectDurationDays: 3,
+    contractorId: "cnt_101",
+    contractorName: "Balasaheb Ramchandra Shinde",
+    assignedWorkerIds: [],
+    address: "Flat 701, Rohan Nilay Phase 2, Aundh, Pune 411007",
+    cooperativeId: "coop_pune_multi",
+    cooperativeName: "Brihan-Maharashtra Multi-Trade Labour Cooperative",
+    status: "PROPOSAL_PENDING",
+    totalAmount: 14500,
+    projectScope: {
+      taskDescription: "Full Interior Painting for 3 BHK Flat (Walls, Ceiling & Woodwork)",
+      propertyType: "3 BHK Flat",
+      scopeType: "Interior Walls & Ceiling Painting",
+      approxAreaSqFt: 1350,
+      preferredStartDate: "Tomorrow, 09:00 AM",
+      specialRequirements: "Customer requested complete wall sanding, 2 coats of acrylic putty, 1 coat primer, and 2 coats of Asian Paints Royal Luxury Emulsion. Protect furniture with drop sheets."
+    },
+    paymentBreakdown: {
+      workerAmount: 11600,
+      coopAmount: 1450,
+      welfareAmount: 870,
+      platformAmount: 580
+    },
+    paymentStatus: "PENDING",
+    invoiceNumber: "INV-TEAM-2026-00091",
+    allocationRationale: "Awaiting contractor proposal and workforce plan sizing.",
+    notes: "Customer outcome: 'I want to paint my 3 BHK flat before the festive season. Need verified cooperative team with Mukaddam supervision.'",
+    createdAt: "2026-09-05T09:00:00.000Z"
+  },
+  {
+    _id: "bk_team_104",
+    customerName: "Sneha & Rohan Kulkarni",
+    customerPhone: "+91 98221 44778",
+    serviceCategory: "Home Maintenance & Renovation",
+    subTrade: "Bathroom Tile Waterproofing & Plumbing Overhaul",
+    type: "HOUSEHOLD",
+    urgency: "STANDARD",
+    bookingMode: "CONTRACTOR_TEAM",
+    teamSize: 3,
+    projectDurationDays: 2,
+    contractorId: "cnt_101",
+    contractorName: "Balasaheb Ramchandra Shinde",
+    assignedWorkerIds: [],
+    address: "Bungalow 12, Prabhat Road Lane 4, Erandwane, Pune 411004",
+    cooperativeId: "coop_pune_multi",
+    cooperativeName: "Brihan-Maharashtra Multi-Trade Labour Cooperative",
+    status: "PROPOSAL_PENDING",
+    totalAmount: 9800,
+    projectScope: {
+      taskDescription: "Bathroom Tile Waterproofing & Sanitary Overhaul",
+      propertyType: "Independent House",
+      scopeType: "Plumbing & Tiling Repair",
+      approxAreaSqFt: 450,
+      preferredStartDate: "Tomorrow, 10:00 AM",
+      specialRequirements: "Replace aged concealed piping, apply epoxy grout to floor joints, install new diverter fixture, and test water pressure."
+    },
+    paymentBreakdown: {
+      workerAmount: 7840,
+      coopAmount: 980,
+      welfareAmount: 588,
+      platformAmount: 392
+    },
+    paymentStatus: "PENDING",
+    invoiceNumber: "INV-TEAM-2026-00092",
+    allocationRationale: "Awaiting contractor proposal and workforce plan sizing.",
+    notes: "Customer outcome: 'Persistent dampness on adjacent bedroom wall. Need bathroom waterproofing overhaul.'",
+    createdAt: "2026-09-05T10:30:00.000Z"
+  }
+];
 
 const seedWelfareLedger = [
   {

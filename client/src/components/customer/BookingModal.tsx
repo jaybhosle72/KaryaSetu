@@ -11,6 +11,7 @@ interface BookingModalProps {
   serviceCategory: string;
   subTrade: string;
   defaultPrice: number;
+  currentUser?: { name: string; phone: string; address?: string } | null;
   onSubmitBooking: (data: {
     customerName: string;
     customerPhone: string;
@@ -39,6 +40,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   serviceCategory,
   subTrade,
   defaultPrice,
+  currentUser,
   onSubmitBooking
 }) => {
   const [bookingMode, setBookingMode] = useState<'SOLO_WORKER' | 'CONTRACTOR_TEAM'>('SOLO_WORKER');
@@ -64,10 +66,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const [selectedWorkerTier, setSelectedWorkerTier] = useState<'STANDARD' | 'MASTER' | 'HELPER'>('STANDARD');
 
-  const [customerName, setCustomerName] = useState('Pooja Nair');
-  const [customerPhone, setCustomerPhone] = useState('+91 98224 55667');
-  const [address, setAddress] = useState('Flat 504, Windsor Park, Kothrud, Pune 411038');
+  const [customerName, setCustomerName] = useState(currentUser?.name || 'Registered Customer');
+  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '+91 98224 00000');
+  const [address, setAddress] = useState(currentUser?.address || 'Kothrud, Pune 411038');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.name) setCustomerName(currentUser.name);
+      if (currentUser.phone) setCustomerPhone(currentUser.phone);
+      if (currentUser.address) setAddress(currentUser.address);
+    }
+  }, [currentUser]);
 
   // Sync worker type if serviceCategory prop changes
   useEffect(() => {

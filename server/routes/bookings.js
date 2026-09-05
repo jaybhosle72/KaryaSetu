@@ -1,14 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const { DataStore } = require('../services/dataStore');
-const { matchWorkerToBooking } = require('../services/matchingEngine');
 const { calculatePaymentSplit, generateInvoiceNumber } = require('../services/paymentService');
 
-// GET /api/bookings - List all bookings
+// GET /api/bookings - List all bookings with optional role/worker filtering
 router.get('/', async (req, res) => {
   try {
-    const bookings = await DataStore.getBookings();
-    res.json({ success: true, count: bookings.length, data: bookings });
+    const { role, workerId, trade, status, bookingMode } = req.query;
+    const allBookings = await DataStore.getBookings();
+
+    let filtered = allBookings;
+
+    if (role === 'worker' && workerId) {
+      filtered = allBookings.filter(b => {
+        const isAssignedToMe = b.assignedWorkerId === workerId;
+        const isAvailableInMyTrade = b.status === 'MATCHING' && !b.assignedWorkerId && 
+          (!trade || b.serviceCategory?.toLowerCase().includes(trade.toLowerCase()) || trade.toLowerCase().includes(b.serviceCategory?.toLowerCase()));
+        return isAssignedToMe || isAvailableInMyTrade;
+      });
+    } else {
+      if (status) filtered = filtered.filter(b => b.status === status);
+      if (bookingMode) filtered = filtered.filter(b => b.bookingMode === bookingMode);
+    }
+
+    res.json({ success: true, count: filtered.length, data: filtered });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -42,24 +57,22 @@ router.post('/', async (req, res) => {
       projectScope
     } = req.body;
 
-    // 1. Fetch available workers and cooperatives
-    const allWorkers = await DataStore.getWorkers();
     const allCoops = await DataStore.getCooperatives();
+    const defaultCoop = allCoops[0] || { _id: 'coop_pune_multi', name: 'Brihan-Maharashtra Multi-Trade Labour Cooperative' };
 
     let newBookingData = {};
-    let matchResult = null;
 
     if (bookingMode === 'CONTRACTOR_TEAM') {
-      // Contractor Team Request: Customer describes the outcome; contractor plans workforce & sends proposal
+      // Contractor Team Request: Customer describes outcome; contractor plans workforce & sends proposal
       const allContractors = await DataStore.getContractors();
       const contractor = (req.body.contractorId ? allContractors.find(c => c._id === req.body.contractorId) : null) || allContractors[0];
-      const coop = allCoops.find(c => c._id === contractor?.cooperativeId) || allCoops[0];
+      const coop = allCoops.find(c => c._id === contractor?.cooperativeId) || defaultCoop;
       const initialAmount = Number(estimatedAmount) || 0;
       const split = calculatePaymentSplit(initialAmount, coop?.splitConfig);
 
       newBookingData = {
-        customerName: customerName || 'Rahul Deshmukh',
-        customerPhone: customerPhone || '+91 98230 45678',
+        customerName: customerName || 'Citizen Customer',
+        customerPhone: customerPhone || '+91 98220 11223',
         serviceCategory,
         subTrade: subTrade || `${serviceCategory} Contractor Project`,
         type: 'HOUSEHOLD',
@@ -73,10 +86,10 @@ router.post('/', async (req, res) => {
           scopeType: 'Interior',
           approxAreaSqFt: 1200
         },
-        contractorId: contractor?._id || 'cnt_101',
-        contractorName: contractor?.name || 'Balasaheb Ramchandra Shinde',
+        contractorId: contractor?._id,
+        contractorName: contractor?.name,
         assignedWorkerIds: [],
-        address: address || 'Kothrud, Pune 411038',
+        address: address || 'Pune, Maharashtra',
         cooperativeId: coop?._id,
         cooperativeName: coop?.name,
         assignedWorkerId: undefined,
@@ -93,26 +106,17 @@ router.post('/', async (req, res) => {
         paymentStatus: 'PENDING',
         paymentMethod: 'UPI',
         invoiceNumber: generateInvoiceNumber(),
-        allocationRationale: `Customer specified project outcome ("${projectScope?.taskDescription || subTrade}"). Dispatched to Contractor ${contractor?.name} for workforce evaluation & proposal.`,
+        allocationRationale: `Customer specified project outcome ("${projectScope?.taskDescription || subTrade}"). Dispatched to Contractor ${contractor?.name || 'Mukaddam'} for workforce planning & proposal.`,
         etaMinutes: 45
       };
     } else {
-      // Solo Worker Flow: Run Cooperative-First AI Matching Engine
-      const tempBooking = {
-        serviceCategory,
-        subTrade,
-        urgency,
-        address,
-        type: 'HOUSEHOLD'
-      };
-      matchResult = matchWorkerToBooking(tempBooking, allWorkers, allCoops);
-      const assignedWorker = matchResult.selectedWorker;
-      const coop = allCoops.find(c => c._id === assignedWorker?.cooperativeId) || allCoops[0];
+      // Solo Worker Flow: Created in MATCHING state without pre-assignment!
+      const coop = defaultCoop;
       const split = calculatePaymentSplit(estimatedAmount, coop?.splitConfig);
 
       newBookingData = {
-        customerName: customerName || 'Rahul Deshmukh',
-        customerPhone: customerPhone || '+91 98230 45678',
+        customerName: customerName || 'Citizen Customer',
+        customerPhone: customerPhone || '+91 98220 11223',
         serviceCategory,
         subTrade: subTrade || `${serviceCategory} General Service`,
         type: 'HOUSEHOLD',
@@ -120,14 +124,14 @@ router.post('/', async (req, res) => {
         bookingMode: 'SOLO_WORKER',
         teamSize: 1,
         projectDurationDays: 1,
-        address: address || 'Kothrud, Pune 411038',
+        address: address || 'Pune, Maharashtra',
         cooperativeId: coop?._id,
         cooperativeName: coop?.name,
-        assignedWorkerId: assignedWorker?._id,
-        workerName: assignedWorker?.name,
-        workerPhone: assignedWorker?.phone,
-        status: 'ALLOCATED',
-        totalAmount: estimatedAmount,
+        assignedWorkerId: null,
+        workerName: 'Matching eligible cooperative professional...',
+        workerPhone: '',
+        status: 'MATCHING',
+        totalAmount: Number(estimatedAmount) || 500,
         notes: req.body.notes || '',
         paymentBreakdown: {
           workerAmount: split.workerAmount,
@@ -138,17 +142,10 @@ router.post('/', async (req, res) => {
         paymentStatus: 'PENDING',
         paymentMethod: 'UPI',
         invoiceNumber: generateInvoiceNumber(),
-        allocationRationale: matchResult.rationale,
-        etaMinutes: matchResult.etaMinutes || 20,
+        allocationRationale: `Request dispatched to cooperative pool for ${serviceCategory}. Awaiting technician acceptance.`,
+        etaMinutes: 15,
         otp: req.body.otp || Math.floor(1000 + Math.random() * 9000).toString()
       };
-
-      if (assignedWorker) {
-        await DataStore.updateWorker(assignedWorker._id, {
-          status: 'ON_DUTY',
-          currentWorkload: (assignedWorker.currentWorkload || 0) + 1
-        });
-      }
     }
 
     const newBooking = await DataStore.createBooking(newBookingData);
@@ -158,9 +155,9 @@ router.post('/', async (req, res) => {
       data: newBooking,
       booking: newBooking,
       matchMeta: {
-        score: matchResult ? matchResult.score : 98.5,
-        distKm: matchResult ? matchResult.distKm : 1.2,
-        rationale: matchResult ? matchResult.rationale : newBookingData.allocationRationale
+        score: 98.5,
+        distKm: 1.2,
+        rationale: newBookingData.allocationRationale
       }
     });
   } catch (error) {
@@ -168,13 +165,43 @@ router.post('/', async (req, res) => {
   }
 });
 
-// POST /api/bookings/emergency - 🚨 Instant 1-Click SOS Dispatch
+// POST /api/bookings/:id/accept - Real Worker Accepts Matching Request
+router.post('/:id/accept', async (req, res) => {
+  try {
+    const { workerId } = req.body;
+    if (!workerId) {
+      return res.status(400).json({ success: false, error: 'workerId is required to accept job.' });
+    }
+
+    const updatedBooking = await DataStore.acceptBooking(req.params.id, workerId);
+    res.json({
+      success: true,
+      message: `Job accepted successfully by ${updatedBooking.workerName}!`,
+      data: updatedBooking,
+      booking: updatedBooking
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/bookings/clear-all - Purge test/demo bookings for clean testing
+router.delete('/clear-all', async (req, res) => {
+  try {
+    const result = await DataStore.clearAllBookings();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/bookings/emergency - Rapid 1-Click SOS Dispatch
 router.post('/emergency', async (req, res) => {
   try {
     const {
       customerName = "Emergency Requester",
       customerPhone = "+91 98999 11111",
-      emergencyType = "Water Leakage", // or Short Circuit, Gas Leak, Lockout
+      emergencyType = "Water Leakage",
       address = "Baner Road, Pune 411045",
       notes = "Critical immediate response required"
     } = req.body;
@@ -193,21 +220,12 @@ router.post('/emergency', async (req, res) => {
       basePrice = 550;
     }
 
-    const allWorkers = await DataStore.getWorkers();
+    const allWorkers = await DataStore.getWorkers({ trade });
+    const availableWorkers = allWorkers.filter(w => w.status === 'AVAILABLE' || w.status === 'EMERGENCY_READY');
+    const assignedWorker = availableWorkers[0] || allWorkers[0];
+
     const allCoops = await DataStore.getCooperatives();
-
-    const emergencyBooking = {
-      serviceCategory: trade,
-      subTrade,
-      urgency: 'EMERGENCY',
-      address,
-      type: 'EMERGENCY'
-    };
-
-    const matchResult = matchWorkerToBooking(emergencyBooking, allWorkers, allCoops);
-    const assignedWorker = matchResult.selectedWorker;
     const coop = allCoops.find(c => c._id === assignedWorker?.cooperativeId) || allCoops[0];
-
     const split = calculatePaymentSplit(basePrice, coop?.splitConfig);
 
     const created = await DataStore.createBooking({
@@ -221,9 +239,9 @@ router.post('/emergency', async (req, res) => {
       cooperativeId: coop?._id,
       cooperativeName: coop?.name,
       assignedWorkerId: assignedWorker?._id,
-      workerName: assignedWorker?.name,
-      workerPhone: assignedWorker?.phone,
-      status: 'ALLOCATED',
+      workerName: assignedWorker?.name || 'Rapid Response Squad',
+      workerPhone: assignedWorker?.phone || '+91 98221 00102',
+      status: assignedWorker ? 'ALLOCATED' : 'MATCHING',
       totalAmount: basePrice,
       paymentBreakdown: {
         workerAmount: split.workerAmount,
@@ -234,8 +252,8 @@ router.post('/emergency', async (req, res) => {
       paymentStatus: 'PENDING',
       paymentMethod: 'UPI / Direct',
       invoiceNumber: generateInvoiceNumber(),
-      allocationRationale: `🚨 EMERGENCY DISPATCH: ${matchResult.rationale}`,
-      etaMinutes: Math.min(12, matchResult.etaMinutes || 10),
+      allocationRationale: `🚨 EMERGENCY RAPID SQUAD: Auto-dispatched nearest ${trade} shramik.`,
+      etaMinutes: 10,
       emergencyTriggerReason: notes,
       otp: req.body.otp || Math.floor(1000 + Math.random() * 9000).toString()
     });
@@ -259,8 +277,8 @@ router.post('/emergency', async (req, res) => {
   }
 });
 
-// PUT /api/bookings/:id/status - Update Booking Status
-router.put('/:id/status', async (req, res) => {
+// PUT & PATCH /api/bookings/:id/status - Update Booking Status
+const handleUpdateStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const booking = await DataStore.getBookingById(req.params.id);
@@ -279,14 +297,22 @@ router.put('/:id/status', async (req, res) => {
           });
         }
       }
+      if (booking.assignedWorkerIds && booking.assignedWorkerIds.length > 0) {
+        await Worker.updateMany(
+          { _id: { $in: booking.assignedWorkerIds } },
+          { status: 'AVAILABLE', $inc: { completedJobs: 1 } }
+        );
+      }
     }
 
     const updated = await DataStore.updateBooking(req.params.id, updates);
-    res.json({ success: true, data: updated });
+    res.json({ success: true, data: updated, booking: updated });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
-});
+};
+router.put('/:id/status', handleUpdateStatus);
+router.patch('/:id/status', handleUpdateStatus);
 
 // POST /api/bookings/:id/verify-otp - Verify Doorstep 4-digit OTP & transition to IN_PROGRESS
 router.post('/:id/verify-otp', async (req, res) => {
@@ -299,7 +325,7 @@ router.post('/:id/verify-otp', async (req, res) => {
     if (otp && otp.toString().trim() !== expectedOtp.toString().trim()) {
       return res.status(400).json({ 
         success: false, 
-        error: `Invalid OTP. Please enter the correct 4-digit code (${expectedOtp}) provided to the customer.` 
+        error: `Invalid OTP. Please enter the correct 4-digit code provided to the customer.` 
       });
     }
 
@@ -310,7 +336,7 @@ router.post('/:id/verify-otp', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Doorstep OTP verified successfully. Worker is now authorized to start work.',
+      message: 'Doorstep OTP verified successfully. Worker authorized to start work.',
       data: updated,
       booking: updated
     });
@@ -326,14 +352,19 @@ router.post('/:id/pay', async (req, res) => {
     const booking = await DataStore.getBookingById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, error: 'Booking not found' });
 
-    const split = booking.paymentBreakdown;
+    const split = booking.paymentBreakdown || {
+      workerAmount: Math.round(booking.totalAmount * 0.8),
+      coopAmount: Math.round(booking.totalAmount * 0.1),
+      welfareAmount: Math.round(booking.totalAmount * 0.06),
+      platformAmount: Math.round(booking.totalAmount * 0.04)
+    };
 
-    // 1. Mark booking as PAID (preserve COMPLETED or IN_PROGRESS status)
     const newStatus = (booking.status === 'COMPLETED')
       ? 'COMPLETED'
       : (booking.status === 'IN_PROGRESS')
       ? 'IN_PROGRESS'
       : 'EN_ROUTE';
+
     const updatedBooking = await DataStore.updateBooking(req.params.id, {
       paymentStatus: 'PAID',
       paymentMethod,
@@ -459,7 +490,7 @@ router.post('/:id/approve-proposal', async (req, res) => {
 
     const updated = await DataStore.updateBooking(req.params.id, {
       status: 'MATCHING',
-      workerName: `Plan Approved by Customer — Allocating ${booking.teamSize || 4} Shramiks`
+      workerName: `Plan Approved by Customer — Ready for Crew Allocation (${booking.teamSize || 2} Shramiks)`
     });
 
     res.json({ success: true, data: updated, booking: updated });

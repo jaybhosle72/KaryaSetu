@@ -48,10 +48,13 @@ export function App() {
     } catch {}
   };
 
-  const handleLogin = (role: UserRole, userDetails: { name: string; phone: string; roleName: string }) => {
+  const handleLogin = (role: UserRole, userDetails: { name: string; phone: string; roleName: string; extraMeta?: any }) => {
     const user = { role, ...userDetails };
     setCurrentUser(user);
     setCurrentRole(role);
+    if (user.extraMeta?.workerId) {
+      setSelectedWorkerId(user.extraMeta.workerId);
+    }
     try {
       localStorage.setItem('karyasetu_current_user', JSON.stringify(user));
       localStorage.setItem('sahakar_current_user', JSON.stringify(user));
@@ -250,7 +253,40 @@ export function App() {
 
   useEffect(() => {
     loadData();
+
+    // Multi-device live synchronization: background polling every 2.5 seconds
+    const pollTimer = setInterval(async () => {
+      try {
+        const [freshBookings, freshWorkers] = await Promise.all([
+          api.getBookings(),
+          api.getWorkers()
+        ]);
+        if (Array.isArray(freshBookings)) {
+          setBookings(freshBookings);
+        }
+        if (Array.isArray(freshWorkers)) {
+          setWorkers(freshWorkers);
+        }
+      } catch (err) {
+        // silent polling catch
+      }
+    }, 2500);
+
+    return () => clearInterval(pollTimer);
   }, []);
+
+  const handleAcceptJob = async (bookingId: string, workerId: string) => {
+    try {
+      const updated = await api.acceptBooking(bookingId, workerId);
+      setBookings(prev => prev.map(b => b._id === bookingId ? updated : b));
+      showToast(`✓ Job accepted! You are allocated to ${updated.serviceCategory || 'service'}. Start navigation to doorstep.`, 'success');
+      playAlertSound('success');
+      return updated;
+    } catch (e: any) {
+      showToast(e.message || 'Could not accept job. It may have been claimed.', 'emergency');
+      throw e;
+    }
+  };
 
   // Handlers for Customer
   const handleBookService = async (bookingData: any): Promise<Booking | null> => {
@@ -261,7 +297,9 @@ export function App() {
         setSelectedWorkerId(res.booking.assignedWorkerId);
       }
       if (res.booking.bookingMode === 'CONTRACTOR_TEAM') {
-        showToast(`Request sent to Contractor ${res.booking.contractorName || 'Balasaheb Shinde'} for workforce planning!`, 'success');
+        showToast(`Requirement sent to Contractor ${res.booking.contractorName || 'Mukaddam'} for workforce planning!`, 'success');
+      } else if (res.booking.status === 'MATCHING') {
+        showToast(`Job broadcast to certified cooperative workers in ${res.booking.serviceCategory}! Awaiting acceptance.`, 'success');
       } else {
         showToast(`Matched via ${res.booking.cooperativeName} • Worker: ${res.booking.workerName}`, 'success');
       }
@@ -614,6 +652,7 @@ export function App() {
                 onClearCart={handleClearCart}
                 onOpenCart={() => setIsCartOpen(true)}
                 onApproveProposal={handleApproveProposal}
+                currentUser={currentUser}
               />
             )}
 
@@ -628,6 +667,8 @@ export function App() {
                 onUpdateBookingStatus={handleUpdateBookingStatus}
                 onVerifyOtp={handleVerifyOtp}
                 onAddSkill={(wId, skill) => handleVerifySkill(wId, skill, 'Brihan-Maharashtra Cooperative Board')}
+                onAcceptJob={handleAcceptJob}
+                currentUser={currentUser}
               />
             )}
 

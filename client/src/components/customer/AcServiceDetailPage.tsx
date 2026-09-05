@@ -8,6 +8,7 @@ import { BookingModal } from './BookingModal';
 interface AcServiceDetailPageProps {
   onBack: () => void;
   onSubmitBooking: (bookingData: any) => Promise<void>;
+  currentUser?: { name: string; phone: string; address?: string } | null;
 }
 
 interface CartItem {
@@ -22,7 +23,8 @@ interface CartItem {
 
 export const AcServiceDetailPage: React.FC<AcServiceDetailPageProps> = ({
   onBack,
-  onSubmitBooking
+  onSubmitBooking,
+  currentUser
 }) => {
   const [activeSection, setActiveSection] = useState<'SERVICE' | 'REPAIR' | 'INSTALL' | 'ANNUAL'>('SERVICE');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -68,13 +70,13 @@ export const AcServiceDetailPage: React.FC<AcServiceDetailPageProps> = ({
     try {
       const primaryItem = cart[0];
       await onSubmitBooking({
-        customerName: 'Rahul Sharma',
-        customerPhone: '+91 98229 33445',
+        customerName: currentUser?.name || 'Registered Customer',
+        customerPhone: currentUser?.phone || '+91 98229 00000',
         serviceCategory: 'Appliance Repair',
         subTrade: cart.map(i => `${i.name} (x${i.quantity})`).join(', '),
         urgency: 'STANDARD',
-        address: 'Flat 402, Mayur Residency, Kothrud, Pune 411038',
-        preferredTime: 'Tomorrow, 10:00 AM',
+        address: currentUser?.address || 'Flat 402, Mayur Residency, Kothrud, Pune 411038',
+        preferredTime: 'Immediate / Next Available Slot',
         estimatedPrice: totalAmount,
         notes: `Selected ${totalItemsCount} AC services. Split: ₹${workerEarning} direct to technician, ₹${welfareShare} to PM-JAY welfare.`
       });

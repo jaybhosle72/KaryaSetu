@@ -29,6 +29,7 @@ interface MasterSectorDetailPageProps {
   onRemoveItem?: (id: string) => void;
   onClearCart?: () => void;
   onOpenCart?: () => void;
+  currentUser?: { name: string; phone: string; address?: string } | null;
 }
 
 const getSubTradeIcon = (id: string): string => {
@@ -80,7 +81,8 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
-  onOpenCart
+  onOpenCart,
+  currentUser
 }) => {
   const t = translations[currentLanguage] || translations.en;
   // Find matching sector from master catalog (fallback to sector 0)
@@ -176,9 +178,15 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
   const [preferredDate, setPreferredDate] = useState('Immediate / Flexible');
   const [specialRequirements, setSpecialRequirements] = useState('Full 3 BHK repainting with premium emulsion, ceiling touchup and crack filling.');
 
-  const [customerName, setCustomerName] = useState('Rahul Deshmukh');
-  const [customerPhone, setCustomerPhone] = useState('+91 98224 55667');
-  const [address, setAddress] = useState('Flat 504, Windsor Park, Kothrud, Pune 411038');
+  const [customerName, setCustomerName] = useState(currentUser?.name || 'Citizen Customer');
+  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '+91 98220 11223');
+  const [address, setAddress] = useState(currentUser?.address || 'Flat 504, Windsor Park, Kothrud, Pune 411038');
+
+  useEffect(() => {
+    if (currentUser?.name) setCustomerName(currentUser.name);
+    if (currentUser?.phone) setCustomerPhone(currentUser.phone);
+    if (currentUser?.address) setAddress(currentUser.address);
+  }, [currentUser]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 

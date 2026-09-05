@@ -15,6 +15,7 @@ const disputeRoutes = require('./routes/disputes');
 const contractorRoutes = require('./routes/contractors');
 const matchingRoutes = require('./routes/matching');
 const paymentRoutes = require('./routes/payments');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +28,108 @@ app.use(express.json());
 app.use((req, res, next) => {
   console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.originalUrl}`);
   next();
+});
+
+// Root landing & redirect to frontend UI
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>KaryaSetu - National Cooperative DPI</title>
+        <meta http-equiv="refresh" content="1;url=http://localhost:5173" />
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #090D16;
+            color: #F8FAFC;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+          }
+          .card {
+            background: #111827;
+            border: 1px solid #1F2937;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+          }
+          .badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+          }
+          h1 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            color: #FFFFFF;
+          }
+          p {
+            color: #94A3B8;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: #EA580C;
+            color: #FFFFFF;
+            padding: 0.875rem 1.75rem;
+            border-radius: 0.875rem;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+            width: 100%;
+          }
+          .btn:hover {
+            background: #C2410C;
+          }
+          .subtext {
+            margin-top: 1.25rem;
+            font-size: 0.75rem;
+            color: #64748B;
+          }
+          .subtext a {
+            color: #38BDF8;
+            text-decoration: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <span class="badge">API Backend Online (Port 5000)</span>
+          <h1>KaryaSetu DPI Server</h1>
+          <p>You opened the backend API port. The interactive web application is running at <strong>http://localhost:5173</strong>.</p>
+          <a class="btn" href="http://localhost:5173">Open KaryaSetu Web App (Port 5173) ➔</a>
+          <div class="subtext">
+            Redirecting automatically to <a href="http://localhost:5173">localhost:5173</a>...<br>
+            API Health: <a href="/api/health">/api/health</a>
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
 });
 
 // Health check endpoint
@@ -61,6 +164,7 @@ app.use('/api/disputes', disputeRoutes);
 app.use('/api/contractors', contractorRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/auth', authRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

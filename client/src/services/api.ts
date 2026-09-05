@@ -324,6 +324,71 @@ export const api = {
     return data.data;
   },
 
+  // Worker Accept Booking
+  async acceptBooking(bookingId: string, workerId: string): Promise<Booking> {
+    const res = await fetch(`${API_BASE}/bookings/${bookingId}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workerId })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to accept job');
+    }
+    return data.booking || data.data;
+  },
+
+  // Clear Bookings (Clean Real Testing Mode)
+  async clearAllBookings(): Promise<void> {
+    await fetch(`${API_BASE}/bookings/clear-all`, { method: 'DELETE' });
+  },
+
+  // Real User Authentication & Registration
+  async register(userData: {
+    name: string;
+    phone: string;
+    role: string;
+    address?: string;
+    trade?: string;
+    subTrades?: string[];
+    experienceYears?: number;
+    aadhaar?: string;
+    license?: string;
+    cooperativeId?: string;
+    cooperativeName?: string;
+  }): Promise<{ user: any; worker?: Worker; contractor?: any }> {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Registration failed');
+    }
+    return data;
+  },
+
+  async login(phone: string, role?: string): Promise<{ user: any; worker?: Worker; contractor?: any }> {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, role })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Login failed');
+    }
+    return data;
+  },
+
+  async getUsers(role?: string): Promise<any[]> {
+    const query = role ? `?role=${role}` : '';
+    const res = await fetch(`${API_BASE}/auth/users${query}`);
+    const data = await res.json();
+    return data.data || [];
+  },
+
   // Reset Demo
   async resetDemoData(): Promise<void> {
     await fetch(`${API_BASE}/reset-demo`, { method: 'POST' });
