@@ -18,6 +18,7 @@ import { CustomerProfilePage } from './components/customer/CustomerProfilePage';
 import confetti from 'canvas-confetti';
 
 export function App() {
+  // Landing page is strictly the Login Page on initial load / new visit
   const [currentUser, setCurrentUser] = useState<{
     role: UserRole;
     name: string;
@@ -27,8 +28,11 @@ export function App() {
     extraMeta?: any;
   } | null>(() => {
     try {
-      const saved = localStorage.getItem('karyasetu_current_user') || localStorage.getItem('sahakar_current_user');
-      return saved ? JSON.parse(saved) : null;
+      // Clear persistent auto-login so landing page is always the login page
+      localStorage.removeItem('karyasetu_current_user');
+      localStorage.removeItem('sahakar_current_user');
+      const sessionSaved = sessionStorage.getItem('karyasetu_current_user');
+      return sessionSaved ? JSON.parse(sessionSaved) : null;
     } catch {
       return null;
     }
@@ -52,8 +56,9 @@ export function App() {
       setSelectedCoopId(user.extraMeta.cooperativeId);
     }
     try {
-      localStorage.setItem('karyasetu_current_user', JSON.stringify(user));
-      localStorage.setItem('sahakar_current_user', JSON.stringify(user));
+      sessionStorage.setItem('karyasetu_current_user', JSON.stringify(user));
+      localStorage.removeItem('karyasetu_current_user');
+      localStorage.removeItem('sahakar_current_user');
     } catch {}
     showToast(`Welcome, ${user.name}! Signed in to ${role.toUpperCase()} portal.`, 'info');
     loadData();
@@ -62,6 +67,7 @@ export function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     try {
+      sessionStorage.removeItem('karyasetu_current_user');
       localStorage.removeItem('karyasetu_current_user');
       localStorage.removeItem('sahakar_current_user');
     } catch {}

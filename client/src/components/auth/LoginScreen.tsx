@@ -53,8 +53,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
-
   // Sign In State
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -88,20 +86,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [adminPhone, setAdminPhone] = useState('');
   const [adminCoop, setAdminCoop] = useState('Brihan-Maharashtra Multi-Trade Labour Cooperative');
   const [adminRegNo, setAdminRegNo] = useState('MH/PNE/CS/LAB/2026/0491');
-
-  // Fetch real registered users from backend on mount
-  const fetchRegisteredUsers = async () => {
-    try {
-      const users = await api.getUsers();
-      setRegisteredUsers(users);
-    } catch (e) {
-      console.warn('Could not fetch registered users:', e);
-    }
-  };
-
-  useEffect(() => {
-    fetchRegisteredUsers();
-  }, [selectedRole]);
 
   // Handle Sign In with username/phone and password
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -253,32 +237,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  // Quick select an existing registered user for multi-device testing
-  const handleSelectRegisteredUser = (u: any) => {
-    let roleName = 'Citizen Customer';
-    if (u.role === 'worker') {
-      roleName = `Certified ${u.metadata?.trade || 'Skilled'} Shramik`;
-    } else if (u.role === 'contractor') {
-      roleName = 'Labour Contractor / Mukaddam';
-    } else if (u.role === 'admin') {
-      roleName = 'Cooperative Board President';
-    }
-
-    onLogin(u.role as UserRole, {
-      name: u.name,
-      phone: u.phone,
-      roleName,
-      extraMeta: {
-        ...u.metadata,
-        workerId: u.workerId,
-        contractorId: u.contractorId,
-        cooperativeId: u.cooperativeId,
-        cooperativeName: u.cooperativeName,
-        address: u.address
-      }
-    });
-  };
-
   const handleClearBookings = async () => {
     if (!window.confirm('Are you sure you want to clear all bookings in the database? This creates a completely clean slate for multi-device testing.')) return;
     try {
@@ -292,8 +250,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       setIsLoading(false);
     }
   };
-
-  const filteredRegisteredUsers = registeredUsers.filter(u => u.role === selectedRole);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8 font-sans">
@@ -478,50 +434,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             </button>
           </div>
-
-          {/* Quick Select of Registered Database Accounts for Easy Testing */}
-          {filteredRegisteredUsers.length > 0 && (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  {t.auth.registeredAccounts.replace('{role}', selectedRole.toUpperCase())}
-                </span>
-                <button
-                  type="button"
-                  onClick={fetchRegisteredUsers}
-                  className="text-[10px] text-slate-500 hover:text-slate-800 flex items-center gap-1 font-bold cursor-pointer"
-                >
-                  <RefreshCw className="w-3 h-3" /> {t.auth.refresh}
-                </button>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {filteredRegisteredUsers.map(u => (
-                  <button
-                    key={u._id}
-                    type="button"
-                    onClick={() => handleSelectRegisteredUser(u)}
-                    className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 text-slate-800 text-xs font-bold transition flex items-center gap-2 shadow-2xs cursor-pointer group hover:bg-emerald-50"
-                  >
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 group-hover:scale-125 transition" />
-                    <span>{u.name}</span>
-                    {u.username ? (
-                      <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                        @{u.username}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-mono">({u.phone})</span>
-                    )}
-                    {u.metadata?.trade && (
-                      <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold">
-                        {u.metadata.trade}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* FORM: Sign In or Register */}
           {authMode === 'LOGIN' ? (
