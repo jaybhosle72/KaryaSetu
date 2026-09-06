@@ -275,7 +275,8 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
       {/* Milestone Progress Bar */}
       {isContractorTeam ? (
         /* 5-Stage Contractor Team Milestone */
-        <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+        <div className="overflow-x-auto scrollbar-none rounded-xl border border-slate-800/80 bg-slate-900/60">
+        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 min-w-max">
           <div className="flex items-center gap-1 text-emerald-400 whitespace-nowrap">
             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{language === 'mr' ? '१. आवश्यकता' : language === 'hi' ? '1. आवश्यकता' : '1. Requirement'}</span>
@@ -305,9 +306,11 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
             <span>{language === 'mr' ? '५. पूर्ण' : language === 'hi' ? '5. पूर्ण' : '5. Completed'}</span>
           </div>
         </div>
+        </div>
       ) : (
         /* 5-Stage Solo Worker Milestone */
-        <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+        <div className="overflow-x-auto scrollbar-none rounded-xl border border-slate-800/80 bg-slate-900/60">
+        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 py-1.5 px-3 min-w-max">
           <div className={`flex items-center gap-1 whitespace-nowrap ${isMatching ? 'text-indigo-400 font-black animate-pulse' : 'text-emerald-400'}`}>
             {isAllocated || isEnRoute || isInProgress || isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Radio className="w-3.5 h-3.5" />}
             <span>{language === 'mr' ? '१. शोधत आहे' : language === 'hi' ? '1. मिलान जारी' : '1. Matching'}</span>
@@ -336,6 +339,7 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{language === 'mr' ? '५. पूर्ण' : language === 'hi' ? '5. पूर्ण' : '5. Completed'}</span>
           </div>
+        </div>
         </div>
       )}
 

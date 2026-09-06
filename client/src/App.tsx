@@ -590,7 +590,7 @@ export function App() {
       )}
 
       {/* Main Content View based on Role */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6">
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center space-y-3">

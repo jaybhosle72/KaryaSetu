@@ -439,7 +439,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
   };
 
   return (
-    <div className="space-y-8 font-sans pb-20 max-w-[1360px] mx-auto">
+    <div className="space-y-8 font-sans pb-28 lg:pb-12 max-w-[1360px] mx-auto">
       
       {/* 1. Top Breadcrumb & Navigation Bar */}
       <div className="flex items-center justify-between pt-2">
@@ -908,7 +908,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
             </span>
           </div>
 
-          <form onSubmit={handleBookingSubmit} className="space-y-4 text-xs">
+          <form id="booking-dispatch-form" onSubmit={handleBookingSubmit} className="space-y-4 text-xs">
             
             {/* Selected Services in this Booking Basket */}
             <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
@@ -1460,6 +1460,30 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
           }}
         />
       )}
+
+      {/* Mobile Sticky Bottom Booking Tray */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-3 shadow-2xl flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate">
+            {totalItemsCount} {totalItemsCount === 1 ? (t.sectorDetail?.serviceSelectedInOrder || '1 Service Selected') : `${totalItemsCount} Services Selected`}
+          </div>
+          <div className="text-base font-black text-slate-900">
+            ₹{finalAmount.toLocaleString('en-IN')}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const formElem = document.getElementById('booking-dispatch-form');
+            if (formElem) {
+              formElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
+          className="px-4 py-2.5 rounded-xl bg-slate-950 text-white font-extrabold text-xs shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer shrink-0"
+        >
+          <span>{isContractorProject ? (t.sectorDetail?.requestContractorProposalBtn || 'Configure Scope ➔') : (t.sectorDetail?.confirmAndBookBtn || 'Book Now ➔')}</span>
+        </button>
+      </div>
 
     </div>
   );

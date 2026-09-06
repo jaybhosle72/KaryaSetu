@@ -148,11 +148,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               <div>
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-sm sm:text-lg font-black tracking-tight text-slate-900 leading-none">
                     {t.brandName}
                   </span>
-                  <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${roleInfo.bg}`}>
+                  <span className={`text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full border ${roleInfo.bg}`}>
                     {roleInfo.label}
                   </span>
                 </div>
@@ -163,8 +163,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* 2. Center: Prominent, Well-Proportioned Search Bar */}
-          <div className="flex-1 min-w-[240px] sm:min-w-[320px] md:min-w-[380px] max-w-2xl relative mx-2 sm:mx-4" ref={searchContainerRef}>
+          {/* 2. Center: Prominent, Well-Proportioned Responsive Search Bar */}
+          <div className="flex-1 min-w-0 max-w-2xl relative mx-1.5 sm:mx-4" ref={searchContainerRef}>
             <div className="relative flex items-center group">
               <Search className="w-4 h-4 text-slate-400 group-focus-within:text-orange-600 transition-colors absolute left-3.5 pointer-events-none" />
               <input

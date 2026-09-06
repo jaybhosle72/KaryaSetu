@@ -375,7 +375,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <button
               type="button"
               onClick={() => { setSelectedRole('customer'); setErrorMessage(''); }}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 selectedRole === 'customer'
                   ? 'bg-blue-50/70 border-blue-500 text-blue-950 ring-2 ring-blue-500/20'
                   : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
@@ -394,7 +394,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <button
               type="button"
               onClick={() => { setSelectedRole('worker'); setErrorMessage(''); }}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 selectedRole === 'worker'
                   ? 'bg-emerald-50/70 border-emerald-500 text-emerald-950 ring-2 ring-emerald-500/20'
                   : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
@@ -413,7 +413,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <button
               type="button"
               onClick={() => { setSelectedRole('contractor'); setErrorMessage(''); }}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 selectedRole === 'contractor'
                   ? 'bg-orange-50/70 border-orange-500 text-orange-950 ring-2 ring-orange-500/20'
                   : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
@@ -432,7 +432,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <button
               type="button"
               onClick={() => { setSelectedRole('admin'); setErrorMessage(''); }}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 selectedRole === 'admin'
                   ? 'bg-amber-50/70 border-amber-500 text-amber-950 ring-2 ring-amber-500/20'
                   : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
@@ -503,7 +503,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     value={loginPhone}
                     onChange={(e) => setLoginPhone(e.target.value)}
                     placeholder={t.auth.mobilePlaceholder}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -546,7 +546,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={custName}
                         onChange={(e) => setCustName(e.target.value)}
                         placeholder={t.auth.fullNamePlaceholder}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                     <div>
@@ -557,7 +557,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={custPhone}
                         onChange={(e) => setCustPhone(e.target.value)}
                         placeholder="+91 98220 11223"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                   </div>
@@ -568,7 +568,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={custAddress}
                       onChange={(e) => setCustAddress(e.target.value)}
                       placeholder={t.auth.serviceAddressPlaceholder}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                     />
                   </div>
                 </div>
@@ -586,7 +586,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={workerName}
                         onChange={(e) => setWorkerName(e.target.value)}
                         placeholder={t.auth.fullNamePlaceholder}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                     <div>
@@ -597,7 +597,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={workerPhone}
                         onChange={(e) => setWorkerPhone(e.target.value)}
                         placeholder="+91 98221 00200"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                   </div>
@@ -607,7 +607,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       <select
                         value={workerTrade}
                         onChange={(e) => setWorkerTrade(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-bold text-slate-900"
                       >
                         <option value="Electrical">{t.trades?.electrical || 'Electrical'}</option>
                         <option value="Plumbing">{t.trades?.plumbing || 'Plumbing'}</option>
@@ -629,7 +629,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         max={40}
                         value={workerExperience}
                         onChange={(e) => setWorkerExperience(Number(e.target.value))}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                   </div>
@@ -640,7 +640,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={workerAadhaar}
                       onChange={(e) => setWorkerAadhaar(e.target.value)}
                       placeholder="XXXX-XXXX-4012"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-mono"
                     />
                   </div>
                 </div>
@@ -658,7 +658,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={contractorName}
                         onChange={(e) => setContractorName(e.target.value)}
                         placeholder={t.auth.fullNamePlaceholder}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                     <div>
@@ -669,7 +669,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={contractorPhone}
                         onChange={(e) => setContractorPhone(e.target.value)}
                         placeholder="+91 98224 88120"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold text-slate-900"
                       />
                     </div>
                   </div>
@@ -680,7 +680,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={contractorLicense}
                       onChange={(e) => setContractorLicense(e.target.value)}
                       placeholder="LIC/CLRA/PNE/2026/8812"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-mono"
                     />
                   </div>
                   <div>
@@ -690,7 +690,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={contractorTrades}
                       onChange={(e) => setContractorTrades(e.target.value)}
                       placeholder="Painting, Plumbing, Civil, Deep Cleaning"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold"
                     />
                   </div>
                 </div>
@@ -708,7 +708,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={adminName}
                         onChange={(e) => setAdminName(e.target.value)}
                         placeholder={t.auth.fullNamePlaceholder}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold"
                       />
                     </div>
                     <div>
@@ -719,7 +719,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={adminPhone}
                         onChange={(e) => setAdminPhone(e.target.value)}
                         placeholder="+91 98220 99887"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold"
                       />
                     </div>
                   </div>
@@ -730,7 +730,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={adminCoop}
                       onChange={(e) => setAdminCoop(e.target.value)}
                       placeholder="Brihan-Maharashtra Multi-Trade Labour Cooperative"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-semibold"
                     />
                   </div>
                   <div>
@@ -740,7 +740,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={adminRegNo}
                       onChange={(e) => setAdminRegNo(e.target.value)}
                       placeholder={t.auth.coopRegNoPlaceholder || 'MH/PNE/CS/LAB/2026/0491'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-base sm:text-xs font-mono"
                     />
                   </div>
                 </div>

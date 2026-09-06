@@ -270,7 +270,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md animate-fadeIn font-sans">
-      <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90dvh]">
         
         {/* Header */}
         <div className="bg-slate-950 text-white p-5 flex items-center justify-between">
@@ -307,7 +307,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         {/* Navigation Tabs */}
         {!paymentSuccess ? (
-          <div className="flex border-b border-slate-200 bg-slate-50 px-5 pt-3 gap-2">
+          <div className="flex border-b border-slate-200 bg-slate-50 px-5 pt-3 gap-2 overflow-x-auto scrollbar-none">
             <button
               type="button"
               onClick={() => { setActiveTab('UPI_QR'); setErrorMessage(''); }}

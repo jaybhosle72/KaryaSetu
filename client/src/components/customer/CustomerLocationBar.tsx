@@ -141,8 +141,11 @@ export const CustomerLocationBar: React.FC<CustomerLocationBarProps> = ({
           className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-bold text-xs flex items-center gap-1.5 transition border border-blue-200/60 cursor-pointer shrink-0 disabled:opacity-60 shadow-2xs"
         >
           <Navigation className={`w-3.5 h-3.5 text-blue-600 ${isDetecting ? 'animate-spin' : ''}`} />
-          <span className="whitespace-nowrap">
+          <span className="hidden sm:inline whitespace-nowrap">
             {isDetecting ? (activeLang === 'hi' ? 'खोज जारी...' : activeLang === 'mr' ? 'शोध सुरू...' : 'Detecting...') : (t.customer?.currentLocation || 'Current Location')}
+          </span>
+          <span className="sm:hidden whitespace-nowrap">
+            {isDetecting ? '...' : 'GPS'}
           </span>
         </button>
       </div>
