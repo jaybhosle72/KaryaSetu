@@ -638,42 +638,58 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
             </div>
           </div>
 
-          {/* Minimal 4-Digit OTP Box */}
-          <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-2.5 sm:px-3.5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>{t.tracker.securityOtp}</span>
-              </span>
-              <div className="flex items-center gap-1.5 pt-1">
-                {otpDigits.map((digit, idx) => (
-                  <span
-                    key={idx}
-                    className="w-7 h-8 sm:w-8 sm:h-9 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-black text-lg font-mono shadow-xs"
+          {/* Doorstep Security OTP Box (Customer Handshake) */}
+          <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-3 sm:p-4 space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <KeyRound className="w-4 h-4" />
+                  <span>{t.tracker.securityOtp || 'Doorstep Security OTP'}</span>
+                </span>
+                <div className="flex items-center gap-1.5 pt-1.5">
+                  {otpDigits.map((digit, idx) => (
+                    <span
+                      key={idx}
+                      className="w-8 h-9 sm:w-9 sm:h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xl font-mono shadow-md border border-amber-300"
+                    >
+                      {digit}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={handleCopyOtp}
+                    className="ml-2 px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer border border-amber-500/30"
                   >
-                    {digit}
+                    {copiedOtp ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedOtp ? (language === 'mr' ? 'कॉपी केले!' : language === 'hi' ? 'कॉपी किया!' : 'Copied!') : (language === 'mr' ? 'ओटीपी कॉपी करा' : language === 'hi' ? 'ओटीपी कॉपी करें' : 'Copy OTP')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Badge: Worker will ask for OTP at the doorstep */}
+              <div className="flex items-center gap-2 bg-slate-900/90 border border-amber-500/40 px-3.5 py-2.5 rounded-xl text-xs self-start sm:self-auto shadow-sm">
+                <ShieldCheck className="w-4 h-4 text-amber-400 flex-shrink-0 animate-pulse" />
+                <div className="text-left">
+                  <span className="font-black text-amber-300 block text-[11px]">
+                    {language === 'mr' ? 'दारात आगमनाची प्रतीक्षा' : language === 'hi' ? 'दरवाजे पर आगमन की प्रतीक्षा' : 'Awaiting Doorstep Arrival'}
                   </span>
-                ))}
-                <button
-                  type="button"
-                  onClick={handleCopyOtp}
-                  className="ml-2 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                >
-                  {copiedOtp ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedOtp ? t.tracker.copied : t.tracker.copyOtp}</span>
-                </button>
+                  <span className="text-[10px] text-slate-300 block">
+                    {language === 'mr' ? 'काम सुरू करण्यासाठी तंत्रज्ञाला हा ओटीपी द्या' : language === 'hi' ? 'काम शुरू करने के लिए तकनीशियन को यह ओटीपी दें' : 'Technician will ask for this OTP to start work'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              disabled={isVerifying}
-              onClick={() => handleConfirmOtpAndStart(otpCode)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap self-end lg:self-auto"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{isVerifying ? (language === 'mr' ? 'तपासत आहे...' : language === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...') : (language === 'mr' ? 'कामगार आला? काम सुरू करा ➔' : language === 'hi' ? 'श्रमिक पहुंच गया? काम शुरू करें ➔' : 'Worker Arrived? Start Work ➔')}</span>
-            </button>
+            <p className="text-[11px] text-amber-200/90 bg-amber-950/60 rounded-xl px-3 py-2 border border-amber-500/25 flex items-start gap-2 leading-relaxed">
+              <span className="text-amber-400 font-bold">ℹ️</span>
+              <span>
+                {language === 'mr'
+                  ? `सुरक्षा सूचना: तंत्रज्ञ ${assignedWorker.name} प्रत्यक्ष तुमच्या दारात आल्यावरच हा ४-अंकी ओटीपी त्यांच्याशी शेअर करा. तंत्रज्ञ त्यांच्या मोबाईलमध्ये हा ओटीपी प्रविष्ट करून काम सुरू करेल.`
+                  : language === 'hi'
+                  ? `सुरक्षा निर्देश: तकनीशियन ${assignedWorker.name} के दरवाजे पर पहुंचने पर ही यह 4-अंकों का ओटीपी साझा करें। तकनीशियन अपने ऐप में यह कोड दर्ज करके काम शुरू करेगा।`
+                  : `Security instruction: Share this 4-digit OTP with technician ${assignedWorker.name} ONLY when they arrive at your doorstep. The technician will enter it on their device to begin service.`}
+              </span>
+            </p>
           </div>
         </div>
       )}

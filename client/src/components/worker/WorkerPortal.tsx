@@ -6,7 +6,7 @@ import {
   ShieldCheck, Award, HeartHandshake, Phone, MapPin, 
   CheckCircle2, AlertTriangle, Wallet, Check, Star, 
   Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight, HardHat,
-  GraduationCap, ExternalLink, Sparkles
+  GraduationCap, ExternalLink, Sparkles, KeyRound
 } from 'lucide-react';
 import { isTradeMatch, resolveCanonicalTrade, getTradeBadgeStyle } from '../../utils/tradeUtils';
 
@@ -972,6 +972,16 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         <Navigation className="w-4 h-4 text-emerald-400" />
                         <span>1. {t.worker.tripStartBtn} ➔</span>
                       </button>
+                      <button
+                        onClick={() => {
+                          onUpdateBookingStatus(activeJob._id, 'EN_ROUTE');
+                          setIsArrivedAtDoorstep(true);
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
+                      >
+                        <MapPin className="w-4 h-4 text-white" />
+                        <span>2. {t.worker.arrivedBtn} ➔</span>
+                      </button>
                       <a
                         href={`tel:${activeJob.customerPhone}`}
                         className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs flex items-center gap-1.5 transition"
@@ -997,10 +1007,14 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
 
                         <button
                           onClick={() => setIsArrivedAtDoorstep(true)}
-                          className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
+                          className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer ${
+                            isArrivedAtDoorstep 
+                              ? 'bg-emerald-700 text-white border border-emerald-500' 
+                              : 'bg-amber-600 hover:bg-amber-700 text-white'
+                          }`}
                         >
                           <MapPin className="w-4 h-4 text-white" />
-                          <span>2. {t.worker.arrivedBtn} ➔</span>
+                          <span>{isArrivedAtDoorstep ? (language === 'mr' ? '✓ ग्राहकाच्या दारात पोहोचलो' : language === 'hi' ? '✓ ग्राहक के दरवाजे पर पहुंचे' : '✓ At Customer Doorstep') : `2. ${t.worker.arrivedBtn} ➔`}</span>
                         </button>
 
                         <a
@@ -1013,49 +1027,46 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                       </div>
 
                       {/* Doorstep OTP Verification Form */}
-                      <div className="p-4 rounded-2xl bg-amber-50/90 border-2 border-amber-300 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <strong className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                              <span>🔐 {t.worker.verifyOtpTitle}</span>
-                            </strong>
-                            <p className="text-[11px] text-slate-600 mt-0.5">
-                              {t.worker.otpPrompt}
-                            </p>
-                          </div>
-                          {activeJob.otp && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setWorkerOtpInput(activeJob.otp || '');
-                                setWorkerOtpError('');
-                              }}
-                              className="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-2.5 py-1 rounded-lg transition self-start sm:self-auto cursor-pointer"
-                            >
-                              Autofill OTP ({activeJob.otp})
-                            </button>
-                          )}
+                      <div className={`p-4 rounded-2xl border-2 space-y-3 transition-all ${
+                        isArrivedAtDoorstep 
+                          ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/60 shadow-md' 
+                          : 'bg-amber-50/70 border-amber-300'
+                      }`}>
+                        <div>
+                          <strong className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                            <KeyRound className="w-4 h-4 text-amber-600" />
+                            <span>🔐 {t.worker.verifyOtpTitle}</span>
+                          </strong>
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            {t.worker.otpPrompt}
+                          </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2.5">
                           <input
                             type="text"
                             maxLength={4}
                             value={workerOtpInput}
                             onChange={(e) => {
-                              setWorkerOtpInput(e.target.value);
+                              setWorkerOtpInput(e.target.value.replace(/[^0-9]/g, ''));
                               setWorkerOtpError('');
                             }}
                             placeholder="4-digit OTP"
-                            className="px-3 py-2 rounded-xl bg-white border border-amber-400 text-slate-900 font-mono font-bold text-center tracking-widest text-base w-36 shadow-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                            className="px-3.5 py-2.5 rounded-xl bg-white border-2 border-amber-400 text-slate-900 font-mono font-black text-center tracking-widest text-lg w-36 shadow-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
                           />
                           <button
                             type="button"
                             disabled={isVerifyingOtp}
                             onClick={async () => {
                               const code = workerOtpInput.trim();
-                              if (!code) {
-                                setWorkerOtpError('Please enter the 4-digit OTP provided by the customer.');
+                              if (!code || code.length < 4) {
+                                setWorkerOtpError(
+                                  language === 'mr'
+                                    ? 'कृपया ग्राहकाने दिलेला ४-अंकी ओटीपी प्रविष्ट करा.'
+                                    : language === 'hi'
+                                    ? 'कृपया ग्राहक द्वारा प्रदान किया गया 4-अंकों का ओटीपी दर्ज करें।'
+                                    : 'Please enter the 4-digit OTP provided by the customer.'
+                                );
                                 return;
                               }
                               setIsVerifyingOtp(true);
@@ -1066,7 +1077,13 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                                 } else {
                                   const expected = activeJob.otp;
                                   if (expected && code !== expected) {
-                                    throw new Error(`Invalid OTP. Customer's code is ${expected}`);
+                                    throw new Error(
+                                      language === 'mr'
+                                        ? 'अवैध ओटीपी. कृपया ग्राहकाकडून अचूक ४-अंकी कोड तपासा.'
+                                        : language === 'hi'
+                                        ? 'अमान्य ओटीपी। कृपया ग्राहक से सही 4-अंकों का कोड पूछें।'
+                                        : 'Invalid OTP. Please ask customer for the correct 4-digit code.'
+                                    );
                                   }
                                   await onUpdateBookingStatus(activeJob._id, 'IN_PROGRESS');
                                 }
@@ -1077,7 +1094,7 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                                 setIsVerifyingOtp(false);
                               }
                             }}
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                             <span>{isVerifyingOtp ? t.common.loading : `${t.worker.verifyAndReleaseBtn} ➔`}</span>
@@ -1085,7 +1102,10 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                         </div>
 
                         {workerOtpError && (
-                          <p className="text-xs text-rose-600 font-bold">{workerOtpError}</p>
+                          <p className="text-xs text-rose-600 font-bold flex items-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{workerOtpError}</span>
+                          </p>
                         )}
                       </div>
                     </div>
