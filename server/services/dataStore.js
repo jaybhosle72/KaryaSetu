@@ -94,6 +94,39 @@ const DataStore = {
     });
   },
 
+  async getUserByUsername(username, role = null) {
+    if (!username) return null;
+    const cleanUsername = String(username).trim().toLowerCase();
+    if (!cleanUsername) return null;
+
+    if (getDBMode() === 'mongodb') {
+      const q = { username: cleanUsername };
+      if (role) q.role = role;
+      return await User.findOne(q);
+    }
+    return store.users.find(u => {
+      if ((u.username || '').toLowerCase().trim() !== cleanUsername) return false;
+      if (role && u.role !== role) return false;
+      return true;
+    });
+  },
+
+  async getUserByIdentifier(identifier, role = null) {
+    if (!identifier) return null;
+    const clean = String(identifier).trim();
+    if (!clean) return null;
+
+    // 1. Try finding by exact username
+    const byUsername = await this.getUserByUsername(clean, role);
+    if (byUsername) return byUsername;
+
+    // 2. Try finding by phone number
+    const byPhone = await this.getUserByPhone(clean, role);
+    if (byPhone) return byPhone;
+
+    return null;
+  },
+
   async getUserById(id) {
     if (getDBMode() === 'mongodb') return await User.findOne({ $or: [{ _id: id }, { id }] });
     return store.users.find(u => u._id === id || u.id === id);
@@ -104,6 +137,9 @@ const DataStore = {
       _id: `usr_${Date.now()}`,
       ...userData
     };
+    if (doc.username) {
+      doc.username = String(doc.username).trim().toLowerCase();
+    }
     if (getDBMode() === 'mongodb') {
       const created = new User(doc);
       return await created.save();

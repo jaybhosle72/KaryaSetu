@@ -369,6 +369,8 @@ export const api = {
   // Real User Authentication & Registration
   async register(userData: {
     name: string;
+    username?: string;
+    password?: string;
     phone: string;
     role: string;
     address?: string;
@@ -379,6 +381,7 @@ export const api = {
     license?: string;
     cooperativeId?: string;
     cooperativeName?: string;
+    regNumber?: string;
   }): Promise<{ user: any; worker?: Worker; contractor?: any }> {
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
@@ -392,11 +395,17 @@ export const api = {
     return data;
   },
 
-  async login(phone: string, role?: string): Promise<{ user: any; worker?: Worker; contractor?: any }> {
+  async login(identifier: string, role?: string, password?: string): Promise<{ user: any; worker?: Worker; contractor?: any }> {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, role })
+      body: JSON.stringify({ 
+        identifier: identifier.trim(),
+        username: identifier.trim(),
+        phone: identifier.trim(),
+        password: password ? password.trim() : undefined,
+        role 
+      })
     });
     const data = await res.json();
     if (!res.ok || !data.success) {

@@ -5,7 +5,8 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   Users, HardHat, Briefcase, Building, ArrowRight, 
   CheckCircle2, Award, Lock, Phone, UserPlus, LogIn,
-  ShieldCheck, AlertCircle, RefreshCw, Trash2
+  ShieldCheck, AlertCircle, RefreshCw, Trash2,
+  Eye, EyeOff, User
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -55,7 +56,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
 
   // Sign In State
-  const [loginPhone, setLoginPhone] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Common Registration Credentials (Username & Password)
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
   // Register States - Customer
   const [custName, setCustName] = useState('');
@@ -95,17 +103,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     fetchRegisteredUsers();
   }, [selectedRole]);
 
-  // Handle Sign In with phone lookup
+  // Handle Sign In with username/phone and password
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginPhone.trim()) {
-      setErrorMessage(t.auth.phoneRequired);
+    if (!loginIdentifier.trim()) {
+      setErrorMessage('Please enter your username or registered mobile number.');
       return;
     }
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const res = await api.login(loginPhone.trim(), selectedRole);
+      const res = await api.login(loginIdentifier.trim(), selectedRole, loginPassword.trim());
       const user = res.user;
       let roleName = 'Citizen Customer';
       if (selectedRole === 'worker') {
@@ -122,6 +130,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         roleName,
         extraMeta: {
           ...user.metadata,
+          username: user.username,
           workerId: user.workerId,
           contractorId: user.contractorId,
           cooperativeId: user.cooperativeId,
@@ -130,7 +139,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         }
       });
     } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please verify your phone number or register.');
+      setErrorMessage(err.message || 'Login failed. Please verify your username/password or register.');
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +153,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setSuccessMessage('');
 
     try {
-      let regPayload: any = {};
+      if (!regUsername.trim()) {
+        throw new Error('Please choose a username for your account.');
+      }
+      if (regUsername.trim().length < 3) {
+        throw new Error('Username must be at least 3 characters long.');
+      }
+      if (!regPassword.trim()) {
+        throw new Error('Please enter a password for your account.');
+      }
+      if (regPassword.trim().length < 4) {
+        throw new Error('Password must be at least 4 characters long.');
+      }
+
+      let regPayload: any = {
+        username: regUsername.trim().toLowerCase(),
+        password: regPassword.trim()
+      };
       let roleName = 'Citizen Customer';
 
       if (selectedRole === 'customer') {
@@ -152,6 +177,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           throw new Error(t.auth.namePhoneRequired);
         }
         regPayload = {
+          ...regPayload,
           name: custName.trim(),
           phone: custPhone.trim(),
           address: custAddress.trim() || 'Kothrud, Pune, Maharashtra',
@@ -163,6 +189,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           throw new Error(t.auth.namePhoneRequired);
         }
         regPayload = {
+          ...regPayload,
           name: workerName.trim(),
           phone: workerPhone.trim(),
           trade: workerTrade,
@@ -176,6 +203,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           throw new Error('Please enter contractor name and phone number.');
         }
         regPayload = {
+          ...regPayload,
           name: contractorName.trim(),
           phone: contractorPhone.trim(),
           license: contractorLicense.trim(),
@@ -188,6 +216,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           throw new Error('Please enter officer name and phone number.');
         }
         regPayload = {
+          ...regPayload,
           name: adminName.trim(),
           phone: adminPhone.trim(),
           cooperativeName: adminCoop.trim(),
@@ -208,6 +237,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           roleName,
           extraMeta: {
             ...user.metadata,
+            username: user.username,
             workerId: user.workerId,
             contractorId: user.contractorId,
             cooperativeId: user.cooperativeId,
@@ -475,7 +505,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-500 group-hover:scale-125 transition" />
                     <span>{u.name}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">({u.phone})</span>
+                    {u.username ? (
+                      <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        @{u.username}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-mono">({u.phone})</span>
+                    )}
                     {u.metadata?.trade && (
                       <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold">
                         {u.metadata.trade}
@@ -493,22 +529,47 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <form onSubmit={handleLoginSubmit} className="space-y-4 pt-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t.auth.mobileLabel}
+                  Username or Registered Mobile Number *
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
-                    value={loginPhone}
-                    onChange={(e) => setLoginPhone(e.target.value)}
-                    placeholder={t.auth.mobilePlaceholder}
+                    value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                    placeholder="Enter username (e.g. rahul_patil) or mobile number"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  {t.auth.mobileHint}
+                  Enter the username you chose during registration, or your registered mobile number.
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Account Password *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter your account password"
+                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-white text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                    title={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
@@ -533,6 +594,65 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           ) : (
             /* ================= REGISTER FORM ================= */
             <form onSubmit={handleRegisterSubmit} className="space-y-4 pt-2">
+              
+              {/* Common Account Access Credentials (Username & Password) */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/90 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between pb-1 border-b border-amber-200/60">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-amber-950">
+                    <Lock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Account Login Credentials</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-200">
+                    Required for Future Logins
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      Choose Username *
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        placeholder="e.g. rahul_patil"
+                        className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 bg-white text-base sm:text-xs font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">Unique login ID (letters, numbers, underscore)</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      Account Password *
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showRegPassword ? "text" : "password"}
+                        required
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="Min. 4 characters"
+                        className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white text-base sm:text-xs font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                        title={showRegPassword ? "Hide password" : "Show password"}
+                      >
+                        {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">Secure password to access your account</p>
+                  </div>
+                </div>
+              </div>
               
               {/* CUSTOMER REGISTRATION */}
               {selectedRole === 'customer' && (

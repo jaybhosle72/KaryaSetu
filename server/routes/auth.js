@@ -7,6 +7,8 @@ router.post('/register', async (req, res) => {
   try {
     const {
       name,
+      username,
+      password,
       phone,
       email,
       role = 'customer',
@@ -36,8 +38,32 @@ router.post('/register', async (req, res) => {
     if (existing) {
       return res.status(409).json({ 
         success: false, 
-        error: `An account for phone ${cleanPhone} with role '${role}' already exists. Please log in.` 
+        error: `An account with phone ${cleanPhone} already exists for role '${role}'. Please log in.` 
       });
+    }
+
+    // Username validation and uniqueness check
+    let cleanUsername = username ? String(username).trim().toLowerCase() : '';
+    if (cleanUsername) {
+      if (cleanUsername.length < 3) {
+        return res.status(400).json({ success: false, error: 'Username must be at least 3 characters long.' });
+      }
+      const existingUserByUsername = await DataStore.getUserByUsername(cleanUsername);
+      if (existingUserByUsername) {
+        return res.status(409).json({ 
+          success: false, 
+          error: `Username "${cleanUsername}" is already taken. Please choose another username.` 
+        });
+      }
+    } else {
+      // Auto-generate a fallback clean username if omitted
+      const namePrefix = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) || 'user';
+      cleanUsername = `${namePrefix}_${cleanPhone.slice(-4)}`;
+    }
+
+    // Password validation
+    if (password && password.length < 4) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 4 characters long.' });
     }
 
     let linkedWorker = null;
@@ -130,6 +156,8 @@ router.post('/register', async (req, res) => {
 
     const newUser = await DataStore.createUser({
       name,
+      username: cleanUsername,
+      password: password ? String(password).trim() : undefined,
       phone: cleanPhone,
       email: email || '',
       role,
@@ -140,6 +168,7 @@ router.post('/register', async (req, res) => {
       contractorId: linkedContractor?._id,
       metadata: {
         ...metadata,
+        username: cleanUsername,
         trade: trade || linkedWorker?.trade,
         license: license || linkedContractor?.licenseNumber,
         regNumber: adminRegNumber || undefined
@@ -160,39 +189,57 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login - Phone-based authentication lookup
+// POST /api/auth/login - Username/Phone & Password authentication
 router.post('/login', async (req, res) => {
   try {
-    const { phone, role } = req.body;
-    if (!phone) {
-      return res.status(400).json({ success: false, error: 'Phone number is required.' });
+    const { identifier, phone, username, password, role } = req.body;
+    const loginId = String(identifier || username || phone || '').trim();
+    if (!loginId) {
+      return res.status(400).json({ success: false, error: 'Username or registered mobile number is required.' });
     }
 
-    const cleanPhone = phone.trim();
-    const user = await DataStore.getUserByPhone(cleanPhone, role);
+    const user = await DataStore.getUserByIdentifier(loginId, role);
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: `No registered user found for phone "${cleanPhone}"${role ? ` with role "${role}"` : ''}. Please register first.`
+        error: `No registered account found for "${loginId}"${role ? ` with role "${role}"` : ''}. Please check your credentials or register a new account.`
       });
+    }
+
+    // Password verification
+    if (user.password) {
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          error: 'Account password is required. Please enter your password.'
+        });
+      }
+      if (user.password !== String(password).trim()) {
+        return res.status(401).json({
+          success: false,
+          error: 'Incorrect password. Please check your password and try again.'
+        });
+      }
     }
 
     let worker = null;
     let contractor = null;
 
+    const cleanPhone = (user.phone || '').trim();
+
     if (user.workerId) {
       worker = await DataStore.getWorkerById(user.workerId);
     } else if (user.role === 'worker') {
       const workers = await DataStore.getWorkers();
-      worker = workers.find(w => w.phone.replace(/[\s-]/g, '').includes(cleanPhone.slice(-10)));
+      worker = workers.find(w => w.phone && w.phone.replace(/[\s-]/g, '').includes(cleanPhone.slice(-10)));
     }
 
     if (user.contractorId) {
       contractor = await DataStore.getContractorById(user.contractorId);
     } else if (user.role === 'contractor') {
       const contractors = await DataStore.getContractors();
-      contractor = contractors.find(c => c.phone.replace(/[\s-]/g, '').includes(cleanPhone.slice(-10)));
+      contractor = contractors.find(c => c.phone && c.phone.replace(/[\s-]/g, '').includes(cleanPhone.slice(-10)));
     }
 
     res.json({
