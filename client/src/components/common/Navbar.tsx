@@ -49,11 +49,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Close search popover on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inDesktop = searchContainerRef.current && searchContainerRef.current.contains(target);
+      const inMobile = mobileSearchContainerRef.current && mobileSearchContainerRef.current.contains(target);
+      if (!inDesktop && !inMobile) {
         setIsSearchOpen(false);
       }
     };
@@ -127,10 +132,182 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const roleInfo = getRoleBadge();
 
+  const renderAutocompleteContent = () => (
+    <>
+      {/* 1. When query is empty -> show popular chips in clean flex wrap */}
+      {!searchQuery.trim() ? (
+        <div className="space-y-3 p-1">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="font-extrabold uppercase tracking-wider text-[10px] text-slate-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+              <span>{t.nav.popularServices}</span>
+            </span>
+            <span className="text-[10px] text-slate-400">{t.nav.pressToFocus}</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {POPULAR_SEARCH_CHIPS.map((chip) => (
+              <button
+                key={chip.query}
+                type="button"
+                onClick={() => {
+                  onSearchChange?.(chip.query);
+                  setIsSearchOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-300 text-xs font-semibold text-slate-700 hover:text-orange-950 transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              >
+                <span>{chip.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{t.nav.govtRatesTag}</span>
+            </span>
+            <span className="text-[10px] text-slate-400">{t.nav.sectorsCount}</span>
+          </div>
+        </div>
+      ) : (
+        /* 2. When query has text -> show matching results */
+        <div className="space-y-3">
+          
+          {/* Header info */}
+          <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 pb-1 border-b border-slate-100">
+            <span className="font-bold text-slate-800">
+              {t.nav.matchesFor} <span className="text-orange-600">"{searchQuery}"</span>
+            </span>
+            <span className="text-[10px] font-bold text-slate-400">
+              {searchResults.totalMatches} {t.nav.results}
+            </span>
+          </div>
+
+          {/* Matched Services List */}
+          {searchResults.services.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1 block">
+                {t.nav.verifiedServicesTitle}
+              </span>
+              {searchResults.services.map((item) => (
+                <div
+                  key={item.service.id}
+                  onClick={() => handleSelectServiceItem(item.sector.id, item.service)}
+                  className="p-2.5 rounded-xl hover:bg-orange-50/70 border border-transparent hover:border-orange-200/80 transition cursor-pointer flex items-center justify-between gap-3 group/item"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <strong className="text-xs font-black text-slate-900 group-hover/item:text-orange-700 transition">
+                        {item.service.name}
+                      </strong>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                        {item.subTrade.title}
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-400">
+                        • {item.sector.shortTitle}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                      {item.service.description}
+                    </p>
+                  </div>
+
+                  <div className="text-right flex-shrink-0 flex items-center gap-2.5">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 block leading-tight">
+                        ₹{item.service.price}
+                      </span>
+                      <span className="text-[10px] font-bold text-amber-600 flex items-center justify-end gap-0.5">
+                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                        <span>{item.service.rating}</span>
+                      </span>
+                    </div>
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 group-hover/item:bg-orange-500 group-hover/item:text-white text-slate-600 flex items-center justify-center transition">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Matched Sectors */}
+          {searchResults.sectors.length > 0 && (
+            <div className="space-y-1 pt-2 border-t border-slate-100">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1 block">
+                {t.nav.cooperativeSectorsTitle}
+              </span>
+              {searchResults.sectors.map((sec) => (
+                <div
+                  key={sec.sector.id}
+                  onClick={() => handleSelectSectorItem(sec.sector.id)}
+                  className="p-2.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition cursor-pointer flex items-center justify-between gap-3 group/sec"
+                >
+                  <div>
+                    <strong className="text-xs font-bold text-slate-800 group-hover/sec:text-blue-900 transition">
+                      {sec.sector.title}
+                    </strong>
+                    <p className="text-[10px] text-slate-500">
+                      {sec.sector.subTradesList.slice(0, 4).join(', ')}...
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      {sec.sector.shramiksAvailable} {t.nav.ready}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover/sec:text-slate-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Zero matches */}
+          {searchResults.totalMatches === 0 && (
+            <div className="text-center py-6 px-4 space-y-3">
+              <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <Search className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">
+                  {t.nav.noServicesFound} "{searchQuery}"
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {t.nav.trySearching}
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+                {['Electrician', 'Plumber', 'AC Repair', 'Deep Cleaning', 'Painting'].map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => {
+                      onSearchChange?.(term.toLowerCase());
+                    }}
+                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-semibold text-slate-700 transition"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 px-1">
+            <span>{t.nav.pressEnter}</span>
+            <span>{t.nav.escToClose}</span>
+          </div>
+
+        </div>
+      )}
+    </>
+  );
+
   return (
     <header className="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 shadow-xs font-sans">
       <div className="max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-18 gap-2 sm:gap-4">
+        <div className="flex items-center justify-between h-14 sm:h-18 gap-2 sm:gap-4">
           
           {/* 1. Left: Sovereign Brand Logo & Authority Label */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
@@ -163,9 +340,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* 2. Center: Prominent, Well-Proportioned Responsive Search Bar */}
-          <div className="flex-1 min-w-0 max-w-2xl relative mx-1.5 sm:mx-4" ref={searchContainerRef}>
-            <div className="relative flex items-center group">
+          {/* 2. Center: Desktop Prominent Search Bar (hidden on mobile to prevent overlapping header controls) */}
+          <div className="hidden md:flex flex-1 min-w-0 max-w-2xl relative mx-4" ref={searchContainerRef}>
+            <div className="relative flex items-center group w-full">
               <Search className="w-4 h-4 text-slate-400 group-focus-within:text-orange-600 transition-colors absolute left-3.5 pointer-events-none" />
               <input
                 ref={searchInputRef}
@@ -203,176 +380,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Autocomplete Dropdown Popover: Centered and Spacious */}
             {isSearchOpen && (
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[92vw] sm:w-[500px] md:w-[560px] max-w-[580px] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 py-4 px-4 sm:px-5 z-50 animate-fadeIn max-h-[75vh] overflow-y-auto">
-                
-                {/* 1. When query is empty -> show popular chips in clean flex wrap */}
-                {!searchQuery.trim() ? (
-                  <div className="space-y-3 p-1">
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span className="font-extrabold uppercase tracking-wider text-[10px] text-slate-400 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-                        <span>{t.nav.popularServices}</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400">{t.nav.pressToFocus}</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {POPULAR_SEARCH_CHIPS.map((chip) => (
-                        <button
-                          key={chip.query}
-                          type="button"
-                          onClick={() => {
-                            onSearchChange?.(chip.query);
-                            setIsSearchOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-300 text-xs font-semibold text-slate-700 hover:text-orange-950 transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                        >
-                          <span>{chip.label}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                      <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>{t.nav.govtRatesTag}</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400">{t.nav.sectorsCount}</span>
-                    </div>
-                  </div>
-                ) : (
-                  /* 2. When query has text -> show matching results */
-                  <div className="space-y-3">
-                    
-                    {/* Header info */}
-                    <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 pb-1 border-b border-slate-100">
-                      <span className="font-bold text-slate-800">
-                        {t.nav.matchesFor} <span className="text-orange-600">"{searchQuery}"</span>
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {searchResults.totalMatches} {t.nav.results}
-                      </span>
-                    </div>
-
-                    {/* Matched Services List */}
-                    {searchResults.services.length > 0 && (
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1 block">
-                          {t.nav.verifiedServicesTitle}
-                        </span>
-                        {searchResults.services.map((item) => (
-                          <div
-                            key={item.service.id}
-                            onClick={() => handleSelectServiceItem(item.sector.id, item.service)}
-                            className="p-2.5 rounded-xl hover:bg-orange-50/70 border border-transparent hover:border-orange-200/80 transition cursor-pointer flex items-center justify-between gap-3 group/item"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <strong className="text-xs font-black text-slate-900 group-hover/item:text-orange-700 transition">
-                                  {item.service.name}
-                                </strong>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
-                                  {item.subTrade.title}
-                                </span>
-                                <span className="text-[9px] font-bold text-slate-400">
-                                  • {item.sector.shortTitle}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                                {item.service.description}
-                              </p>
-                            </div>
-
-                            <div className="text-right flex-shrink-0 flex items-center gap-2.5">
-                              <div>
-                                <span className="text-xs font-black text-slate-900 block leading-tight">
-                                  ₹{item.service.price}
-                                </span>
-                                <span className="text-[10px] font-bold text-amber-600 flex items-center justify-end gap-0.5">
-                                  <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                                  <span>{item.service.rating}</span>
-                                </span>
-                              </div>
-                              <span className="w-7 h-7 rounded-lg bg-slate-100 group-hover/item:bg-orange-500 group-hover/item:text-white text-slate-600 flex items-center justify-center transition">
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Matched Sectors */}
-                    {searchResults.sectors.length > 0 && (
-                      <div className="space-y-1 pt-2 border-t border-slate-100">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1 block">
-                          {t.nav.cooperativeSectorsTitle}
-                        </span>
-                        {searchResults.sectors.map((sec) => (
-                          <div
-                            key={sec.sector.id}
-                            onClick={() => handleSelectSectorItem(sec.sector.id)}
-                            className="p-2.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition cursor-pointer flex items-center justify-between gap-3 group/sec"
-                          >
-                            <div>
-                              <strong className="text-xs font-bold text-slate-800 group-hover/sec:text-blue-900 transition">
-                                {sec.sector.title}
-                              </strong>
-                              <p className="text-[10px] text-slate-500">
-                                {sec.sector.subTradesList.slice(0, 4).join(', ')}...
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                                {sec.sector.shramiksAvailable} {t.nav.ready}
-                              </span>
-                              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover/sec:text-slate-800" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Zero matches */}
-                    {searchResults.totalMatches === 0 && (
-                      <div className="text-center py-6 px-4 space-y-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-                          <Search className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-800">
-                            {t.nav.noServicesFound} "{searchQuery}"
-                          </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            {t.nav.trySearching}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-                          {['Electrician', 'Plumber', 'AC Repair', 'Deep Cleaning', 'Painting'].map((term) => (
-                            <button
-                              key={term}
-                              type="button"
-                              onClick={() => {
-                                onSearchChange?.(term.toLowerCase());
-                              }}
-                              className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-semibold text-slate-700 transition"
-                            >
-                              {term}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 px-1">
-                      <span>{t.nav.pressEnter}</span>
-                      <span>{t.nav.escToClose}</span>
-                    </div>
-
-                  </div>
-                )}
-
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[500px] md:w-[560px] max-w-[580px] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 py-4 px-4 sm:px-5 z-50 animate-fadeIn max-h-[75vh] overflow-y-auto">
+                {renderAutocompleteContent()}
               </div>
             )}
           </div>
@@ -471,6 +480,46 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           </div>
 
+        </div>
+
+        {/* Mobile Dedicated Search Row (screens < md): Clean full-width search, zero collision with header buttons */}
+        <div className="md:hidden pb-2.5 pt-0.5 relative" ref={mobileSearchContainerRef}>
+          <div className="relative flex items-center group">
+            <Search className="w-4 h-4 text-slate-400 group-focus-within:text-orange-600 transition-colors absolute left-3.5 pointer-events-none" />
+            <input
+              ref={mobileSearchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                onSearchChange?.(e.target.value);
+                setIsSearchOpen(true);
+              }}
+              onFocus={() => setIsSearchOpen(true)}
+              onKeyDown={handleInputKeyDown}
+              placeholder={t.nav.searchPlaceholder}
+              className="w-full pl-10 pr-10 py-2 text-xs bg-slate-100 hover:bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-200/60 rounded-xl outline-none font-medium text-slate-900 transition-all shadow-2xs placeholder:text-slate-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSearchChange?.('');
+                  mobileSearchInputRef.current?.focus();
+                }}
+                className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Autocomplete Dropdown Popover on Mobile (Spans full mobile container width) */}
+          {isSearchOpen && (
+            <div className="absolute top-full mt-1.5 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 py-3.5 px-3.5 z-50 animate-fadeIn max-h-[70vh] overflow-y-auto">
+              {renderAutocompleteContent()}
+            </div>
+          )}
         </div>
       </div>
     </header>
