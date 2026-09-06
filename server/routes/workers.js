@@ -111,6 +111,15 @@ router.post('/', async (req, res) => {
     if (!name || !phone) {
       return res.status(400).json({ success: false, error: 'Name and phone are required' });
     }
+
+    let resolvedContractorName = null;
+    if (contractorId) {
+      const contractor = await DataStore.getContractorById(contractorId);
+      if (contractor) {
+        resolvedContractorName = contractor.name;
+      }
+    }
+
     const newWorker = await DataStore.createWorker({
       name,
       phone,
@@ -119,7 +128,8 @@ router.post('/', async (req, res) => {
       aadhaarNumber: aadhaar || 'XXXX-XXXX-8821',
       cooperativeId: cooperativeId || 'coop_101',
       cooperativeName: cooperativeName || 'Brihan-Maharashtra Multi-Trade Labour Cooperative',
-      contractorId: contractorId || 'cnt_101'
+      contractorId: contractorId || null,
+      contractorName: resolvedContractorName
     });
 
     if (contractorId) {

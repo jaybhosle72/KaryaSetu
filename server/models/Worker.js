@@ -39,7 +39,9 @@ const WorkerSchema = new mongoose.Schema({
   },
   currentWorkload: { type: Number, default: 0 },
   maxDailyCapacity: { type: Number, default: 5 },
-  totalEarnings: { type: Number, default: 0 }
+  totalEarnings: { type: Number, default: 0 },
+  contractorId: { type: String, default: null, index: true },
+  contractorName: { type: String, default: null }
 }, { timestamps: true, _id: false });
 
 module.exports = mongoose.model('Worker', WorkerSchema);

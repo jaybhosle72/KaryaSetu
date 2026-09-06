@@ -314,14 +314,37 @@ export const api = {
     return data.data;
   },
 
-  async addWorkerToCommunity(contractorId: string, workerId: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/contractors/add-worker`, {
+  async getContractorWorkers(contractorId: string): Promise<Worker[]> {
+    const res = await fetch(`${API_BASE}/contractors/${contractorId}/workers`);
+    const data = await res.json();
+    return data.data || [];
+  },
+
+  async addWorkerToCommunity(contractorId: string, payload: string | { workerId?: string; phone?: string; newWorker?: any }): Promise<any> {
+    const body = typeof payload === 'string' 
+      ? { contractorId, workerId: payload } 
+      : { contractorId, ...payload };
+    const res = await fetch(`${API_BASE}/contractors/${contractorId}/add-worker`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contractorId, workerId })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
-    return data.data;
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to add worker to contractor committee');
+    }
+    return data;
+  },
+
+  async removeWorkerFromCommunity(contractorId: string, workerId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/contractors/${contractorId}/workers/${workerId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to remove worker from committee');
+    }
+    return data;
   },
 
   // Worker Accept Booking

@@ -184,12 +184,14 @@ const DataStore = {
     if (getDBMode() === 'mongodb') {
       const q = {};
       if (filter.cooperativeId) q.cooperativeId = filter.cooperativeId;
+      if (filter.contractorId) q.contractorId = filter.contractorId;
       if (filter.trade) q.trade = { $regex: new RegExp(filter.trade, 'i') };
       if (filter.status) q.status = filter.status;
       return await Worker.find(q);
     }
     return store.workers.filter(w => {
       if (filter.cooperativeId && w.cooperativeId !== filter.cooperativeId) return false;
+      if (filter.contractorId && w.contractorId !== filter.contractorId) return false;
       if (filter.trade && !w.trade.toLowerCase().includes(filter.trade.toLowerCase())) return false;
       if (filter.status && w.status !== filter.status) return false;
       return true;
@@ -534,6 +536,22 @@ const DataStore = {
   },
 
   async allocateWorkersToTeamBooking(bookingId, workerIds) {
+    const booking = await this.getBookingById(bookingId);
+    if (!booking) return null;
+
+    // Verify all allocated workers belong to this contractor's committee if contractorId specified
+    if (booking.contractorId) {
+      const contractor = await this.getContractorById(booking.contractorId);
+      if (contractor) {
+        for (const wId of workerIds) {
+          const w = await this.getWorkerById(wId);
+          if (w && w.contractorId && String(w.contractorId) !== String(contractor._id) && String(w.contractorId) !== String(contractor.id)) {
+            throw new Error(`Cannot allocate worker "${w.name}": Worker is exclusively affiliated with contractor "${w.contractorName || w.contractorId}".`);
+          }
+        }
+      }
+    }
+
     if (getDBMode() === 'mongodb') {
       const assignedWorkers = await Worker.find({ _id: { $in: workerIds } });
       const workerNames = assignedWorkers.map(w => w.name).join(', ');
@@ -545,7 +563,7 @@ const DataStore = {
           status: 'ALLOCATED',
           assignedWorkerId: workerIds[0],
           workerName: workerNames || `${workerIds.length} Verified Shramiks`,
-          allocationRationale: `Contractor allocated ${workerIds.length} verified shramiks from cooperative community.`
+          allocationRationale: `Contractor allocated ${workerIds.length} verified shramiks from exclusive committee.`
         },
         { new: true }
       );
@@ -562,7 +580,7 @@ const DataStore = {
     store.bookings[bookingIdx].status = 'ALLOCATED';
     store.bookings[bookingIdx].assignedWorkerId = workerIds[0];
     store.bookings[bookingIdx].workerName = assignedWorkers.map(w => w.name).join(', ');
-    store.bookings[bookingIdx].allocationRationale = `Contractor allocated ${workerIds.length} verified shramiks from cooperative community.`;
+    store.bookings[bookingIdx].allocationRationale = `Contractor allocated ${workerIds.length} verified shramiks from exclusive committee.`;
     
     workerIds.forEach(wId => {
       const wIdx = store.workers.findIndex(w => w._id === wId);
@@ -576,27 +594,111 @@ const DataStore = {
   },
 
   async addWorkerToContractorCommunity(contractorId, workerId) {
-    if (getDBMode() === 'mongodb') {
-      const contractor = await Contractor.findOne({ $or: [{ _id: contractorId }, { id: contractorId }] });
-      if (contractor) {
-        if (!contractor.workerIds.includes(workerId)) {
-          contractor.workerIds.push(workerId);
-          contractor.communitySize = contractor.workerIds.length;
-          await contractor.save();
-        }
-        return contractor;
-      }
-      return null;
+    const contractor = await this.getContractorById(contractorId);
+    if (!contractor) {
+      throw new Error(`Contractor with ID "${contractorId}" not found.`);
     }
+
+    const worker = await this.getWorkerById(workerId);
+    if (!worker) {
+      throw new Error(`Worker with ID "${workerId}" not found.`);
+    }
+
+    // Strict 1-to-1 Affiliation Exclusivity Check
+    const existingContractorId = worker.contractorId;
+    if (existingContractorId && String(existingContractorId) !== String(contractor._id) && String(existingContractorId) !== String(contractor.id)) {
+      const currentContractor = await this.getContractorById(existingContractorId);
+      const name = currentContractor ? currentContractor.name : (worker.contractorName || existingContractorId);
+      throw new Error(`Affiliation conflict: Worker "${worker.name}" is already affiliated with contractor "${name}". A worker can only be affiliated with one contractor at a time.`);
+    }
+
+    if (getDBMode() === 'mongodb') {
+      // Update worker with contractor affiliation
+      await Worker.findOneAndUpdate(
+        { $or: [{ _id: worker._id }, { id: worker._id }] },
+        { contractorId: contractor._id, contractorName: contractor.name }
+      );
+
+      // Add worker to contractor's workerIds array if not already present
+      if (!contractor.workerIds.includes(worker._id)) {
+        contractor.workerIds.push(worker._id);
+        contractor.communitySize = contractor.workerIds.length;
+        await contractor.save();
+      }
+
+      // Ensure no other contractor's workerIds retains this worker
+      await Contractor.updateMany(
+        { _id: { $ne: contractor._id }, workerIds: worker._id },
+        { $pull: { workerIds: worker._id } }
+      );
+
+      return contractor;
+    }
+
+    // In-memory store
+    const wIdx = store.workers.findIndex(w => w._id === worker._id);
+    if (wIdx !== -1) {
+      store.workers[wIdx].contractorId = contractor._id;
+      store.workers[wIdx].contractorName = contractor.name;
+    }
+
+    // Pull worker from any other contractor in-memory
+    (store.contractors || []).forEach(c => {
+      if (c._id !== contractor._id && Array.isArray(c.workerIds)) {
+        c.workerIds = c.workerIds.filter(id => id !== worker._id);
+        c.communitySize = c.workerIds.length;
+      }
+    });
 
     const cIdx = (store.contractors || []).findIndex(c => c._id === contractorId);
     if (cIdx !== -1) {
-      if (!store.contractors[cIdx].workerIds.includes(workerId)) {
-        store.contractors[cIdx].workerIds.push(workerId);
+      if (!store.contractors[cIdx].workerIds.includes(worker._id)) {
+        store.contractors[cIdx].workerIds.push(worker._id);
         store.contractors[cIdx].communitySize = store.contractors[cIdx].workerIds.length;
       }
       return store.contractors[cIdx];
     }
+    return null;
+  },
+
+  async removeWorkerFromContractorCommunity(contractorId, workerId) {
+    const contractor = await this.getContractorById(contractorId);
+    if (!contractor) {
+      throw new Error(`Contractor with ID "${contractorId}" not found.`);
+    }
+
+    const worker = await this.getWorkerById(workerId);
+
+    if (getDBMode() === 'mongodb') {
+      if (worker) {
+        await Worker.findOneAndUpdate(
+          { $or: [{ _id: worker._id }, { id: worker._id }] },
+          { contractorId: null, contractorName: null }
+        );
+      }
+
+      contractor.workerIds = (contractor.workerIds || []).filter(id => String(id) !== String(workerId));
+      contractor.communitySize = contractor.workerIds.length;
+      await contractor.save();
+      return contractor;
+    }
+
+    // In-memory store
+    if (worker) {
+      const wIdx = store.workers.findIndex(w => w._id === worker._id);
+      if (wIdx !== -1) {
+        store.workers[wIdx].contractorId = null;
+        store.workers[wIdx].contractorName = null;
+      }
+    }
+
+    const cIdx = (store.contractors || []).findIndex(c => c._id === contractorId);
+    if (cIdx !== -1) {
+      store.contractors[cIdx].workerIds = (store.contractors[cIdx].workerIds || []).filter(id => String(id) !== String(workerId));
+      store.contractors[cIdx].communitySize = store.contractors[cIdx].workerIds.length;
+      return store.contractors[cIdx];
+    }
+
     return null;
   },
 

@@ -21,6 +21,8 @@ interface ContractorPortalProps {
   onAllocateWorkers: (bookingId: string, workerIds: string[]) => Promise<void>;
   onUpdateBookingStatus: (bookingId: string, status: Booking['status']) => Promise<void>;
   onOnboardWorker?: (data: any) => Promise<Worker | void>;
+  onRecruitWorker?: (contractorId: string, payload: any) => Promise<any>;
+  onReleaseWorker?: (contractorId: string, workerId: string) => Promise<any>;
   onSubmitProposal?: (bookingId: string, proposalData: any) => Promise<any>;
 }
 export const ContractorPortal: React.FC<ContractorPortalProps> = ({
@@ -30,6 +32,8 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
   onAllocateWorkers,
   onUpdateBookingStatus,
   onOnboardWorker,
+  onRecruitWorker,
+  onReleaseWorker,
   onSubmitProposal
 }) => {
   const { t, language, getServiceName } = useLanguage();
@@ -104,28 +108,38 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
     }));
   };
 
-  // State for onboarding new worker to community
+  // State for onboarding / recruiting worker to committee
   const [showAddWorkerModal, setShowAddWorkerModal] = useState(false);
+  const [addWorkerTab, setAddWorkerTab] = useState<'ONBOARD' | 'RECRUIT'>('ONBOARD');
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [newWorkerName, setNewWorkerName] = useState('');
   const [newWorkerPhone, setNewWorkerPhone] = useState('');
   const [newWorkerTrade, setNewWorkerTrade] = useState('Painting');
   const [newWorkerAadhaar, setNewWorkerAadhaar] = useState('');
+  const [recruitSearchTerm, setRecruitSearchTerm] = useState('');
+  const [isReleasingWorkerId, setIsReleasingWorkerId] = useState<string | null>(null);
 
   // Contractor profile info
   const contractorName = contractorUser?.name || 'Licensed Contractor';
   const contractorPhone = contractorUser?.phone || '';
   const licenseNumber = contractorUser?.extraMeta?.license || '';
   const cooperativeName = contractorUser?.extraMeta?.cooperative || 'District Labour Cooperative Federation';
+  const contractorId = contractorUser?.extraMeta?.contractorId || (contractorUser as any)?._id || (contractorUser as any)?.id || 'cnt_101';
 
-  // Workers in the contractor's community roster
-  const communityWorkers = workers;
+  // Workers strictly in this contractor's exclusive contraction committee
+  const communityWorkers = workers.filter(w => 
+    (w.contractorId && String(w.contractorId) === String(contractorId)) ||
+    (w.contractorName && contractorName && w.contractorName.toLowerCase().trim() === contractorName.toLowerCase().trim())
+  );
 
-  // Available unique trades from workers
-  const availableTrades = Array.from(new Set(workers.map(w => w.trade))).filter(Boolean);
+  // Unaffiliated / Independent workers available for recruitment into committee
+  const unattachedWorkers = workers.filter(w => !w.contractorId && !w.contractorName);
+
+  // Available unique trades from committee workers
+  const availableTrades = Array.from(new Set(communityWorkers.map(w => w.trade))).filter(Boolean);
 
   // Filtered & Sorted workers for contractor roster
-  const filteredCommunityWorkers = workers.filter(w => {
+  const filteredCommunityWorkers = communityWorkers.filter(w => {
     const term = workerSearchTerm.toLowerCase().trim();
     const matchesSearch = term === '' ||
       w.name.toLowerCase().includes(term) ||
@@ -858,23 +872,26 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <span>Worker Community Roster</span>
+                  <span>Your Contraction Committee</span>
                   <span className="text-xs font-extrabold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-200">
-                    {communityWorkers.length} Verified Shramiks
+                    {communityWorkers.length} Exclusive Shramiks
                   </span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Complete profiles, e-Shram & DigiLocker KYC, PM-JAY medical welfare, and skill certifications.
+                  Workers affiliated exclusively with {contractorName}'s committee. Each shramik is affiliated to only one contractor.
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowAddWorkerModal(true)}
+                  onClick={() => {
+                    setAddWorkerTab('ONBOARD');
+                    setShowAddWorkerModal(true);
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-950 text-white font-bold text-xs hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-xs transition"
                 >
                   <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>+ Onboard Shramik</span>
+                  <span>+ Add / Recruit Shramik</span>
                 </button>
               </div>
             </div>
@@ -1008,20 +1025,36 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
             {filteredCommunityWorkers.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 space-y-3">
                 <Users className="w-12 h-12 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">No matching shramiks found</h3>
-                <p className="text-xs text-slate-500">
-                  Try searching with a different name, trade, or clear the filters.
+                <h3 className="text-base font-bold text-slate-800">
+                  {communityWorkers.length === 0 ? 'Your Contraction Committee is Empty' : 'No matching shramiks found'}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  {communityWorkers.length === 0 
+                    ? `Every contractor must have their own verified workers. Add new workers or recruit unattached workers from the cooperative pool under ${contractorName}'s committee.`
+                    : 'Try searching with a different name, trade, or clear the filters.'}
                 </p>
-                <button
-                  onClick={() => {
-                    setWorkerSearchTerm('');
-                    setSelectedTradeFilter('ALL');
-                    setSelectedStatusFilter('ALL');
-                  }}
-                  className="px-4 py-2 rounded-xl bg-slate-950 text-white font-bold text-xs"
-                >
-                  Clear Filters
-                </button>
+                {communityWorkers.length === 0 ? (
+                  <button
+                    onClick={() => {
+                      setAddWorkerTab('ONBOARD');
+                      setShowAddWorkerModal(true);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-black text-xs hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    + Add Your First Worker ➔
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setWorkerSearchTerm('');
+                      setSelectedTradeFilter('ALL');
+                      setSelectedStatusFilter('ALL');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-950 text-white font-bold text-xs"
+                  >
+                    Clear Filters
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -1127,6 +1160,36 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                           </span>
                           <span className="font-mono text-[9px]">{w.welfareDetails?.pensionCreditTier || 'Active'}</span>
                         </div>
+                      </div>
+
+                      {/* Committee Exclusivity & Release */}
+                      <div className="flex items-center justify-between text-[10px] font-bold text-blue-900 bg-blue-50/80 px-2.5 py-1.5 rounded-xl border border-blue-200/70">
+                        <span className="flex items-center gap-1">
+                          <Shield className="w-3 h-3 text-blue-600" />
+                          <span>Committee Exclusive</span>
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isReleasingWorkerId === w._id}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`Are you sure you want to release ${w.name} from your contraction committee? They will become independent in the cooperative pool.`)) {
+                              setIsReleasingWorkerId(w._id);
+                              try {
+                                if (onReleaseWorker) {
+                                  await onReleaseWorker(contractorId, w._id);
+                                }
+                              } catch (err: any) {
+                                alert(err.message || 'Failed to release worker');
+                              } finally {
+                                setIsReleasingWorkerId(null);
+                              }
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 hover:underline font-extrabold cursor-pointer disabled:opacity-50"
+                        >
+                          {isReleasingWorkerId === w._id ? 'Releasing...' : 'Release ✕'}
+                        </button>
                       </div>
 
                     </div>
@@ -1853,11 +1916,16 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
 
       {showAddWorkerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
-            <div className="bg-slate-950 text-white p-5 flex items-center justify-between">
-              <h2 className="text-base font-black text-white">
-                Onboard Shramik to Community
-              </h2>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+            <div className="bg-slate-950 text-white p-5 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-base font-black text-white">
+                  Add Shramik to {contractorName}'s Committee
+                </h2>
+                <p className="text-[11px] text-slate-400">
+                  Workers are exclusively affiliated to only one contractor at a time.
+                </p>
+              </div>
               <button
                 onClick={() => setShowAddWorkerModal(false)}
                 className="text-white/70 hover:text-white text-xl font-bold cursor-pointer"
@@ -1866,108 +1934,205 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
               </button>
             </div>
 
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setIsOnboarding(true);
-                try {
-                  if (onOnboardWorker) {
-                    await onOnboardWorker({
-                      name: newWorkerName,
-                      phone: newWorkerPhone,
-                      trade: newWorkerTrade,
-                      aadhaar: newWorkerAadhaar,
-                      cooperativeName: cooperativeName,
-                      contractorId: 'cnt_101'
-                    });
-                  }
-                  setShowAddWorkerModal(false);
-                  setNewWorkerName('');
-                  setNewWorkerPhone('');
-                  setNewWorkerAadhaar('');
-                } catch (err: any) {
-                  alert(err.message || 'Failed to onboard worker');
-                } finally {
-                  setIsOnboarding(false);
-                }
-              }}
-              className="p-6 space-y-3.5 text-xs"
-            >
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newWorkerName}
-                  onChange={(e) => setNewWorkerName(e.target.value)}
-                  placeholder="e.g. Ramesh Shankar Shinde"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold"
-                />
-              </div>
+            {/* Modal Tabs */}
+            <div className="flex border-b border-slate-200 bg-slate-50 shrink-0">
+              <button
+                type="button"
+                onClick={() => setAddWorkerTab('ONBOARD')}
+                className={`flex-1 py-3 text-xs font-black transition text-center cursor-pointer border-b-2 ${
+                  addWorkerTab === 'ONBOARD'
+                    ? 'border-blue-600 text-blue-900 bg-white'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                1. Register New Shramik
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddWorkerTab('RECRUIT')}
+                className={`flex-1 py-3 text-xs font-black transition text-center cursor-pointer border-b-2 ${
+                  addWorkerTab === 'RECRUIT'
+                    ? 'border-blue-600 text-blue-900 bg-white'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                2. Recruit Unaffiliated ({unattachedWorkers.length})
+              </button>
+            </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Mobile Number</label>
-                <input
-                  type="tel"
-                  required
-                  value={newWorkerPhone}
-                  onChange={(e) => setNewWorkerPhone(e.target.value)}
-                  placeholder="+91 98220 00000"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Trade Specialization</label>
-                  <select
-                    value={newWorkerTrade}
-                    onChange={(e) => setNewWorkerTrade(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
-                  >
-                    <option value="Painting">Painting</option>
-                    <option value="Deep Cleaning">Deep Cleaning</option>
-                    <option value="Masonry">Masonry</option>
-                    <option value="Carpentry">Carpentry</option>
-                    <option value="Electrical">Electrical</option>
-                    <option value="Plumbing">Plumbing</option>
-                    <option value="General Labour">General Labour</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Aadhaar Number</label>
-                  <input
-                    type="text"
-                    required
-                    value={newWorkerAadhaar}
-                    onChange={(e) => setNewWorkerAadhaar(e.target.value)}
-                    placeholder="XXXX-XXXX-1234"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-[11px] text-emerald-800">
-                ✓ Auto-links to e-Shram portal and registers for ₹5L group accidental cover.
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddWorkerModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer"
+            <div className="p-6 overflow-y-auto flex-1 text-xs">
+              {addWorkerTab === 'ONBOARD' ? (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsOnboarding(true);
+                    try {
+                      if (onOnboardWorker) {
+                        await onOnboardWorker({
+                          name: newWorkerName,
+                          phone: newWorkerPhone,
+                          trade: newWorkerTrade,
+                          aadhaar: newWorkerAadhaar,
+                          cooperativeName: cooperativeName,
+                          contractorId: contractorId
+                        });
+                      }
+                      setShowAddWorkerModal(false);
+                      setNewWorkerName('');
+                      setNewWorkerPhone('');
+                      setNewWorkerAadhaar('');
+                    } catch (err: any) {
+                      alert(err.message || 'Failed to onboard worker');
+                    } finally {
+                      setIsOnboarding(false);
+                    }
+                  }}
+                  className="space-y-3.5"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isOnboarding}
-                  className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-black hover:bg-slate-800 shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {isOnboarding ? 'Linking Shramik...' : 'Confirm & Link Member ➔'}
-                </button>
-              </div>
-            </form>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={newWorkerName}
+                      onChange={(e) => setNewWorkerName(e.target.value)}
+                      placeholder="e.g. Ramesh Shankar Shinde"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Mobile Number</label>
+                    <input
+                      type="tel"
+                      required
+                      value={newWorkerPhone}
+                      onChange={(e) => setNewWorkerPhone(e.target.value)}
+                      placeholder="+91 98220 00000"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Trade Specialization</label>
+                      <select
+                        value={newWorkerTrade}
+                        onChange={(e) => setNewWorkerTrade(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
+                      >
+                        <option value="Painting">Painting</option>
+                        <option value="Deep Cleaning">Deep Cleaning</option>
+                        <option value="Masonry">Masonry</option>
+                        <option value="Carpentry">Carpentry</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="General Labour">General Labour</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Aadhaar Number</label>
+                      <input
+                        type="text"
+                        required
+                        value={newWorkerAadhaar}
+                        onChange={(e) => setNewWorkerAadhaar(e.target.value)}
+                        placeholder="XXXX-XXXX-1234"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-blue-50 rounded-2xl border border-blue-200 text-[11px] text-blue-900">
+                    🔒 This worker will be registered directly under <strong>{contractorName}</strong>'s exclusive committee and cannot be claimed by another contractor.
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddWorkerModal(false)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isOnboarding}
+                      className="px-5 py-2.5 rounded-xl bg-slate-950 text-white font-black hover:bg-slate-800 shadow-sm cursor-pointer disabled:opacity-50"
+                    >
+                      {isOnboarding ? 'Onboarding...' : 'Onboard & Affiliate ➔'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Search Unaffiliated Shramiks in Cooperative</label>
+                    <input
+                      type="text"
+                      value={recruitSearchTerm}
+                      onChange={(e) => setRecruitSearchTerm(e.target.value)}
+                      placeholder="Search by worker name, trade, or phone..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold text-xs focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {unattachedWorkers
+                      .filter(w => {
+                        const s = recruitSearchTerm.toLowerCase().trim();
+                        if (!s) return true;
+                        return w.name.toLowerCase().includes(s) || w.trade.toLowerCase().includes(s) || w.phone.includes(s);
+                      })
+                      .map(w => (
+                        <div
+                          key={w._id}
+                          className="p-3 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 hover:border-slate-300"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-slate-900">{w.name}</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-900 border border-blue-200">
+                                {w.trade}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                              {w.phone} • {w.experienceYears || 3} yrs exp
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={isOnboarding}
+                            onClick={async () => {
+                              setIsOnboarding(true);
+                              try {
+                                if (onRecruitWorker) {
+                                  await onRecruitWorker(contractorId, { workerId: w._id });
+                                }
+                                setShowAddWorkerModal(false);
+                              } catch (err: any) {
+                                alert(err.message || 'Failed to recruit worker');
+                              } finally {
+                                setIsOnboarding(false);
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition cursor-pointer shrink-0 disabled:opacity-50"
+                          >
+                            Recruit ➔
+                          </button>
+                        </div>
+                      ))}
+
+                    {unattachedWorkers.length === 0 && (
+                      <div className="p-4 text-center text-slate-500 text-xs bg-slate-50 rounded-2xl border border-slate-200">
+                        All shramiks in the cooperative are currently affiliated with contractor committees. Use the "Register New Shramik" tab to onboard new workers.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

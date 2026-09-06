@@ -44,6 +44,7 @@ export interface Worker {
   totalEarnings: number;
   aadhaarNumber?: string;
   contractorId?: string;
+  contractorName?: string;
 }
 
 export interface SplitConfig {

@@ -379,6 +379,40 @@ export function App() {
     }
   };
 
+  const handleRecruitWorker = async (contractorId: string, payload: any) => {
+    try {
+      const res = await api.addWorkerToCommunity(contractorId, payload);
+      if (res.worker) {
+        setWorkers(prev => {
+          const exists = prev.some(w => w._id === res.worker._id);
+          if (exists) {
+            return prev.map(w => w._id === res.worker._id ? { ...w, ...res.worker, contractorId, contractorName: res.data?.name || res.worker.contractorName } : w);
+          } else {
+            return [res.worker, ...prev];
+          }
+        });
+      }
+      showToast(res.message || 'Worker affiliated with your committee successfully!', 'success');
+      playAlertSound('success');
+      return res;
+    } catch (e: any) {
+      showToast(e.message, 'info');
+      throw e;
+    }
+  };
+
+  const handleReleaseWorker = async (contractorId: string, workerId: string) => {
+    try {
+      const res = await api.removeWorkerFromCommunity(contractorId, workerId);
+      setWorkers(prev => prev.map(w => w._id === workerId ? { ...w, contractorId: undefined, contractorName: undefined } : w));
+      showToast('Worker released from committee to independent pool', 'success');
+      return res;
+    } catch (e: any) {
+      showToast(e.message, 'info');
+      throw e;
+    }
+  };
+
   const handleSubmitProposal = async (bookingId: string, proposalData: any) => {
     try {
       const updated = await api.submitProposal(bookingId, proposalData);
@@ -680,6 +714,8 @@ export function App() {
                 onAllocateWorkers={handleAllocateWorkers}
                 onUpdateBookingStatus={handleUpdateBookingStatus}
                 onOnboardWorker={handleOnboardWorker}
+                onRecruitWorker={handleRecruitWorker}
+                onReleaseWorker={handleReleaseWorker}
                 onSubmitProposal={handleSubmitProposal}
               />
             )}
