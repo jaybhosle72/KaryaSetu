@@ -6,6 +6,7 @@ const BookingSchema = new mongoose.Schema({
   customerPhone: { type: String, required: true },
   serviceCategory: { type: String, required: true },
   subTrade: { type: String, required: true },
+  trade: { type: String },
   type: { 
     type: String, 
     enum: ['HOUSEHOLD', 'INSTITUTIONAL', 'EMERGENCY'], 

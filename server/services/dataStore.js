@@ -20,6 +20,7 @@ const {
 } = require('../data/seedData');
 
 const seedDisputes = [];
+const { resolveCanonicalTrade, isTradeMatch } = require('../utils/tradeResolver');
 
 // Initialize in-memory store with clean empty arrays (no demo/mock records)
 const store = getInMemoryStore();
@@ -269,10 +270,12 @@ const DataStore = {
   },
 
   async createBooking(bookingData) {
+    const canonicalTrade = bookingData.trade || resolveCanonicalTrade(bookingData);
     const doc = {
       _id: `bk_${Date.now()}`,
       createdAt: new Date().toISOString(),
-      ...bookingData
+      ...bookingData,
+      trade: canonicalTrade
     };
     if (getDBMode() === 'mongodb') {
       const created = new Booking(doc);
@@ -296,6 +299,17 @@ const DataStore = {
   async acceptBooking(bookingId, workerId) {
     const worker = await this.getWorkerById(workerId);
     if (!worker) throw new Error(`Worker with ID ${workerId} not found`);
+
+    // Enforce strict trade validation
+    const targetBooking = await this.getBookingById(bookingId);
+    if (!targetBooking) {
+      throw new Error('Job is no longer available or has already been removed.');
+    }
+
+    const targetTrade = targetBooking.trade || resolveCanonicalTrade(targetBooking);
+    if (!isTradeMatch(worker.trade, targetBooking, worker.subTrades)) {
+      throw new Error(`Trade mismatch: This service request requires a certified ${targetTrade} specialist, but worker ${worker.name} is certified in ${worker.trade || 'a different trade'}.`);
+    }
 
     if (getDBMode() === 'mongodb') {
       const idMatch = { $or: [{ _id: String(bookingId) }, { id: String(bookingId) }] };

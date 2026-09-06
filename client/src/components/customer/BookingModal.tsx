@@ -5,6 +5,7 @@ import {
   Zap, Hammer, Paintbrush, Tv, Heart, Car, Star, Layers
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { resolveCanonicalTrade } from '../../utils/tradeUtils';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface BookingModalProps {
     customerPhone: string;
     serviceCategory: string;
     subTrade: string;
+    trade?: string;
     address: string;
     estimatedAmount: number;
     bookingMode?: 'SOLO_WORKER' | 'CONTRACTOR_TEAM';
@@ -121,13 +123,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const resolvedSubTrade = bookingMode === 'CONTRACTOR_TEAM' 
+        ? `${selectedWorkerType} Project (${propertyType})`
+        : subTrade;
+      const canonicalTrade = resolveCanonicalTrade({
+        trade: selectedWorkerType,
+        subTrade: resolvedSubTrade,
+        serviceCategory,
+        workerType: selectedWorkerType
+      });
+
       await onSubmitBooking({
         customerName,
         customerPhone,
         serviceCategory,
-        subTrade: bookingMode === 'CONTRACTOR_TEAM' 
-          ? `${selectedWorkerType} Project (${propertyType})`
-          : subTrade,
+        trade: canonicalTrade,
+        subTrade: resolvedSubTrade,
         address,
         estimatedAmount,
         bookingMode,

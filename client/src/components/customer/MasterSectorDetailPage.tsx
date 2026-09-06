@@ -14,6 +14,7 @@ import { GoogleMapLocationModal } from './GoogleMapLocationModal';
 import { PaymentModal } from './PaymentModal';
 import { TransparentInvoiceModal } from './TransparentInvoiceModal';
 import { CartItem } from './CartDrawerModal';
+import { resolveCanonicalTrade } from '../../utils/tradeUtils';
 
 interface MasterSectorDetailPageProps {
   sectorId: string;
@@ -377,11 +378,20 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
     setSuccessMessage('');
     try {
       const servicesSummary = selectedServices.map(i => `${i.service.name}${i.quantity > 1 ? ` (x${i.quantity})` : ''}`).join(', ');
+      const explicitTrade = activeSubTrade?.title || sector.shortTitle || sector.title;
+      const canonicalTrade = resolveCanonicalTrade({
+        trade: explicitTrade,
+        subTrade: activeSubTrade?.title,
+        serviceCategory: sector.title,
+        workerType: `${sector.shortTitle} Specialist`,
+        name: servicesSummary
+      });
 
       const created = await onSubmitBooking({
         customerName,
         customerPhone,
         serviceCategory: sector.title,
+        trade: canonicalTrade,
         subTrade: isContractorProject ? taskOutcome : `${activeSubTrade?.title || sector.title}: ${servicesSummary}`,
         address,
         estimatedAmount: finalAmount,
@@ -411,6 +421,7 @@ export const MasterSectorDetailPage: React.FC<MasterSectorDetailPageProps> = ({
         customerName,
         customerPhone,
         serviceCategory: sector.title,
+        trade: canonicalTrade,
         subTrade: `${activeSubTrade?.title || sector.title}: ${servicesSummary}`,
         totalAmount: finalAmount,
         workerName: undefined,

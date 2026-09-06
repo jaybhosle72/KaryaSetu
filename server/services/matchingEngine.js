@@ -16,9 +16,10 @@
  *    - Location / Proximity: 25%
  *    - Available Workforce: 20%
  *    - Experience: 15%
- *    - Rating: 10%
  * 5. Level 2 Proximity Sorting (Contractor -> Workers)
  */
+
+const { resolveCanonicalTrade, isTradeMatch } = require('../utils/tradeResolver');
 
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return 2.5; // fallback
@@ -76,14 +77,33 @@ function calculateWorkerMatchScore(worker, query, customerCoords) {
 
   const distKm = calculateDistanceKm(cLat, cLng, wLat, wLng);
 
+  const targetTrade = resolveCanonicalTrade(query);
+  const tradeEligible = isTradeMatch(worker.trade, query, worker.subTrades);
+
+  if (!tradeEligible) {
+    return {
+      distKm,
+      etaMinutes: 999,
+      totalScore: 0,
+      isEligible: false,
+      scoreBreakdown: {
+        skillScore: 0,
+        distanceScore: 0,
+        availabilityScore: 0,
+        reliabilityScore: 0,
+        experienceScore: 0
+      },
+      rationale: `Trade mismatch: Worker certified in ${worker.trade}, but request requires certified ${targetTrade} specialist.`
+    };
+  }
+
   // 1. Skill Match (40%)
-  let rawSkill = 70;
+  let rawSkill = 85;
   const subTradeLower = (subTrade || '').toLowerCase();
-  const categoryLower = (serviceCategory || '').toLowerCase();
   const workerTrade = (worker.trade || '').toLowerCase();
 
-  if (workerTrade === categoryLower || categoryLower.includes(workerTrade) || workerTrade.includes(categoryLower)) {
-    rawSkill = 85;
+  if (workerTrade === targetTrade.toLowerCase()) {
+    rawSkill = 90;
   }
   if (worker.subTrades && worker.subTrades.some(st => subTradeLower.includes(st.toLowerCase()) || st.toLowerCase().includes(subTradeLower))) {
     rawSkill = 95;
@@ -220,7 +240,10 @@ function calculateContractorMatchScore(contractor, query, customerCoords) {
 function matchWorkersForCustomer(workers, query, customerCoords) {
   const coords = resolveAreaCoordinates(customerCoords || query.address);
   
-  const scored = workers.map(worker => {
+  // Strict trade filter: only workers qualified in this service's trade are eligible
+  const eligibleWorkers = workers.filter(worker => isTradeMatch(worker.trade, query, worker.subTrades));
+  
+  const scored = eligibleWorkers.map(worker => {
     const match = calculateWorkerMatchScore(worker, query, coords);
     return {
       worker,
@@ -260,19 +283,25 @@ function matchContractorsForProject(contractors, query, customerCoords) {
 // Legacy adapter for matchWorkerToBooking
 function matchWorkerToBooking(booking, availableWorkers, cooperatives) {
   const coords = resolveAreaCoordinates(booking.address);
+  const targetTrade = resolveCanonicalTrade(booking);
   const ranked = matchWorkersForCustomer(availableWorkers, {
     serviceCategory: booking.serviceCategory,
     subTrade: booking.subTrade,
+    trade: booking.trade || targetTrade,
     isEmergency: booking.urgency === 'EMERGENCY' || booking.type === 'EMERGENCY'
   }, coords);
 
-  const best = ranked[0] || {
-    worker: availableWorkers[0],
-    totalScore: 85,
-    distKm: 2.1,
-    etaMinutes: 20,
-    rationale: 'Assigned via cooperative queue.'
-  };
+  const best = ranked[0] || null;
+
+  if (!best) {
+    return {
+      selectedWorker: null,
+      score: 0,
+      distKm: 0,
+      rationale: `No active ${targetTrade} shramik currently online in proximity. Broadcast to cooperative dispatch.`,
+      etaMinutes: 30
+    };
+  }
 
   return {
     selectedWorker: best.worker,

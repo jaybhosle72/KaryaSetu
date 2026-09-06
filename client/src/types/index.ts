@@ -141,6 +141,7 @@ export interface Booking {
   customerPhone: string;
   serviceCategory: string;
   subTrade: string;
+  trade?: string;
   type: 'HOUSEHOLD' | 'INSTITUTIONAL' | 'EMERGENCY';
   urgency: 'STANDARD' | 'PRIORITY' | 'EMERGENCY';
   bookingMode?: 'SOLO_WORKER' | 'CONTRACTOR_TEAM';

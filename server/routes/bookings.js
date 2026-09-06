@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { DataStore } = require('../services/dataStore');
 const { calculatePaymentSplit, generateInvoiceNumber } = require('../services/paymentService');
+const { resolveCanonicalTrade, isTradeMatch } = require('../utils/tradeResolver');
 
 // GET /api/bookings - List all bookings with optional role/worker filtering
 router.get('/', async (req, res) => {
@@ -11,15 +12,23 @@ router.get('/', async (req, res) => {
 
     let filtered = allBookings;
 
-    if (role === 'worker' && workerId) {
-      filtered = allBookings.filter(b => {
-        const isAssignedToMe = b.assignedWorkerId === workerId;
-        const combined = `${b.serviceCategory || ''} ${b.subTrade || ''} ${b.notes || ''}`.toLowerCase();
-        const cleanTrade = (trade || '').toLowerCase();
-        const isAvailableInMyTrade = b.status === 'MATCHING' && !b.assignedWorkerId && 
-          (!trade || combined.includes(cleanTrade) || cleanTrade.includes((b.serviceCategory || '').toLowerCase()) || combined.includes('home maintenance') || combined.includes('household'));
-        return isAssignedToMe || isAvailableInMyTrade;
-      });
+    if (workerId || role === 'worker') {
+      const worker = workerId ? await DataStore.getWorkerById(workerId) : null;
+      const workerTrade = worker?.trade || trade;
+      const workerSubTrades = worker?.subTrades || [];
+
+      if (workerTrade) {
+        filtered = allBookings.filter(b => {
+          const isAssignedToMe = worker && (
+            String(b.assignedWorkerId) === String(worker._id) ||
+            String(b.assignedWorkerId) === String(worker.id) ||
+            String(b.assignedWorkerId) === String(workerId)
+          );
+          const isMatchingTrade = isTradeMatch(workerTrade, b, workerSubTrades);
+          const isAvailableInMyTrade = b.status === 'MATCHING' && !b.assignedWorkerId && isMatchingTrade;
+          return isAssignedToMe || isAvailableInMyTrade;
+        });
+      }
     } else {
       if (status) filtered = filtered.filter(b => b.status === status);
       if (bookingMode) filtered = filtered.filter(b => b.bookingMode === bookingMode);
@@ -62,6 +71,7 @@ router.post('/', async (req, res) => {
     const allCoops = await DataStore.getCooperatives();
     const defaultCoop = allCoops[0] || { _id: 'coop_pune_multi', name: 'Brihan-Maharashtra Multi-Trade Labour Cooperative' };
 
+    const canonicalTrade = resolveCanonicalTrade(req.body);
     let newBookingData = {};
 
     if (bookingMode === 'CONTRACTOR_TEAM') {
@@ -77,6 +87,7 @@ router.post('/', async (req, res) => {
         customerPhone: customerPhone || '+91 98220 11223',
         serviceCategory,
         subTrade: subTrade || `${serviceCategory} Contractor Project`,
+        trade: canonicalTrade,
         type: 'HOUSEHOLD',
         urgency,
         bookingMode: 'CONTRACTOR_TEAM',
@@ -121,6 +132,7 @@ router.post('/', async (req, res) => {
         customerPhone: customerPhone || '+91 98220 11223',
         serviceCategory,
         subTrade: subTrade || `${serviceCategory} General Service`,
+        trade: canonicalTrade,
         type: 'HOUSEHOLD',
         urgency,
         bookingMode: 'SOLO_WORKER',
@@ -222,9 +234,9 @@ router.post('/emergency', async (req, res) => {
       basePrice = 550;
     }
 
-    const allWorkers = await DataStore.getWorkers({ trade });
+    const allWorkers = (await DataStore.getWorkers()).filter(w => isTradeMatch(w.trade, trade, w.subTrades));
     const availableWorkers = allWorkers.filter(w => w.status === 'AVAILABLE' || w.status === 'EMERGENCY_READY');
-    const assignedWorker = availableWorkers[0] || allWorkers[0];
+    const assignedWorker = availableWorkers[0] || allWorkers[0] || null;
 
     const allCoops = await DataStore.getCooperatives();
     const coop = allCoops.find(c => c._id === assignedWorker?.cooperativeId) || allCoops[0];
@@ -235,6 +247,7 @@ router.post('/emergency', async (req, res) => {
       customerPhone,
       serviceCategory: trade,
       subTrade,
+      trade,
       type: 'EMERGENCY',
       urgency: 'EMERGENCY',
       address,

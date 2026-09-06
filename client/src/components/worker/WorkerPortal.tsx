@@ -7,6 +7,7 @@ import {
   CheckCircle2, AlertTriangle, Wallet, Check, Star, 
   Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight, HardHat
 } from 'lucide-react';
+import { isTradeMatch, resolveCanonicalTrade, getTradeBadgeStyle } from '../../utils/tradeUtils';
 
 interface WorkerPortalProps {
   workers: Worker[];
@@ -57,57 +58,10 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   const myBookings = bookings.filter(b => b.assignedWorkerId === currentWorker?._id);
   const completedJobs = myBookings.filter(b => b.status === 'COMPLETED');
 
-  // Available matching jobs in worker's trade awaiting acceptance
-  const [filterTradeMode, setFilterTradeMode] = useState<'MATCHING' | 'ALL'>('MATCHING');
-
+  // Strict trade matching: electrical requests go strictly to electricians, plumbing to plumbers
   const isJobMatchingWorkerTrade = (b: Booking, worker: Worker | undefined): boolean => {
-    if (!worker) return true;
-    const wTrade = (worker.trade || '').toLowerCase();
-    const cat = (b.serviceCategory || '').toLowerCase();
-    const sub = (b.subTrade || '').toLowerCase();
-    const notes = (b.notes || '').toLowerCase();
-    const combined = `${cat} ${sub} ${notes}`;
-
-    // Direct substring matches
-    if (combined.includes(wTrade) || wTrade.includes(cat) || wTrade.includes(sub)) {
-      return true;
-    }
-
-    // Worker subtrades match
-    if (worker.subTrades && Array.isArray(worker.subTrades)) {
-      if (worker.subTrades.some(st => combined.includes(st.toLowerCase()) || st.toLowerCase().includes(sub))) {
-        return true;
-      }
-    }
-
-    // Trade Synonyms / Keywords dictionary
-    const tradeSynonyms: Record<string, string[]> = {
-      'electrical': ['elec', 'wire', 'wiring', 'switch', 'socket', 'mcb', 'light', 'fan', 'ac', 'appliance', 'circuit', 'inverter', 'motor', 'installation', 'geyser', 'repair'],
-      'plumbing': ['plumb', 'pipe', 'leak', 'drain', 'tap', 'faucet', 'sanitary', 'water', 'sewage', 'tank', 'flush', 'basin', 'motor', 'pump'],
-      'carpentry': ['carp', 'wood', 'furniture', 'door', 'lock', 'latch', 'hinge', 'cabinet', 'cupboard', 'table', 'chair', 'drill', 'shelf'],
-      'deep cleaning': ['clean', 'sanitiz', 'sweep', 'mop', 'wash', 'pest', 'disinfect', 'housekeeping', 'dust', 'maid'],
-      'appliance repair': ['appliance', 'ac', 'refrigerat', 'fridge', 'washing', 'microwave', 'oven', 'geyser', 'chimney', 'heater', 'cooler', 'electrical', 'repair'],
-      'painting': ['paint', 'color', 'whitewash', 'distemper', 'waterproof', 'wall', 'primer', 'polish'],
-      'maid': ['maid', 'cook', 'clean', 'domestic', 'household', 'shramik', 'helper'],
-      'driver': ['driver', 'driving', 'car', 'vehicle', 'chauffeur'],
-      'gardening': ['garden', 'lawn', 'plant', 'grass', 'tree', 'landscape'],
-      'caregiver': ['care', 'nurse', 'elderly', 'patient', 'baby', 'attendant']
-    };
-
-    for (const [key, keywords] of Object.entries(tradeSynonyms)) {
-      if (wTrade.includes(key) || key.includes(wTrade)) {
-        if (keywords.some(kw => combined.includes(kw))) {
-          return true;
-        }
-      }
-    }
-
-    // Broad household sector match
-    if (cat.includes('home maintenance') || cat.includes('household') || cat.includes('general')) {
-      return true;
-    }
-
-    return false;
+    if (!worker) return false;
+    return isTradeMatch(worker.trade, b, worker.subTrades);
   };
 
   const allUnassignedJobs = bookings.filter(b => 
@@ -116,10 +70,8 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
     !b.assignedWorkerId
   );
 
-  const tradeMatchingJobs = allUnassignedJobs.filter(b => isJobMatchingWorkerTrade(b, currentWorker));
-  const availableMatchingJobs = filterTradeMode === 'ALL'
-    ? allUnassignedJobs
-    : (tradeMatchingJobs.length > 0 ? tradeMatchingJobs : allUnassignedJobs);
+  // Available jobs strictly matched to worker's certified trade
+  const availableMatchingJobs = allUnassignedJobs.filter(b => isJobMatchingWorkerTrade(b, currentWorker));
 
   const activeAssignedJob = myBookings.find(b => b.status !== 'COMPLETED') || null;
   const activeJob = activeAssignedJob || (availableMatchingJobs.length > 0 ? availableMatchingJobs[0] : null);
@@ -227,113 +179,99 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
         </div>
       </div>
 
-      {/* Real Available Job Requests in Worker's Trade / Cooperative Pool */}
+      {/* Real Available Job Requests in Worker's Certified Trade Pool */}
       {availableMatchingJobs.length > 0 ? (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
               <h2 className="text-sm font-black uppercase tracking-wider text-emerald-900">
-                {tradeMatchingJobs.length > 0 && filterTradeMode !== 'ALL'
-                  ? `Incoming Real Job Dispatches In Your Trade (${tradeMatchingJobs.length})`
-                  : `Incoming Real Job Dispatches Across Pune (${availableMatchingJobs.length})`}
+                Incoming Real Job Dispatches For {currentWorker?.trade || 'Certified'} Specialist ({availableMatchingJobs.length})
               </h2>
             </div>
 
-            {/* Filter Toggle Pills */}
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setFilterTradeMode('MATCHING')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                  filterTradeMode === 'MATCHING'
-                    ? 'bg-white text-emerald-800 shadow-2xs font-extrabold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                In Your Trade ({tradeMatchingJobs.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTradeMode('ALL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                  filterTradeMode === 'ALL'
-                    ? 'bg-white text-emerald-800 shadow-2xs font-extrabold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                All Open ({allUnassignedJobs.length})
-              </button>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Certified {currentWorker?.trade || 'Specialist'} Queue Only</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availableMatchingJobs.map(job => (
-              <div 
-                key={job._id}
-                className="p-5 rounded-3xl bg-white border-2 border-emerald-500 shadow-md flex flex-col justify-between gap-4 transition hover:shadow-lg"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full">
-                      ⚡ {t.portal?.instant || 'Immediate'} Dispatch
-                    </span>
-                    <span className="text-sm font-black text-emerald-700">
-                      ₹{Math.round(job.totalAmount * 0.8)} <span className="text-[10px] text-slate-500 font-normal">({t.worker.directEscrowRate})</span>
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="text-base font-black text-slate-900">
-                      {getSectorTitle(job.serviceCategory, job.serviceCategory)} • {getServiceName(job.subTrade)}
-                    </h4>
-                    <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-1">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                      <span>{job.address}</span>
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {t.worker.customerLabel} <strong>{job.customerName}</strong> ({job.customerPhone})
-                    </p>
-                    {job.notes && (
-                      <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded-xl mt-1.5 border border-slate-100 italic">
-                        "{job.notes}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isAcceptingJobId === job._id}
-                  onClick={async () => {
-                    if (onAcceptJob) {
-                      setIsAcceptingJobId(job._id);
-                      try {
-                        await onAcceptJob(job._id, currentWorker._id);
-                      } catch (err: any) {
-                        alert(err.message || 'Failed to accept job');
-                      } finally {
-                        setIsAcceptingJobId(null);
-                      }
-                    }
-                  }}
-                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            {availableMatchingJobs.map(job => {
+              const jobTrade = job.trade || resolveCanonicalTrade(job);
+              const badgeStyle = getTradeBadgeStyle(jobTrade);
+              return (
+                <div 
+                  key={job._id}
+                  className="p-5 rounded-3xl bg-white border-2 border-emerald-500 shadow-md flex flex-col justify-between gap-4 transition hover:shadow-lg"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{isAcceptingJobId === job._id ? t.common.loading : `${t.worker.acceptBtn} ➔`}</span>
-                </button>
-              </div>
-            ))}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full">
+                          ⚡ {t.portal?.instant || 'Immediate'} Dispatch
+                        </span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}>
+                          {jobTrade}
+                        </span>
+                      </div>
+                      <span className="text-sm font-black text-emerald-700">
+                        ₹{Math.round(job.totalAmount * 0.8)} <span className="text-[10px] text-slate-500 font-normal">({t.worker.directEscrowRate})</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-base font-black text-slate-900">
+                        {getSectorTitle(job.serviceCategory, job.serviceCategory)} • {getServiceName(job.subTrade)}
+                      </h4>
+                      <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-1">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                        <span>{job.address}</span>
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {t.worker.customerLabel} <strong>{job.customerName}</strong> ({job.customerPhone})
+                      </p>
+                      {job.notes && (
+                        <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded-xl mt-1.5 border border-slate-100 italic">
+                          "{job.notes}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isAcceptingJobId === job._id}
+                    onClick={async () => {
+                      if (onAcceptJob) {
+                        setIsAcceptingJobId(job._id);
+                        try {
+                          await onAcceptJob(job._id, currentWorker._id);
+                        } catch (err: any) {
+                          alert(err.message || 'Failed to accept job');
+                        } finally {
+                          setIsAcceptingJobId(null);
+                        }
+                      }
+                    }}
+                    className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{isAcceptingJobId === job._id ? t.common.loading : `${t.worker.acceptBtn} ➔`}</span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
         <div className="p-4 rounded-2xl bg-white border border-slate-200 text-center space-y-1 shadow-2xs">
           <div className="flex items-center justify-center gap-2 text-xs font-black text-slate-700">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Cooperative Dispatch Radar Active</span>
+            <span>{currentWorker?.trade || 'Trade'} Cooperative Radar Active</span>
           </div>
           <p className="text-[11px] text-slate-500">
-            Listening for live customer bookings in Pune. When a customer books, the job dispatch will appear here immediately.
+            Listening for live customer bookings requiring verified {currentWorker?.trade ? `${currentWorker.trade}` : 'trade'} specialists in Pune. Service requests for other trades are strictly routed to their respective certified workers.
           </p>
         </div>
       )}
