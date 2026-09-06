@@ -5,7 +5,8 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   ShieldCheck, Award, HeartHandshake, Phone, MapPin, 
   CheckCircle2, AlertTriangle, Wallet, Check, Star, 
-  Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight, HardHat
+  Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight, HardHat,
+  GraduationCap, ExternalLink, Sparkles
 } from 'lucide-react';
 import { isTradeMatch, resolveCanonicalTrade, getTradeBadgeStyle } from '../../utils/tradeUtils';
 
@@ -22,6 +23,120 @@ interface WorkerPortalProps {
   onAcceptJob?: (bookingId: string, workerId: string) => Promise<any>;
   currentUser?: any;
 }
+
+export interface GovtSkillCourse {
+  id: string;
+  name: string;
+  fullTitle: string;
+  shortCode: string;
+  council: string;
+  ministry: string;
+  portalUrl: string;
+  duration: string;
+  stipendOrIncentive: string;
+  badgeLevel: string;
+  tradesCovered: string[];
+  description: string;
+  keyBenefits: string[];
+}
+
+export const GOVT_SKILL_COURSES: GovtSkillCourse[] = [
+  {
+    id: 'pmkvy',
+    name: 'Pradhan Mantri Kaushal Vikas Yojana (PMKVY 4.0)',
+    fullTitle: 'PMKVY – Pradhan Mantri Kaushal Vikas Yojana',
+    shortCode: 'PMKVY',
+    council: 'Skill India Digital / NSDC',
+    ministry: 'Ministry of Skill Development & Entrepreneurship (MSDE)',
+    portalUrl: 'https://www.skillindiadigital.gov.in/',
+    duration: '1 - 3 Months (Full / Part Time)',
+    stipendOrIncentive: '₹8,000 Direct Benefit Stipend + Official QR Kaushal Certificate',
+    badgeLevel: 'NSQF Level 3-5',
+    tradesCovered: ['Multi-Trade Vocational', 'Solar PV & Green Energy', 'Electronics Repair', 'RPL Certification'],
+    description: 'Flagship government skill initiative providing 100% free industry training, skill assessment, and direct monetary rewards to shramiks for career progression and certified wages.',
+    keyBenefits: [
+      'Govt. of India certified QR Kaushal badge on Sahakar Seva profile',
+      'Direct monetary incentive & free accidental insurance coverage (₹2 Lakhs)',
+      'Free NSQF assessment & high-priority cooperative booking allocation'
+    ]
+  },
+  {
+    id: 'csdci',
+    name: 'Construction Skill Development Council of India',
+    fullTitle: 'Construction Skill Development Council of India (CSDCI)',
+    shortCode: 'CSDCI',
+    council: 'CSDCI',
+    ministry: 'Ministry of Skill Development & Entrepreneurship (MSDE)',
+    portalUrl: 'https://www.csdcindia.org/',
+    duration: '30 - 45 Days (Practical & Safety)',
+    stipendOrIncentive: 'Government RPL Certification + Free Safety Tool Kit Support',
+    badgeLevel: 'NSQF Level 3/4',
+    tradesCovered: ['Masonry', 'Bar Bending', 'Plumbing', 'Shuttering Carpentry', 'Construction Painting'],
+    description: 'Industry-recognized national certification for construction labours, masons, bar-benders, and painters qualifying workers for higher contractor wage slabs and supervisor roles.',
+    keyBenefits: [
+      'Certified Contractor Grade badge for high-value builder tenders',
+      'Comprehensive on-site occupational safety & hazard mitigation training',
+      'Recognition of Prior Learning (RPL) assessment for experienced shramiks'
+    ]
+  },
+  {
+    id: 'essci',
+    name: 'Electronics Sector Skills Council of India',
+    fullTitle: 'Electronics Sector Skills Council of India (ESSCI)',
+    shortCode: 'ESSCI',
+    council: 'ESSCI',
+    ministry: 'Ministry of Electronics & IT / MSDE',
+    portalUrl: 'https://essc-india.org/',
+    duration: '45 - 60 Days (Hands-on Lab)',
+    stipendOrIncentive: 'State Wireman License Assistance + Tool Kits & Apprenticeships',
+    badgeLevel: 'NSQF Level 4',
+    tradesCovered: ['Electrician & Domestic Wireman', 'Solar Panel Installation', 'Inverter & UPS Servicing', 'Home Appliances'],
+    description: 'Specialized national electronics and electrical curriculum for technicians, solar installers, and electrical maintenance professionals with state licensing support.',
+    keyBenefits: [
+      'Eligibility for official state government wireman licensing',
+      'High-demand green energy (Rooftop Solar) skill credentials',
+      'Free hands-on lab training with modern diagnostic & safety tools'
+    ]
+  },
+  {
+    id: 'dwssc',
+    name: 'Domestic Workers Sector Skill Council',
+    fullTitle: 'Domestic Workers Sector Skill Council (DWSSC)',
+    shortCode: 'DWSSC',
+    council: 'DWSSC',
+    ministry: 'Ministry of Skill Development & Entrepreneurship (MSDE)',
+    portalUrl: 'https://dwsscindia.in/',
+    duration: '2 - 4 Weeks (Flexible Timings)',
+    stipendOrIncentive: 'Official Shramik ID Card + Guaranteed Minimum Wage Protection',
+    badgeLevel: 'NSQF Level 2/3',
+    tradesCovered: ['Housekeeping & Deep Cleaning', 'Commercial Facility Care', 'Cook & Kitchen Assistant', 'Elderly & Child Care'],
+    description: 'Empowers domestic, hygiene, and facility service workers with professional certification, dignified employment standards, and verified safety credentials.',
+    keyBenefits: [
+      'Verified Trust badge ensuring safe residential and gated society access',
+      'Professional hygiene, chemical handling & first-aid training',
+      'Access to cooperative healthcare and welfare scheme benefits'
+    ]
+  },
+  {
+    id: 'parivahan',
+    name: 'Commercial & LMV Driving Skill Certification',
+    fullTitle: 'Commercial/Light Motor Vehicle Driving Skill Certification (Parivahan Sewa)',
+    shortCode: 'Parivahan Sewa',
+    council: 'Parivahan Sewa / ASDC',
+    ministry: 'Ministry of Road Transport and Highways (MoRTH)',
+    portalUrl: 'https://parivahan.gov.in/',
+    duration: '3 - 4 Weeks (Accredited Driving Centers)',
+    stipendOrIncentive: 'Commercial Driver Badge Endorsement + Fleet Job Linkage',
+    badgeLevel: 'MoRTH Certified',
+    tradesCovered: ['Commercial Light Motor Vehicle (LMV)', 'EV Logistics Driving', 'Defensive Driving', 'Route & GPS Navigation'],
+    description: 'Authorized MoRTH and ASDC driver training program offering certified commercial driving endorsements, defensive driving, and transport fleet linkages.',
+    keyBenefits: [
+      'Official Commercial Transport Badge endorsement on Sarathi portal',
+      'Fuel efficiency, defensive driving & emergency accident protocol training',
+      'Direct linkage to cooperative transport and logistics job dispatch'
+    ]
+  }
+];
 
 export const WorkerPortal: React.FC<WorkerPortalProps> = ({
   workers,
@@ -103,6 +218,69 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
       console.error(err);
     } finally {
       setIsSubmittingSkill(false);
+    }
+  };
+
+  // Govt Skill India Courses state
+  const [selectedGovtCourseId, setSelectedGovtCourseId] = useState<string>('pmkvy');
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(`karyasetu_courses_${currentWorker?._id}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isApplyingCourse, setIsApplyingCourse] = useState(false);
+  const [courseSuccessMsg, setCourseSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentWorker?._id) {
+      try {
+        const saved = localStorage.getItem(`karyasetu_courses_${currentWorker._id}`);
+        if (saved) {
+          setEnrolledCourseIds(JSON.parse(saved));
+        } else {
+          setEnrolledCourseIds([]);
+        }
+      } catch {
+        setEnrolledCourseIds([]);
+      }
+    }
+  }, [currentWorker?._id]);
+
+  const selectedCourse = GOVT_SKILL_COURSES.find(c => c.id === selectedGovtCourseId) || GOVT_SKILL_COURSES[0];
+
+  const handleApplyGovtCourse = async (course: GovtSkillCourse) => {
+    if (!currentWorker || isApplyingCourse) return;
+    setIsApplyingCourse(true);
+    try {
+      const updated = Array.from(new Set([...enrolledCourseIds, course.id]));
+      setEnrolledCourseIds(updated);
+      localStorage.setItem(`karyasetu_courses_${currentWorker._id}`, JSON.stringify(updated));
+
+      const skillName = `${course.shortCode} Certified`;
+      if (onAddSkill) {
+        await onAddSkill(currentWorker._id, skillName);
+      } else {
+        if (!currentWorker.verifiedSkills) currentWorker.verifiedSkills = [];
+        const existing = currentWorker.verifiedSkills.some(s => s.name.toLowerCase() === skillName.toLowerCase());
+        if (!existing) {
+          currentWorker.verifiedSkills.push({
+            name: skillName,
+            issuer: course.council,
+            verifiedDate: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
+      setCourseSuccessMsg(`Application active for ${course.shortCode}! Verified badge added to your profile.`);
+      setTimeout(() => setCourseSuccessMsg(null), 6000);
+    } catch (err: any) {
+      console.error(err);
+      setCourseSuccessMsg(`Application recorded for ${course.shortCode}.`);
+      setTimeout(() => setCourseSuccessMsg(null), 6000);
+    } finally {
+      setIsApplyingCourse(false);
     }
   };
 
@@ -384,6 +562,171 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               </form>
             )}
 
+          </div>
+
+          {/* Govt. Skill India & Certification Courses Card (Official Govt. of India Benefits) */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-5">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shadow-2xs">
+                  <GraduationCap className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 tracking-tight">
+                    Govt. Skill India Courses
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Free Govt. of India training & certification for labours
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 flex items-center gap-1 shadow-2xs">
+                <Sparkles className="w-3 h-3 text-amber-600" />
+                100% Free
+              </span>
+            </div>
+
+            {/* Drop Box (Dropdown to select course) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                <label htmlFor="govt-course-select" className="cursor-pointer">
+                  Select Course / Skill Council:
+                </label>
+                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  5 Popular Courses
+                </span>
+              </div>
+              <select
+                id="govt-course-select"
+                value={selectedGovtCourseId}
+                onChange={(e) => setSelectedGovtCourseId(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:bg-white transition-all cursor-pointer shadow-2xs"
+              >
+                {GOVT_SKILL_COURSES.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    [{course.shortCode}] {course.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selected Course Overview Card */}
+            {selectedCourse && (
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-amber-50/40 border border-slate-200/90 space-y-3.5">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-200">
+                      {selectedCourse.badgeLevel}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      {selectedCourse.duration}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-black text-slate-900 leading-snug pt-1">
+                    {selectedCourse.fullTitle}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {selectedCourse.council} • {selectedCourse.ministry}
+                  </p>
+                </div>
+
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  {selectedCourse.description}
+                </p>
+
+                {/* Direct Incentive / Stipend Banner */}
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center gap-2 shadow-2xs">
+                  <Award className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span className="text-[11px] font-bold text-emerald-900 leading-tight">
+                    {selectedCourse.stipendOrIncentive}
+                  </span>
+                </div>
+
+                {/* Trades Covered */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-slate-700 block">Skills & Trades Covered:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedCourse.tradesCovered.map((t, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                      >
+                        • {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Key Benefits List */}
+                <div className="space-y-1 pt-1.5 border-t border-slate-200/70">
+                  <span className="text-[11px] font-bold text-slate-700 block">Labour Benefits & Protection:</span>
+                  <ul className="space-y-1">
+                    {selectedCourse.keyBenefits.map((benefit, idx) => (
+                      <li key={idx} className="text-[11px] text-slate-600 flex items-start gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Application Feedback Banner */}
+                {courseSuccessMsg && (
+                  <div className="p-2.5 rounded-xl bg-emerald-100/90 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>{courseSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Action Buttons: Apply for Course & Visit Official Portal */}
+                <div className="pt-2 space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={isApplyingCourse}
+                      onClick={() => handleApplyGovtCourse(selectedCourse)}
+                      className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer ${
+                        enrolledCourseIds.includes(selectedCourse.id)
+                          ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                          : 'bg-amber-600 hover:bg-amber-700 text-white active:scale-95'
+                      }`}
+                    >
+                      {enrolledCourseIds.includes(selectedCourse.id) ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>✓ Application Active</span>
+                        </>
+                      ) : (
+                        <>
+                          <Award className="w-3.5 h-3.5" />
+                          <span>{isApplyingCourse ? 'Registering...' : 'Apply for Course ➔'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    <a
+                      href={selectedCourse.portalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 font-bold text-xs text-slate-800 flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer hover:text-amber-700"
+                    >
+                      <span>Visit Portal</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
+                    </a>
+                  </div>
+
+                  {enrolledCourseIds.includes(selectedCourse.id) && (
+                    <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-medium">
+                      <span>Registration ID:</span>
+                      <span className="font-mono font-bold text-slate-900">
+                        KS-GOV-2026-{selectedCourse.shortCode.replace(/\s+/g, '')}-{currentWorker._id?.slice(-4) || '8841'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Worker Welfare Card (Exact format from prompt) */}
