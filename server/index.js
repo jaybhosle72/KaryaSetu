@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { connectDB, getDBMode } = require('./config/db');
+const { connectDB, getDBMode, getDBDetails, isDBPersistent } = require('./config/db');
 const { seedMongoIfEmpty, DataStore } = require('./services/dataStore');
 
 // Import routes
@@ -149,11 +149,20 @@ if (!hasBuiltClient) {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const dbDetails = getDBDetails();
   res.json({
     status: 'ONLINE',
     platform: 'KaryaSetu National Cooperative Digital Labour Infrastructure',
     edition: 'Smart India Hackathon 2024-2026 DPI Edition',
-    databaseMode: getDBMode(),
+    database: {
+      mode: dbDetails.mode,
+      isPersistent: dbDetails.isPersistent,
+      host: dbDetails.host || 'ephemeral-ram',
+      status: dbDetails.isPersistent ? 'PERMANENT_CLOUD_PERSISTENCE' : 'TEMPORARY_EPHEMERAL_RAM',
+      notice: dbDetails.isPersistent 
+        ? 'Data is safely stored in MongoDB across restarts, deploys, and container sleep cycles.'
+        : 'CRITICAL ALERT: Running in temporary in-memory mode! Data will vanish on Render restart. Add MONGODB_URI to Render Environment Variables.'
+    },
     timestamp: new Date().toISOString()
   });
 });
