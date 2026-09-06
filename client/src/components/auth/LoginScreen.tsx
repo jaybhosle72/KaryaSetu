@@ -252,10 +252,46 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      
+    <div 
+      className="min-h-screen relative overflow-hidden flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8 font-sans"
+      style={{
+        background: 'linear-gradient(180deg, rgba(255, 153, 51, 0.22) 0%, rgba(255, 179, 102, 0.12) 20%, #FFFFFF 45%, #FFFFFF 55%, rgba(74, 187, 89, 0.12) 80%, rgba(19, 136, 8, 0.22) 100%)'
+      }}
+    >
+      {/* Sovereign Tiranga (Indian Tricolor) Ribbon at top */}
+      <div className="absolute top-0 left-0 right-0 h-1 flex z-50 shadow-xs">
+        <div className="h-full flex-1 bg-[#FF9933]" />
+        <div className="h-full flex-1 bg-white" />
+        <div className="h-full flex-1 bg-[#138808]" />
+      </div>
+
+      {/* Decorative Indian Tricolor Ambient Glow Orbs */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#FF9933]/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-20 -right-20 w-80 h-80 bg-[#FF671F]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#138808]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-[#16A34A]/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Subtle Central Ashoka Chakra Watermark */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.03] select-none">
+        <svg viewBox="0 0 200 200" className="w-[520px] h-[520px] text-[#000080]" fill="currentColor">
+          <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth="8" fill="none" />
+          <circle cx="100" cy="100" r="16" fill="currentColor" />
+          {Array.from({ length: 24 }).map((_, i) => (
+            <line
+              key={i}
+              x1="100"
+              y1="100"
+              x2={100 + 88 * Math.cos((i * 15 * Math.PI) / 180)}
+              y2={100 + 88 * Math.sin((i * 15 * Math.PI) / 180)}
+              stroke="currentColor"
+              strokeWidth="2.5"
+            />
+          ))}
+        </svg>
+      </div>
+
       {/* 1. Header with Sovereign Branding & Language Selector */}
-      <div className="max-w-5xl mx-auto w-full flex items-center justify-between pb-6 border-b border-slate-200/80 gap-3">
+      <div className="max-w-5xl mx-auto w-full flex items-center justify-between pb-6 border-b border-slate-200/80 gap-3 relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center p-0.5 overflow-hidden shrink-0">
             <img 
@@ -298,7 +334,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       </div>
 
       {/* 2. Main Login / Registration Container */}
-      <div className="max-w-4xl mx-auto w-full my-auto py-8">
+      <div className="max-w-4xl mx-auto w-full my-auto py-8 relative z-10">
         
         {/* Alerts */}
         {errorMessage && (
@@ -315,7 +351,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         )}
 
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8 space-y-6">
           
           {/* Top Title & Role Switcher */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -820,7 +856,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       </div>
 
       {/* 3. Footer */}
-      <div className="max-w-5xl mx-auto w-full pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
+      <div className="max-w-5xl mx-auto w-full pt-6 border-t border-slate-300/60 text-center text-xs text-slate-500 relative z-10">
         <p>© 2026 KaryaSetu. National Cooperative Digital Labour Public Infrastructure (DPI).</p>
       </div>
 
