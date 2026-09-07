@@ -278,3 +278,15 @@ export function getTradeBadgeStyle(trade: string): { bg: string; text: string; b
       return { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-300', border: 'border-gray-200 dark:border-gray-700' };
   }
 }
+
+/**
+ * Masks a 12-digit e-Shram Universal Account Number (UAN) for privacy, e.g. XXXX-XXXX-1234
+ */
+export function maskUan(uan?: string | null): string {
+  if (!uan) return 'XXXX-XXXX-••••';
+  const clean = String(uan).replace(/\D/g, '');
+  if (clean.length >= 4) {
+    return `XXXX-XXXX-${clean.slice(-4)}`;
+  }
+  return 'XXXX-XXXX-••••';
+}

@@ -8,6 +8,7 @@ import {
 import { Booking, Worker, Contractor } from '../../types';
 import { api } from '../../services/api';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { maskUan } from '../../utils/tradeUtils';
 
 interface ContractorPortalProps {
   contractorUser?: {
@@ -1737,10 +1738,10 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
 
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">e-Shram UAN</span>
-                      <strong className="text-xs font-black text-slate-900 block mt-0.5">
-                        UAN-2024-MH-9942
+                      <strong className="text-xs font-black text-slate-900 block mt-0.5 font-mono">
+                        {maskUan(viewingWorkerDossier.eshramUan || viewingWorkerDossier.welfareDetails?.eShramUAN || (viewingWorkerDossier.phone ? `12984567${viewingWorkerDossier.phone.replace(/\D/g, '').slice(-4).padStart(4, '0')}` : '129845678921'))}
                       </strong>
-                      <span className="text-[10px] text-blue-700 font-bold">✓ Active Central Registry</span>
+                      <span className="text-[10px] text-emerald-700 font-bold">✓ Active Central Registry</span>
                     </div>
 
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -1815,25 +1816,32 @@ export const ContractorPortal: React.FC<ContractorPortalProps> = ({
                     Certified Trade Qualifications & Government Certifications:
                   </span>
 
-                  {(viewingWorkerDossier.verifiedSkills && viewingWorkerDossier.verifiedSkills.length > 0) ? (
-                    <div className="space-y-2">
-                      {viewingWorkerDossier.verifiedSkills.map((sk, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                          <div>
-                            <strong className="text-xs font-black text-slate-900 block">{sk.name}</strong>
-                            <span className="text-[10px] text-slate-500">Issuer: {sk.issuer}</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                            Verified {sk.verifiedDate}
-                          </span>
+                  <div className="space-y-2">
+                    {(viewingWorkerDossier.eshramRegistered !== false || viewingWorkerDossier.welfareDetails?.eShramUAN) && (
+                      <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+                        <div>
+                          <strong className="text-xs font-black text-emerald-950 block flex items-center gap-1.5">
+                            <span>✓ e-Shram Registered</span>
+                          </strong>
+                          <span className="text-[10px] text-slate-500">Issuer: Ministry of Labour & Employment (MoLE)</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-slate-500">
-                      Standard trade qualification verified upon cooperative induction.
-                    </div>
-                  )}
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Active NDUW Registry
+                        </span>
+                      </div>
+                    )}
+                    {viewingWorkerDossier.verifiedSkills && viewingWorkerDossier.verifiedSkills.map((sk, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                        <div>
+                          <strong className="text-xs font-black text-slate-900 block">{sk.name}</strong>
+                          <span className="text-[10px] text-slate-500">Issuer: {sk.issuer}</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Verified {sk.verifiedDate}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
                   {viewingWorkerDossier.subTrades && viewingWorkerDossier.subTrades.length > 0 && (
                     <div className="pt-2">

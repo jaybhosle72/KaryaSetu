@@ -215,27 +215,50 @@ const DataStore = {
     return doc;
   },
 
+  _sanitizeWorker(w) {
+    if (!w) return null;
+    const worker = w.toObject ? w.toObject() : { ...w };
+    if (worker.eshramRegistered === undefined) worker.eshramRegistered = true;
+    if (!worker.eshramUan) {
+      const phoneDigits = String(worker.phone || worker._id || '8921').replace(/\D/g, '');
+      const last4 = (phoneDigits.slice(-4) || '8921').padStart(4, '0');
+      worker.eshramUan = `12984567${last4}`;
+    }
+    if (!worker.welfareDetails) worker.welfareDetails = {};
+    if (!worker.welfareDetails.eShramUAN) worker.welfareDetails.eShramUAN = worker.eshramUan;
+    if (worker.welfareDetails.eshramRegistered === undefined) worker.welfareDetails.eshramRegistered = true;
+    return worker;
+  },
+
   // Workers
   async getWorkers(filter = {}) {
+    let list = [];
     if (getDBMode() === 'mongodb') {
       const q = {};
       if (filter.cooperativeId) q.cooperativeId = filter.cooperativeId;
       if (filter.contractorId) q.contractorId = filter.contractorId;
       if (filter.trade) q.trade = { $regex: new RegExp(filter.trade, 'i') };
       if (filter.status) q.status = filter.status;
-      return await Worker.find(q);
+      list = await Worker.find(q);
+    } else {
+      list = store.workers.filter(w => {
+        if (filter.cooperativeId && w.cooperativeId !== filter.cooperativeId) return false;
+        if (filter.contractorId && w.contractorId !== filter.contractorId) return false;
+        if (filter.trade && !w.trade.toLowerCase().includes(filter.trade.toLowerCase())) return false;
+        if (filter.status && w.status !== filter.status) return false;
+        return true;
+      });
     }
-    return store.workers.filter(w => {
-      if (filter.cooperativeId && w.cooperativeId !== filter.cooperativeId) return false;
-      if (filter.contractorId && w.contractorId !== filter.contractorId) return false;
-      if (filter.trade && !w.trade.toLowerCase().includes(filter.trade.toLowerCase())) return false;
-      if (filter.status && w.status !== filter.status) return false;
-      return true;
-    });
+    return list.map(w => this._sanitizeWorker(w));
   },
   async getWorkerById(id) {
-    if (getDBMode() === 'mongodb') return await Worker.findOne({ $or: [{ _id: id }, { id }] });
-    return store.workers.find(w => w._id === id || w.id === id);
+    let worker = null;
+    if (getDBMode() === 'mongodb') {
+      worker = await Worker.findOne({ $or: [{ _id: id }, { id }] });
+    } else {
+      worker = store.workers.find(w => w._id === id || w.id === id);
+    }
+    return this._sanitizeWorker(worker);
   },
   async updateWorker(id, updates) {
     if (getDBMode() === 'mongodb') return await Worker.findOneAndUpdate({ $or: [{ _id: id }, { id }] }, updates, { new: true });
@@ -247,6 +270,9 @@ const DataStore = {
     return null;
   },
   async createWorker(workerData) {
+    const phoneDigits = String(workerData.phone || '8921').replace(/\D/g, '');
+    const last4 = (phoneDigits.slice(-4) || '8921').padStart(4, '0');
+    const uan = workerData.eshramUan || workerData.welfareDetails?.eShramUAN || `12984567${last4}`;
     const doc = {
       _id: `wrk_${Date.now()}`,
       rating: 4.9,
@@ -259,6 +285,8 @@ const DataStore = {
       maxDailyCapacity: 4,
       status: 'AVAILABLE',
       isEmergencyDuty: false,
+      eshramRegistered: typeof workerData.eshramRegistered === 'boolean' ? workerData.eshramRegistered : true,
+      eshramUan: uan,
       verifiedSkills: [{
         name: `${workerData.trade || 'Certified'} Professional`,
         issuer: workerData.cooperativeName || 'Maharashtra Labour Cooperative',
@@ -266,10 +294,13 @@ const DataStore = {
       }],
       welfareDetails: {
         pmjayCardNumber: `PMJAY-MH-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+        eShramUAN: uan,
+        eshramRegistered: typeof workerData.eshramRegistered === 'boolean' ? workerData.eshramRegistered : true,
         accidentalInsuranceActive: true,
         insuranceCoverageAmount: 500000,
         welfareContributionBalance: 0,
-        pensionCreditTier: 'Silver Tier'
+        pensionCreditTier: 'Silver Tier',
+        ...(workerData.welfareDetails || {})
       },
       ...workerData
     };

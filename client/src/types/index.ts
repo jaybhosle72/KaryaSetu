@@ -9,6 +9,7 @@ export interface VerifiedSkill {
 export interface WelfareDetails {
   pmjayCardNumber?: string;
   eShramUAN?: string;
+  eshramRegistered?: boolean;
   accidentalInsuranceActive: boolean;
   insuranceCoverageAmount: number;
   welfareContributionBalance: number;
@@ -34,6 +35,8 @@ export interface Worker {
   isEmergencyDuty: boolean;
   verifiedSkills: VerifiedSkill[];
   welfareDetails: WelfareDetails;
+  eshramRegistered?: boolean;
+  eshramUan?: string;
   location?: {
     lat: number;
     lng: number;

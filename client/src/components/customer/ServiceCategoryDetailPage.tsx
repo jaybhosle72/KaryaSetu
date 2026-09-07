@@ -1521,11 +1521,16 @@ export const ServiceCategoryDetailPage: React.FC<ServiceCategoryDetailPageProps>
                       <p className="text-[10px] text-slate-500 truncate">
                         {w.experienceYears} yrs exp • {w.cooperativeName}
                       </p>
-                      {w.verifiedSkills && w.verifiedSkills.length > 0 && (
-                        <span className="inline-block text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded mt-0.5 border border-emerald-100">
-                          ✓ {w.verifiedSkills[0].name.slice(0, 32)}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="inline-block text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                          e-Shram Registered ✓
                         </span>
-                      )}
+                        {w.verifiedSkills && w.verifiedSkills.length > 0 && (
+                          <span className="inline-block text-[9px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                            ✓ {w.verifiedSkills[0].name.slice(0, 24)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

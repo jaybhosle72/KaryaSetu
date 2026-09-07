@@ -2,12 +2,38 @@ const express = require('express');
 const router = express.Router();
 const { DataStore } = require('../services/dataStore');
 
+const maskUan = (uan) => {
+  if (!uan) return 'XXXX-XXXX-••••';
+  const clean = String(uan).replace(/\D/g, '');
+  if (clean.length >= 4) {
+    return `XXXX-XXXX-${clean.slice(-4)}`;
+  }
+  return 'XXXX-XXXX-••••';
+};
+
 // GET /api/workers - List workers with optional filters
 router.get('/', async (req, res) => {
   try {
     const { cooperativeId, trade, status } = req.query;
+    const isCustomer = req.headers['x-user-role'] === 'customer';
     const workers = await DataStore.getWorkers({ cooperativeId, trade, status });
-    res.json({ success: true, count: workers.length, data: workers });
+    
+    // Privacy protection: customers only see eshramRegistered badge, not full UAN
+    const sanitized = workers.map(w => {
+      const copy = { ...w };
+      if (isCustomer) {
+        delete copy.eshramUan;
+        if (copy.welfareDetails) {
+          copy.welfareDetails = { ...copy.welfareDetails };
+          delete copy.welfareDetails.eShramUAN;
+        }
+      } else if (copy.eshramUan) {
+        copy.eshramUanMasked = maskUan(copy.eshramUan);
+      }
+      return copy;
+    });
+
+    res.json({ success: true, count: sanitized.length, data: sanitized });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -25,7 +51,18 @@ router.get('/:id', async (req, res) => {
     const allWelfare = await DataStore.getWelfareLedger();
     const workerWelfare = allWelfare.filter(w => w.workerId === req.params.id);
 
-    const workerObj = worker.toObject ? worker.toObject() : worker;
+    const workerObj = worker.toObject ? worker.toObject() : { ...worker };
+    const isCustomer = req.headers['x-user-role'] === 'customer';
+    if (isCustomer) {
+      delete workerObj.eshramUan;
+      if (workerObj.welfareDetails) {
+        workerObj.welfareDetails = { ...workerObj.welfareDetails };
+        delete workerObj.welfareDetails.eShramUAN;
+      }
+    } else if (workerObj.eshramUan) {
+      workerObj.eshramUanMasked = maskUan(workerObj.eshramUan);
+    }
+
     res.json({
       success: true,
       data: {

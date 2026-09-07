@@ -23,8 +23,12 @@ const WorkerSchema = new mongoose.Schema({
     issuer: String,
     verifiedDate: String
   }],
+  eshramRegistered: { type: Boolean, default: true },
+  eshramUan: { type: String, default: null },
   welfareDetails: {
     pmjayCardNumber: String,
+    eShramUAN: { type: String, default: null },
+    eshramRegistered: { type: Boolean, default: true },
     accidentalInsuranceActive: { type: Boolean, default: true },
     insuranceCoverageAmount: { type: Number, default: 500000 },
     welfareContributionBalance: { type: Number, default: 0 },

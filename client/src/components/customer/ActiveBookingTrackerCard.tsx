@@ -104,14 +104,15 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
   };
 
   // Find worker details from real database workers
-  const assignedWorker = workers.find(w => w._id === booking.assignedWorkerId) || {
+  const assignedWorker: Partial<Worker> & { name: string; phone: string; trade: string; customerRating: number; completedJobs: number; cooperativeName: string } = workers.find(w => w._id === booking.assignedWorkerId) || {
     _id: booking.assignedWorkerId,
     name: booking.workerName || 'Assigned Cooperative Technician',
     phone: booking.workerPhone || '+91 98221 00101',
     trade: booking.serviceCategory || 'Electrical',
     customerRating: 4.88,
     completedJobs: 0,
-    cooperativeName: booking.cooperativeName || 'Maharashtra Labour Cooperative'
+    cooperativeName: booking.cooperativeName || 'Maharashtra Labour Cooperative',
+    eshramRegistered: true
   };
 
   const otpCode = booking.otp || '4821';
@@ -575,11 +576,17 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
               {assignedWorker.name.charAt(0)}
             </div>
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-sm font-black text-white">{assignedWorker.name}</h4>
                 <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
                   {language === 'mr' ? 'कार्यस्थळी उपस्थित' : language === 'hi' ? 'कार्यस्थल पर उपस्थित' : 'On-Site Working'}
                 </span>
+                {(assignedWorker.eshramRegistered !== false || assignedWorker.welfareDetails?.eShramUAN) && (
+                  <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/80 flex items-center gap-1">
+                    <Check className="w-2.5 h-2.5 text-emerald-400 stroke-[3]" />
+                    <span>e-Shram Registered ✓</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-300">
                 {assignedWorker.trade} {language === 'mr' ? 'तज्ज्ञ' : language === 'hi' ? 'विशेषज्ञ' : 'Specialist'} • <strong>{assignedWorker.cooperativeName}</strong>
@@ -620,11 +627,17 @@ export const ActiveBookingTrackerCard: React.FC<ActiveBookingTrackerCardProps> =
               {assignedWorker.name.charAt(0)}
             </div>
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-sm font-black text-white">{assignedWorker.name}</h4>
                 <span className="text-[10px] text-blue-300 font-bold bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800">
                   {assignedWorker.trade}
                 </span>
+                {(assignedWorker.eshramRegistered !== false || assignedWorker.welfareDetails?.eShramUAN) && (
+                  <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/80 flex items-center gap-1">
+                    <Check className="w-2.5 h-2.5 text-emerald-400 stroke-[3]" />
+                    <span>e-Shram Registered ✓</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-300">
                 {isEnRoute ? t.tracker.technicianEnRoute : t.tracker.technicianAllocated} • {t.tracker.etaRemaining} <strong className="text-blue-400">~{formatCountdown(remainingSeconds)}</strong>

@@ -8,7 +8,7 @@ import {
   Navigation, Clock, ChevronRight, PlusCircle, ArrowUpRight, HardHat,
   GraduationCap, ExternalLink, Sparkles, KeyRound
 } from 'lucide-react';
-import { isTradeMatch, resolveCanonicalTrade, getTradeBadgeStyle } from '../../utils/tradeUtils';
+import { isTradeMatch, resolveCanonicalTrade, getTradeBadgeStyle, maskUan } from '../../utils/tradeUtils';
 
 interface WorkerPortalProps {
   workers: Worker[];
@@ -499,6 +499,38 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               </div>
             </div>
 
+            {/* e-Shram Registration Status & Masked UAN Details */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-slate-800 font-bold text-xs">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>e-Shram National Database</span>
+                </div>
+                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  {currentWorker.eshramRegistered !== false ? 'Verified ✓' : 'Pending'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1.5 border-t border-slate-200/70">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                    e-Shram Registration Status
+                  </span>
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>{currentWorker.eshramRegistered !== false ? 'Registered' : 'Pending'}</span>
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                    e-Shram UAN (Masked)
+                  </span>
+                  <span className="font-mono font-black text-slate-900 text-xs block mt-0.5 tracking-wider">
+                    {maskUan(currentWorker.eshramUan || currentWorker.welfareDetails?.eShramUAN || (currentWorker.phone ? `12984567${currentWorker.phone.replace(/\D/g, '').slice(-4).padStart(4, '0')}` : '129845678921'))}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Verified Skills Section */}
             <div className="space-y-2.5 pt-1">
               <div className="flex items-center justify-between">
@@ -515,6 +547,16 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
               </div>
 
               <div className="flex flex-wrap gap-2">
+                {/* e-Shram Registered Verified Badge */}
+                {(currentWorker.eshramRegistered !== false || currentWorker.welfareDetails?.eShramUAN) && (
+                  <span 
+                    className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>e-Shram Registered</span>
+                  </span>
+                )}
+
                 {currentWorker.verifiedSkills && currentWorker.verifiedSkills.length > 0 ? (
                   currentWorker.verifiedSkills.map((s, idx) => (
                     <span 
@@ -526,9 +568,11 @@ export const WorkerPortal: React.FC<WorkerPortalProps> = ({
                     </span>
                   ))
                 ) : (
-                  <span className="text-[11px] text-slate-400 italic py-1">
-                    No extra skill badges added yet. Click "+ Add Skill" to record verified skills.
-                  </span>
+                  currentWorker.eshramRegistered === false && (
+                    <span className="text-[11px] text-slate-400 italic py-1">
+                      No extra skill badges added yet. Click "+ Add Skill" to record verified skills.
+                    </span>
+                  )
                 )}
               </div>
             </div>
