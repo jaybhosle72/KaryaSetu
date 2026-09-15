@@ -75,31 +75,21 @@ const DataStore = {
     });
   },
 
-  getUserRoleFilter(role) {
-    if (!role) return null;
-    if (role === 'hub_coordinator' || role === 'contractor') return ['hub_coordinator', 'contractor'];
-    if (role === 'federation_admin' || role === 'admin' || role === 'cooperative' || role === 'federation') {
-      return ['federation_admin', 'admin', 'cooperative', 'federation'];
-    }
-    return [role];
-  },
-
   async getUserByPhone(phone, role = null) {
     if (!phone) return null;
     const digits = phone.replace(/\D/g, '').slice(-10);
     if (!digits) return null;
     const regexPattern = digits.split('').join('\\D*');
-    const roleList = this.getUserRoleFilter(role);
 
     if (getDBMode() === 'mongodb') {
       const q = { phone: { $regex: regexPattern } };
-      if (roleList) q.role = { $in: roleList };
+      if (role) q.role = role;
       return await User.findOne(q);
     }
     return store.users.find(u => {
       const uDigits = (u.phone || '').replace(/\D/g, '').slice(-10);
       if (uDigits !== digits) return false;
-      if (roleList && !roleList.includes(u.role)) return false;
+      if (role && u.role !== role) return false;
       return true;
     });
   },
@@ -108,16 +98,15 @@ const DataStore = {
     if (!username) return null;
     const cleanUsername = String(username).trim().toLowerCase();
     if (!cleanUsername) return null;
-    const roleList = this.getUserRoleFilter(role);
 
     if (getDBMode() === 'mongodb') {
       const q = { username: cleanUsername };
-      if (roleList) q.role = { $in: roleList };
+      if (role) q.role = role;
       return await User.findOne(q);
     }
     return store.users.find(u => {
       if ((u.username || '').toLowerCase().trim() !== cleanUsername) return false;
-      if (roleList && !roleList.includes(u.role)) return false;
+      if (role && u.role !== role) return false;
       return true;
     });
   },

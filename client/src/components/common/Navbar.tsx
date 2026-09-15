@@ -118,17 +118,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getRoleBadge = () => {
     switch (currentRole) {
       case 'customer':
-        return { label: t.nav.citizen || 'Citizen', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+        return { label: t.nav.citizen, bg: 'bg-orange-50 text-orange-800 border-orange-200' };
       case 'worker':
-        return { label: t.nav.shramik || 'Shramik', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
-      case 'hub_coordinator':
+        return { label: t.nav.shramik, bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
       case 'contractor':
-        return { label: 'Village Hub', bg: 'bg-teal-50 text-teal-800 border-teal-200' };
-      case 'federation_admin':
+        return { label: t.nav.contractor, bg: 'bg-blue-50 text-blue-800 border-blue-200' };
       case 'admin':
       case 'cooperative':
       case 'federation':
-        return { label: 'Federation Board', bg: 'bg-purple-50 text-purple-800 border-purple-200' };
+        return { label: t.nav.coopBoard, bg: 'bg-purple-50 text-purple-800 border-purple-200' };
     }
   };
 

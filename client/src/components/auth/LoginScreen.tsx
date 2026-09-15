@@ -3,7 +3,7 @@ import { UserRole } from '../../types';
 import { Language, translations } from '../../i18n/translations';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { 
-  Users, HardHat, Briefcase, Building, Building2, Globe, Landmark, ArrowRight, 
+  Users, HardHat, Briefcase, Building, ArrowRight, 
   CheckCircle2, Award, Lock, Phone, UserPlus, LogIn,
   ShieldCheck, AlertCircle, RefreshCw, Trash2,
   Eye, EyeOff, User
@@ -102,10 +102,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       let roleName = 'Citizen Customer';
       if (selectedRole === 'worker') {
         roleName = `Certified ${res.worker?.trade || user.metadata?.trade || 'Skilled'} Shramik`;
-      } else if (selectedRole === 'hub_coordinator' || selectedRole === 'contractor') {
-        roleName = 'Village Hub Facilitator (Sahakar Mitra)';
-      } else if (selectedRole === 'federation_admin' || selectedRole === 'admin' || selectedRole === 'cooperative' || selectedRole === 'federation') {
-        roleName = 'Cooperative Federation Officer (NCCT Aligned)';
+      } else if (selectedRole === 'contractor') {
+        roleName = 'Labour Contractor / Mukaddam';
+      } else if (selectedRole === 'admin') {
+        roleName = 'Cooperative Board President';
       }
 
       onLogin(user.role as UserRole, {
@@ -182,9 +182,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           role: 'worker'
         };
         roleName = `Certified ${workerTrade} Shramik`;
-      } else if (selectedRole === 'hub_coordinator' || selectedRole === 'contractor') {
+      } else if (selectedRole === 'contractor') {
         if (!contractorName.trim() || !contractorPhone.trim()) {
-          throw new Error('Please enter coordinator / facilitator name and phone number.');
+          throw new Error('Please enter contractor name and phone number.');
         }
         regPayload = {
           ...regPayload,
@@ -192,22 +192,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           phone: contractorPhone.trim(),
           license: contractorLicense.trim(),
           trade: contractorTrades.split(',').map(s => s.trim()),
-          role: 'hub_coordinator'
+          role: 'contractor'
         };
-        roleName = 'Village Hub Facilitator (Sahakar Mitra)';
-      } else if (selectedRole === 'federation_admin' || selectedRole === 'admin') {
+        roleName = 'Labour Contractor / Mukaddam';
+      } else if (selectedRole === 'admin') {
         if (!adminName.trim() || !adminPhone.trim()) {
-          throw new Error('Please enter federation officer name and phone number.');
+          throw new Error('Please enter officer name and phone number.');
         }
         regPayload = {
           ...regPayload,
           name: adminName.trim(),
           phone: adminPhone.trim(),
           cooperativeName: adminCoop.trim(),
-          regNumber: adminRegNo.trim() || 'MSCS/CR/2018/MH-4421',
-          role: 'federation_admin'
+          regNumber: adminRegNo.trim() || 'MH/PNE/CS/LAB/2026/0491',
+          role: 'admin'
         };
-        roleName = 'Cooperative Federation Officer (NCCT Aligned)';
+        roleName = 'Cooperative Board President';
       }
 
       const res = await api.register(regPayload);
@@ -434,39 +434,39 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             <button
               type="button"
-              onClick={() => { setSelectedRole('hub_coordinator'); setErrorMessage(''); }}
+              onClick={() => { setSelectedRole('contractor'); setErrorMessage(''); }}
               className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                selectedRole === 'hub_coordinator' || selectedRole === 'contractor'
-                  ? 'bg-teal-50/70 border-teal-500 text-teal-950 ring-2 ring-teal-500/20'
+                selectedRole === 'contractor'
+                  ? 'bg-orange-50/70 border-orange-500 text-orange-950 ring-2 ring-orange-500/20'
                   : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
               }`}
             >
               <div className="flex items-center justify-between">
-                <Building2 className={`w-5 h-5 ${selectedRole === 'hub_coordinator' || selectedRole === 'contractor' ? 'text-teal-600' : 'text-slate-400'}`} />
-                {(selectedRole === 'hub_coordinator' || selectedRole === 'contractor') && <span className="w-2 h-2 rounded-full bg-teal-600" />}
+                <Briefcase className={`w-5 h-5 ${selectedRole === 'contractor' ? 'text-orange-600' : 'text-slate-400'}`} />
+                {selectedRole === 'contractor' && <span className="w-2 h-2 rounded-full bg-orange-600" />}
               </div>
               <div className="mt-2">
-                <span className="text-xs font-black block">{currentLanguage === 'mr' ? '३. ग्राम सुविधा केंद्र' : currentLanguage === 'hi' ? '3. ग्राम सुविधा केंद्र' : '3. Village Hub'}</span>
-                <span className="text-[10px] text-slate-500">{currentLanguage === 'mr' ? 'श्रमिक नोंदणी व मदत केंद्र' : currentLanguage === 'hi' ? 'श्रमिक सत्यापन व सहायता केंद्र' : 'Shramik Kendra & Offline Desk'}</span>
+                <span className="text-xs font-black block">{t.auth.contractorRoleTitle}</span>
+                <span className="text-[10px] text-slate-500">{t.auth.contractorRoleDesc}</span>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => { setSelectedRole('federation_admin'); setErrorMessage(''); }}
+              onClick={() => { setSelectedRole('admin'); setErrorMessage(''); }}
               className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                selectedRole === 'federation_admin' || selectedRole === 'admin' || selectedRole === 'cooperative' || selectedRole === 'federation'
-                  ? 'bg-purple-50/70 border-purple-500 text-purple-950 ring-2 ring-purple-500/20'
+                selectedRole === 'admin'
+                  ? 'bg-amber-50/70 border-amber-500 text-amber-950 ring-2 ring-amber-500/20'
                   : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
               }`}
             >
               <div className="flex items-center justify-between">
-                <Globe className={`w-5 h-5 ${selectedRole === 'federation_admin' || selectedRole === 'admin' || selectedRole === 'cooperative' || selectedRole === 'federation' ? 'text-purple-600' : 'text-slate-400'}`} />
-                {(selectedRole === 'federation_admin' || selectedRole === 'admin' || selectedRole === 'cooperative' || selectedRole === 'federation') && <span className="w-2 h-2 rounded-full bg-purple-600" />}
+                <Building className={`w-5 h-5 ${selectedRole === 'admin' ? 'text-amber-600' : 'text-slate-400'}`} />
+                {selectedRole === 'admin' && <span className="w-2 h-2 rounded-full bg-amber-600" />}
               </div>
               <div className="mt-2">
-                <span className="text-xs font-black block">{currentLanguage === 'mr' ? '४. महासंघ प्रशासन' : currentLanguage === 'hi' ? '4. महासंघ बोर्ड' : '4. Federation Board'}</span>
-                <span className="text-[10px] text-slate-500">{currentLanguage === 'mr' ? 'NCCT आणि AI कार्यबल संतुलन' : currentLanguage === 'hi' ? 'NCCT व एआई कार्यबल संतुलन' : 'NCCT Governance & AI Allocation'}</span>
+                <span className="text-xs font-black block">{t.auth.coopRoleTitle}</span>
+                <span className="text-[10px] text-slate-500">{t.auth.coopRoleDesc}</span>
               </div>
             </button>
           </div>

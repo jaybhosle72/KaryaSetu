@@ -1,4 +1,4 @@
-export type UserRole = 'customer' | 'worker' | 'hub_coordinator' | 'federation_admin' | 'cooperative' | 'contractor' | 'admin' | 'federation';
+export type UserRole = 'customer' | 'worker' | 'contractor' | 'admin' | 'cooperative' | 'federation';
 
 export interface VerifiedSkill {
   name: string;
@@ -37,10 +37,6 @@ export interface Worker {
   welfareDetails: WelfareDetails;
   eshramRegistered?: boolean;
   eshramUan?: string;
-  villageHubId?: string;
-  villageHubName?: string;
-  hasSmartphone?: boolean;
-  preferredDispatchMode?: 'APP' | 'HUB_CALL' | 'SMS';
   location?: {
     lat: number;
     lng: number;
@@ -142,44 +138,11 @@ export interface ProjectScope {
   specialRequirements?: string;
 }
 
-export interface VillageHub {
-  _id: string;
-  id?: string;
-  hubName: string;
-  village: string;
-  panchayatOrWard: string;
-  district: string;
-  state: string;
-  coordinatorName: string;
-  coordinatorPhone: string;
-  cooperativeSocieties: {
-    societyId: string;
-    societyName: string;
-  }[];
-  activeWorkersCount: number;
-  nonSmartphoneWorkersCount: number;
-  totalOfflineAssistedBookings: number;
-  toolBankInventory?: {
-    toolName: string;
-    totalUnits: number;
-    availableUnits: number;
-  }[];
-  location?: {
-    lat: number;
-    lng: number;
-    address: string;
-  };
-}
-
 export interface Booking {
   _id: string;
   id?: string;
   customerName: string;
   customerPhone: string;
-  hubAssisted?: boolean;
-  hubCoordinatorId?: string;
-  hubCoordinatorName?: string;
-  fairAllocationScore?: number;
   serviceCategory: string;
   subTrade: string;
   trade?: string;

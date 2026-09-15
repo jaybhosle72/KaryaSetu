@@ -9,7 +9,6 @@ import { CustomerPortal } from './components/customer/CustomerPortal';
 import { WorkerPortal } from './components/worker/WorkerPortal';
 import { CooperativeDashboard } from './components/cooperative/CooperativeDashboard';
 import { FederationDashboard } from './components/federation/FederationDashboard';
-import { VillageHubPortal } from './components/hub/VillageHubPortal';
 import { ContractorPortal } from './components/contractor/ContractorPortal';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { CartDrawerModal, CartItem } from './components/customer/CartDrawerModal';
@@ -713,14 +712,17 @@ export function App() {
               />
             )}
 
-            {(currentRole === 'hub_coordinator' || currentRole === 'contractor') && (
-              <VillageHubPortal
-                hubUser={currentUser || undefined}
+            {currentRole === 'contractor' && (
+              <ContractorPortal
+                contractorUser={currentUser || undefined}
                 bookings={bookings}
                 workers={workers}
+                onAllocateWorkers={handleAllocateWorkers}
                 onUpdateBookingStatus={handleUpdateBookingStatus}
                 onOnboardWorker={handleOnboardWorker}
-                onOfflineBookingCreate={handleBookService}
+                onRecruitWorker={handleRecruitWorker}
+                onReleaseWorker={handleReleaseWorker}
+                onSubmitProposal={handleSubmitProposal}
               />
             )}
 
@@ -742,7 +744,7 @@ export function App() {
               />
             )}
 
-            {(currentRole === 'federation_admin' || currentRole === 'federation') && (
+            {currentRole === 'federation' && (
               <FederationDashboard
                 cooperatives={cooperatives}
                 workers={workers}
