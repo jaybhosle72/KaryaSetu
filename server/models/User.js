@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String },
   role: { 
     type: String, 
-    enum: ['customer', 'worker', 'contractor', 'admin', 'cooperative', 'federation'], 
+    enum: ['customer', 'worker', 'hub_coordinator', 'federation_admin', 'contractor', 'admin', 'cooperative', 'federation'], 
     default: 'customer' 
   },
   address: { type: String, default: 'Pune, Maharashtra' },

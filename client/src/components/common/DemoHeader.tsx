@@ -1,7 +1,7 @@
 import React from 'react';
 import { UserRole } from '../../types';
 import { Language, translations } from '../../i18n/translations';
-import { Users, HardHat, Briefcase, Building, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Users, HardHat, Building2, Globe, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface DemoHeaderProps {
   currentRole: UserRole;
@@ -22,36 +22,38 @@ export const DemoHeader: React.FC<DemoHeaderProps> = ({
   currentLanguage,
   onLanguageChange
 }) => {
-  // 4 Perspectives: Customer, Worker, Contractor, Admin
+  // 4 Perspectives: Citizen, Shramik, Village Hub Facilitator, Federation Admin
   const roles: { key: UserRole; label: string; icon: React.ReactNode; desc: string }[] = [
     {
       key: 'customer',
-      label: 'Customer',
-      icon: <Users className="w-3.5 h-3.5" />,
+      label: '1. Citizen',
+      icon: <Users className="w-3.5 h-3.5 text-blue-400" />,
       desc: 'Book verified workers'
     },
     {
       key: 'worker',
-      label: 'Worker',
-      icon: <HardHat className="w-3.5 h-3.5" />,
+      label: '2. Shramik',
+      icon: <HardHat className="w-3.5 h-3.5 text-emerald-400" />,
       desc: 'Jobs, earnings & welfare'
     },
     {
-      key: 'contractor',
-      label: 'Contractor',
-      icon: <Briefcase className="w-3.5 h-3.5 text-blue-400" />,
-      desc: 'Manage worker community'
+      key: 'hub_coordinator',
+      label: '3. Village Hub',
+      icon: <Building2 className="w-3.5 h-3.5 text-teal-400" />,
+      desc: 'Worker onboarding & offline desk'
     },
     {
-      key: 'admin',
-      label: 'Admin',
-      icon: <Building className="w-3.5 h-3.5 text-amber-400" />,
-      desc: 'Cooperative oversight & AI'
+      key: 'federation_admin',
+      label: '4. Federation Board',
+      icon: <Globe className="w-3.5 h-3.5 text-purple-400" />,
+      desc: 'NCCT oversight & AI demand'
     }
   ];
 
-  // Map admin or cooperative to admin tab
-  const activeKey = currentRole === 'cooperative' || currentRole === 'federation' ? 'admin' : currentRole;
+  // Map legacy role names to active tab
+  let activeKey: UserRole = currentRole;
+  if (currentRole === 'contractor') activeKey = 'hub_coordinator';
+  if (currentRole === 'admin' || currentRole === 'cooperative' || currentRole === 'federation') activeKey = 'federation_admin';
 
   return (
     <div className="bg-slate-900 text-slate-300 border-b border-slate-800 sticky top-0 z-50 py-2 px-4 font-sans text-xs">

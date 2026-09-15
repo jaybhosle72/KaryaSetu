@@ -94,18 +94,28 @@ export const FederationDashboard: React.FC<FederationDashboardProps> = ({
   return (
     <div className="space-y-6 pb-20 font-sans max-w-[1360px] mx-auto">
       
-      {/* 1. Apex State Federation Header */}
-      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-purple-800/60">
+      {/* 1. Apex State Federation Header with NCCT & Ministry of Cooperation Accreditation */}
+      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-purple-800/60 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-purple-800/40 text-xs">
+          <div className="flex items-center gap-2 text-amber-300 font-bold">
+            <Landmark className="w-4 h-4 text-amber-400" />
+            <span>National Council for Co-operative Training (NCCT) • Ministry of Cooperation, Govt. of India</span>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-[11px] border border-emerald-500/30">
+            Cooperative Federation Problem Statement Reference: NCCT-2026-DPS
+          </span>
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="max-w-3xl space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black uppercase tracking-wider border border-purple-500/30">
-              <Globe className="w-3.5 h-3.5 text-purple-400" /> {language === 'mr' ? 'सर्वोच्च राज्य महासंघ प्रशासन' : language === 'hi' ? 'शीर्ष राज्य महासंघ प्रशासन' : 'Apex State Federation Administration'}
+              <Globe className="w-3.5 h-3.5 text-purple-400" /> {language === 'mr' ? 'सर्वोच्च राज्य महासंघ प्रशासन' : language === 'hi' ? 'शीर्ष राज्य महासंघ प्रशासन' : 'Apex Labour Cooperative Federation Administration'}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              {language === 'mr' ? 'महाराष्ट्र राज्य कामगार सहकारी महासंघ (MSLCF)' : language === 'hi' ? 'महाराष्ट्र राज्य श्रम सहकारी महासंघ (MSLCF)' : 'Maharashtra State Labour Cooperative Federation (MSLCF)'}
+              {language === 'mr' ? 'महाराष्ट्र राज्य कामगार सहकारी महासंघ (MSLCF)' : language === 'hi' ? 'महाराष्ट्र राज्य श्रम सहकारी महासंघ (MSLCF)' : 'State Labour Cooperative Federation & Multi-Society Apex'}
             </h1>
             <p className="text-xs sm:text-sm text-purple-200/90 leading-relaxed">
-              {language === 'mr' ? 'केंद्रीय नियामक प्रशासन, वैधानिक ८०% न्याय्य वेतन अंमलबजावणी, सामाजिक सुरक्षा निधी प्रशासन आणि संलग्न प्राथमिक सोसायट्यांमध्ये AI-आधारित कार्यबल संतुलन.' : language === 'hi' ? 'केंद्रीय नियामक शासन, वैधानिक 80% पारिश्रमिक प्रवर्तन, सामाजिक सुरक्षा निधि प्रबंधन और संबद्ध प्राथमिक समितियों में एआई-संचालित कार्यबल संतुलन।' : 'Central regulatory governance, statutory 80% fair-wage enforcement, pooled social security fund administration, and AI-driven inter-cooperative workforce rebalancing across affiliated primary labour societies.'}
+              {language === 'mr' ? 'केंद्रीय नियामक प्रशासन, वैधानिक ८०% न्याय्य वेतन अंमलबजावणी, सामाजिक सुरक्षा निधी प्रशासन आणि संलग्न प्राथमिक सोसायट्यांमध्ये AI-आधारित कार्यबल संतुलन.' : language === 'hi' ? 'केंद्रीय नियामक शासन, वैधानिक 80% पारिश्रमिक प्रवर्तन, सामाजिक सुरक्षा निधि प्रबंधन और संबद्ध प्राथमिक समितियों में एआई-संचालित कार्यबल संतुलन।' : 'Central regulatory governance, statutory fair-wage enforcement, pooled social security fund administration, and AI-driven inter-cooperative workforce rebalancing across affiliated primary labour societies and village hubs.'}
             </p>
           </div>
 
